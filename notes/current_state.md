@@ -39,6 +39,8 @@ This file is a working snapshot. It will be updated at phase transitions. Treat 
 ### Notes
 - `notes/long_range_roadmap_v0_1.md` — long-range projection across Phase 0-9 (corrigible, deprecatable, non-self-propagating)
 - `notes/current_state.md` — this file
+- `notes/future_audit_world_model_integration.md` — DEFERRED audit placeholder (questions preserved; revisit post-Phase 1+)
+- `notes/future_audit_ux_lived_environment.md` — DEFERRED audit placeholder (questions preserved; revisit post-Phase 4-5)
 
 ---
 
@@ -126,3 +128,18 @@ Once cases are authored, Phase 1 execution requires:
 - Case 1 (run): `cases/case_01_electroculture/` + `results/case_01/`
 - Case 2 (pending): `cases/case_02_policy_governance/`
 - Case 3 (pending): `cases/case_03_operational_organizational/`
+- Deferred audit — world-model integration: `notes/future_audit_world_model_integration.md`
+- Deferred audit — UX / lived environment: `notes/future_audit_ux_lived_environment.md`
+
+---
+
+## Deferred audit register
+
+Questions raised but deliberately deferred to preserve the stabilization plateau:
+
+| Topic | Raised | Earliest revisit | Why deferred |
+|---|---|---|---|
+| World-model integration (schemas, registry, connectors, arbitration) | 2026-05-27 | Post Phase 1 | Phase 6 territory; would author architecture before evidence |
+| UX / lived environment / ELIF Capsules / collective dynamics | 2026-05-27 | Post Phase 4-5 | Phase 5+ territory; emotionally compelling framing requires case evidence first |
+
+The register is the operational form of the settling test. Questions persist or dissolve under silence + benchmark pressure. Either outcome is doctrinally legitimate.
