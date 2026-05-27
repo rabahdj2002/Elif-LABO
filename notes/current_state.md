@@ -41,6 +41,8 @@ This file is a working snapshot. It will be updated at phase transitions. Treat 
 - `notes/current_state.md` — this file
 - `notes/future_audit_world_model_integration.md` — DEFERRED audit placeholder (questions preserved; revisit post-Phase 1+)
 - `notes/future_audit_ux_lived_environment.md` — DEFERRED audit placeholder (questions preserved; revisit post-Phase 4-5)
+- `notes/doctrinal_compatibility_audit.md` — verification across 5 locked doctrines; no conflicts found
+- `notes/risk_register_v0_1.md` — consolidated index of risks 1-39 across doctrine + roadmap
 
 ---
 
