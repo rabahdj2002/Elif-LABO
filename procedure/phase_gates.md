@@ -16,20 +16,24 @@
 
 ---
 
-## Phase 0 — Constitutional Stabilization (CURRENT)
+## Phase 0 — Constitutional Stabilization (CURRENT — exit-ready pending Phase 1 execution)
 
 Gates required to enter Phase 1:
 
-- [ ] **G0.1** — Case 02 input frame authored
+- [x] **G0.1** — Case 02 input frame authored *(satisfied 2026-05-28)*
   - Location: `cases/case_02_policy_governance/input_frame.md`
-  - Constraint: must satisfy the "good case shape" per README (reasonable optimizers disagree, but governance constraint still binds)
-  - Operator-authored, not assistant-authored
+  - Domain: autonomous AI-driven crop ecosystems deployment under climate instability
+  - Doctrinal scope: delayed-feedback governance under irreducible uncertainty (Cluster B)
+  - Operator-authored ✓
+  - Framing hygiene: no ELIF vocabulary; native agricultural/climate/development-policy language ✓
 
-- [ ] **G0.2** — Case 03 input frame authored *independently of case 02 execution*
+- [x] **G0.2** — Case 03 input frame authored *independently of case 02 execution* *(satisfied 2026-05-28)*
   - Location: `cases/case_03_operational_organizational/input_frame.md`
-  - Constraint: must embed ambiguity (re-org, vendor, strategic decision with conflicting signals)
-  - **Must be authored BEFORE case 02 runs** (independence requirement)
-  - Operator-authored
+  - Domain: national AI mental-health assistance infrastructure
+  - Doctrinal scope: operational optimization vs. autonomy/dignity/dependency (Cluster D-D8); outside OSG pedagogy domain
+  - Authored simultaneously with case 02, BEFORE either case runs ✓ (independence requirement honored)
+  - Operator-authored ✓
+  - Framing hygiene: no ELIF vocabulary; native mental-health/civil-liberties language ✓
 
 **Do-not-cross boundaries during Phase 0:**
 - Do NOT begin Phase 1 until BOTH cases authored

@@ -1,6 +1,6 @@
 # Case 01 — Electroculture
 
-**Status:** Run (Round 7). Documented post-hoc in `results/case_01_electroculture/` (to be created).
+**Status:** Original Round 7 run (pre-procedure-v1.0, human-executed Condition C). Re-executed 2026-05-28 under procedure v1.0 / E1.5 for matching evidence structure with Cases 02 and 03 — see `results/case_01/`. This README is preserved as historical reference to the original Round 7 documentation.
 
 **Domain:** Scientific / ambiguous-evidence
 

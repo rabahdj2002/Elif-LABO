@@ -1,6 +1,6 @@
 # ELIF-Mode Procedure v0.1
 
-**Status:** Draft. To be locked before benchmark cases 2 and 3.
+**Status:** SUPERSEDED 2026-05-28 by `elif_mode_procedure_v1.0.md`. Retained for trajectory reference only. Do not execute from this file.
 
 **Purpose:** ELIF-mode must be a *specifiable procedure*, not a mindset. The procedure must be executable by an operator following written steps, without "thinking like ELIF."
 

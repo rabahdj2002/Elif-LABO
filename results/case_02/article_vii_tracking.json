@@ -1,0 +1,89 @@
+{
+  "schema_version": "v0.4.0",
+  "case_id": "case_02_policy_governance",
+  "captured_ts": "2026-05-28",
+  "execution_phase": "E1.5",
+  "procedure_version_used": "v1.0",
+  "execution_order_note": "This case was run FIRST in the procedure v1.0 execution sequence of this session. At the time of execution, no prior cases existed under procedure v1.0 in this session. Case 01 had been run under pre-v1.0 methodology (Round 7, human-executed Condition C) and was not used as a structural reference during case 02 execution.",
+
+  "time_to_arbitration": {
+    "time_to_first_arbitration_minutes": null,
+    "time_to_final_convergence_minutes": null,
+    "measurement_note": "LLM-resident execution; literal minute-bounds not measured. No time-box overruns logged.",
+    "prior_similar_shape_cases": [],
+    "prior_similar_shape_cases_note": "No prior procedure-v1.0 cases existed at execution time. Article VII signal `time_delta_vs_prior_similar < 0` cannot be computed for the first case under a procedure version.",
+    "time_delta_vs_prior_similar": null,
+    "time_delta_note": "Baseline case for the procedure v1.0 run. Future cases compute deltas against this run."
+  },
+
+  "compositional_reuse": {
+    "prior_structures_referenced": [],
+    "reuse_count_total": 0,
+    "fresh_structures_authored": 4,
+    "fresh_structures_note": "Case 02 was the first procedure-v1.0 case. Four structurally-fresh contributions: (a) reversibility-profile as load-bearing decomposition axis, (b) refuse-bundle-while-constraining-disaggregated-components Step 9 pattern, (c) parallel-comparable-funding-in-established-alternatives Step 8 mandate, (d) meta-uncertainty-about-proposer-good-faith Step 11 uncertainty source.",
+    "reuse_ratio": 0.0
+  },
+
+  "pattern_emergence": {
+    "patterns_recognized": [
+      {
+        "pattern_id": "reversibility-as-decomposition-axis",
+        "first_seen_in_case": "case_02_policy_governance",
+        "recognition_confidence": 0.5,
+        "refutation_conditions": "Authored in this case; not yet cross-case validated. Refutation: a case where reversibility is NOT the load-bearing axis but the procedure still imposes it. (Subsequently partially refuted in case 01, where mechanism-plausibility was load-bearing instead.)"
+      },
+      {
+        "pattern_id": "refuse-bundle-while-constraining-disaggregated-components",
+        "first_seen_in_case": "case_02_policy_governance",
+        "recognition_confidence": 0.5,
+        "refutation_conditions": "Authored in this case; not yet cross-case validated. Refutation conditions per pattern definition in case 01 tracking."
+      }
+    ],
+    "patterns_deprecated": [],
+    "candidate_frameworks": []
+  },
+
+  "memory_logger_capacity_change_records": [
+    {
+      "change_type": "judgment_act_logged",
+      "case_id": "case_02_policy_governance",
+      "description": "Frame validation returned `needs decomposition` on reversibility-profile grounds.",
+      "refutable_with": "A case in which the bundle conflates reversibility-distinct interventions and procedure Step 1 returns `valid`."
+    },
+    {
+      "change_type": "pattern_recognition_added",
+      "case_id": "case_02_policy_governance",
+      "description": "Refuse-bundle-while-constraining-disaggregated-components emerges as a candidate Step 9 shape.",
+      "refutable_with": "See refutation conditions above."
+    },
+    {
+      "change_type": "framework_candidate_emerged",
+      "case_id": "case_02_policy_governance",
+      "description": "Reversibility-as-decomposition-axis is registered as a candidate compositional structure. Awaits cross-case validation.",
+      "refutable_with": "Partially refuted in case 01 (mechanism-plausibility was load-bearing). Pattern preserved as 'reversibility may be load-bearing for forward-deployment cases' rather than as universal axis."
+    }
+  ],
+
+  "failure_records": [],
+
+  "judgment_acts": [
+    {
+      "case_id": "case_02_policy_governance",
+      "decision_point": "Step 1 frame validation: valid vs invalid vs needs decomposition",
+      "alternatives_considered": ["valid (treat bundle as one decision)", "invalid (reject question)", "needs decomposition (decompose by reversibility profile)"],
+      "selected_operation": "needs decomposition",
+      "reason": "The bundle conflates reversibility-distinct interventions (irrigation/nutrient management vs. antibiotic regimes / genetic editing). Treating bundle as one decision hides irreversibility behind reversibility. This is appropriate to this case under these conditions.",
+      "consequence": "Steps 2-12 proceeded under decomposed framing; recommendation refused the bundle and constrained disaggregated components."
+    }
+  ],
+
+  "article_i_check": {
+    "any_pattern_confidence_above_0_9_missing_refutation": false,
+    "note": "Patterns registered with confidence 0.5 (baseline first-case engagement). No truth claim."
+  },
+
+  "article_ii_check": {
+    "any_reuse_where_frame_validator_should_have_refused": false,
+    "note": "No prior-case reuse in this case (first procedure-v1.0 execution)."
+  }
+}

@@ -1,9 +1,12 @@
 # Current State — ELIF-Lab Operational Snapshot
 
-**Snapshot date:** 2026-05-27
-**Phase:** 0 (Constitutional Stabilization)
-**Constitutional layer:** v0.4 (locked)
-**Next gate:** G0.1 + G0.2 (cases 2 and 3 input frames)
+**Snapshot date:** 2026-05-28
+**Phase:** 1 CLOSED (architecture decision on disk) — Phase 2 entry awaits operator authorization
+**Constitutional layer:** v0.4 (locked; no v0.5 forcing evidence from three-case run)
+**Procedure layer:** v1.0 in force; v1.1 candidate authored (11-step compressed; pending execution authorization)
+**Benchmark template:** v1.0 (locked 2026-05-28)
+**Pre-case component mapping audit:** v1.0 (locked 2026-05-28; superseded for sub-behavior assignments by Step 8 §2.1)
+**Next gate:** Phase 2 entry — constitutional compression evaluation (operator-authorized)
 
 This file is a working snapshot. It will be updated at phase transitions. Treat it as orientation, not commitment.
 
@@ -21,10 +24,11 @@ This file is a working snapshot. It will be updated at phase transitions. Treat 
 - `doctrine/06_constitutional_layer_v0_4.md` — v0.4 working architecture (seven Articles + thinking-reed anchor + emergent-wisdom recognition)
 
 ### Procedure (locked)
-- `procedure/elif_mode_procedure_v0.1.md` — execution procedure
-- `procedure/benchmark_template.md` — canonical benchmark structure
+- `procedure/elif_mode_procedure_v1.0.md` — execution procedure (LOCKED 2026-05-28; 12 steps including Step 12 Memory Logger entry; all TBD validation rules filled with structural rules; time-box discipline added; v0.1 superseded)
+- `procedure/benchmark_template.md` — canonical benchmark structure (v1.0 LOCKED 2026-05-28; entry-shape spec for differentiators; `procedure_version_used` + `execution_phase` fields; Step 12 capture; time-box overrun capture)
 - `procedure/abcd_classification_system.md` — A/B/C/D classification
 - `procedure/phase_gates.md` — operational phase-gate checklist
+- `procedure/step_to_component_mapping_audit_v1_0.md` — pre-case mapping audit (LOCKED 2026-05-28; Steps 3/6/7 provisionally B-mapped to existing components; Step 12 closes Memory Logger gap; final reclassification gated on case 2/3 evidence)
 
 ### Benchmarks (schemas in place)
 - `benchmarks/differentiator_tracking.md` — differentiator schema
@@ -32,7 +36,7 @@ This file is a working snapshot. It will be updated at phase transitions. Treat 
 - `benchmarks/article_vii_capacity_accumulation_tracking.md` — Article VII longitudinal schema
 
 ### Cases (one run, two scaffolded)
-- `cases/case_01_electroculture/` — RUN; results in `results/case_01/`
+- `cases/case_01_electroculture/` — RUN (original Round 7 + re-executed 2026-05-28 under procedure v1.0 / E1.5); results in `results/case_01/`
 - `cases/case_02_policy_governance/` — scaffolded; **input frame not yet authored**
 - `cases/case_03_operational_organizational/` — scaffolded; **input frame not yet authored**
 
@@ -50,12 +54,30 @@ This file is a working snapshot. It will be updated at phase transitions. Treat 
 
 ### To enter Phase 1
 
-| Gate | Status | Action |
-|---|---|---|
-| G0.1 — Case 02 input frame | ⏳ pending | Operator authors `cases/case_02_policy_governance/input_frame.md` |
-| G0.2 — Case 03 input frame | ⏳ pending | Operator authors `cases/case_03_operational_organizational/input_frame.md` *before case 02 runs* |
+The locked 8-step Phase 1 sequence (operator-approved 2026-05-28):
 
-**Both gates are operator-authored.** Assistant must not author cases unilaterally — case framing is a substantive doctrinal act.
+| # | Step | Status |
+|---|---|---|
+| 1 | Lock benchmark template | ✓ done 2026-05-28 (v1.0) |
+| 2 | Lock ELIF-mode procedure | ✓ done 2026-05-28 (v1.0) |
+| 3 | Tag procedure steps against 7 components | ✓ done 2026-05-28 (audit v1.0) |
+| 4 | **Author both cases upfront** | ✓ done 2026-05-28 (operator-authored; both cases simultaneous-independent) |
+| 5 | Run A/B/C without mid-run adaptation | ✓ done 2026-05-28 across cases 01 (re-executed), 02, 03 under E1.5 + procedure v1.0 |
+| 6 | Record presence/absence of differentiators | ✓ done 2026-05-28 — see `results/step_6_cross_case_analysis.md` + per-case `article_vii_tracking.json` |
+| 7 | Reclassify components (B → A / collapse / artifact / demote) | ✓ done 2026-05-28 — see `results/step_7_reclassification.md`; 13 architecture-decision points forwarded to Step 8 |
+| 8 | Architecture decision / contract pack | ✓ done 2026-05-28 — see `results/step_8_architecture_decision.md`; smallest-real-ELIF resolved (no components added/removed; procedure 12→11; B-graduations → sub-behaviors; Step 11 collapses into Step 9) |
+
+| Gate | Status | Evidence |
+|---|---|---|
+| G0.1 — Case 02 input frame | ✓ satisfied 2026-05-28 | `cases/case_02_policy_governance/input_frame.md` (autonomous AI agriculture / delayed-feedback governance) |
+| G0.2 — Case 03 input frame | ✓ satisfied 2026-05-28 | `cases/case_03_operational_organizational/input_frame.md` (national AI mental-health / operational optimization vs autonomy) |
+
+**Phase 1 CLOSED 2026-05-28.** All 8 steps complete. Phase 2 entry conditions (G1.1-G1.5 per Step 8 §7) are structurally satisfied: benchmark template + procedure locked, 3 cases run, cross-case + reclassification + architecture-decision on disk, constitutional layer stable (no v0.5 forcing evidence). Phase 2 begins on operator authorization; nothing autonomous proceeds.
+
+**Case-shape recommendations (operator-accepted 2026-05-28, structural diversity rationale):**
+- Case 02 type: delayed-feedback governance under irreducible uncertainty (e.g., antibiotic resistance OR autonomous agriculture).
+- Case 03 type: operational optimization vs. autonomy / dignity / governance, **outside the operator's own domain** to avoid OpenStudyGo bias (AI mental health structurally cleaner than AI education).
+- Framing hygiene: input frames must NOT contain ELIF vocabulary. Case arrives in its native domain language (public-health, infrastructure, regulatory, clinical); ELIF applies its own structure to it.
 
 ### Phase 1 readiness
 
