@@ -1,0 +1,36 @@
+{
+  "axes": [
+    {
+      "axis_name": "mechanism plausibility per technique",
+      "rationale": "Load-bearing axis: the case turns on whether bundled components share the same risk / mechanism / authority profile or whether bundling hides asymmetry.",
+      "families": [
+        {
+          "family_id": "A",
+          "description": "specified, biologically plausible mechanism"
+        },
+        {
+          "family_id": "B",
+          "description": "under-specified, mechanism evaluable only with protocol detail"
+        },
+        {
+          "family_id": "C",
+          "description": "no specified mechanism that survives physical scrutiny"
+        }
+      ]
+    },
+    {
+      "axis_name": "decision type bundled in the proposal",
+      "rationale": "Secondary axis: time-horizon of effects determines evidence threshold required before authorization.",
+      "families": [
+        {
+          "family_id": "D",
+          "description": "short-horizon, reversible-by-decision"
+        },
+        {
+          "family_id": "E",
+          "description": "medium-horizon, downstream-gated"
+        }
+      ]
+    }
+  ]
+}

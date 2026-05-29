@@ -1,0 +1,36 @@
+{
+  "axes": [
+    {
+      "axis_name": "reversibility profile per intervention",
+      "rationale": "Load-bearing axis: the case turns on whether bundled components share the same risk / mechanism / authority profile or whether bundling hides asymmetry.",
+      "families": [
+        {
+          "family_id": "A",
+          "description": "reversible interventions (irrigation, nutrient management)"
+        },
+        {
+          "family_id": "B",
+          "description": "partially-reversible interventions (antibiotic regimes)"
+        },
+        {
+          "family_id": "C",
+          "description": "irreversible interventions (genetic editing, gene-drive)"
+        }
+      ]
+    },
+    {
+      "axis_name": "policy time-horizon of effects",
+      "rationale": "Secondary axis: time-horizon of effects determines evidence threshold required before authorization.",
+      "families": [
+        {
+          "family_id": "D",
+          "description": "short-horizon, reversible-by-decision"
+        },
+        {
+          "family_id": "E",
+          "description": "medium-horizon, downstream-gated"
+        }
+      ]
+    }
+  ]
+}

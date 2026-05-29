@@ -1,0 +1,29 @@
+{
+  "stages": [
+    {
+      "stage_id": "A1",
+      "description": "Research funding only for Family A techniques under pre-registered, multi-site, replication-protocol-bound studies. No pilot deployment authority.",
+      "continuation_gate": "Continuation gate at 36-60 months: pre-registered replication outcomes meet pre-declared effect-size threshold."
+    },
+    {
+      "stage_id": "A2",
+      "description": "Controlled efficacy trials in test plots if A1 gate cleared. Comparative trials against established alternatives.",
+      "continuation_gate": "Continuation gate at 60-96 months: comparative effect sizes non-inferior or superior to established alternatives."
+    },
+    {
+      "stage_id": "B0",
+      "description": "Protocol specification required for Family B techniques before any authorization.",
+      "continuation_gate": "Continuation gate: specific protocols submitted and independently reviewed for mechanism plausibility."
+    },
+    {
+      "stage_id": "C0",
+      "description": "Refuse research funding for Family C techniques.",
+      "continuation_gate": "Continuation gate for moratorium lift: peer-reviewed publication of a falsifiable mechanism by an independent group."
+    },
+    {
+      "stage_id": "P1",
+      "description": "Parallel mandatory track — comparable public funding for established drought-resilience interventions.",
+      "continuation_gate": "Continuation gate at 60 months: comparative resilience metrics across electroculture vs. established-pathway pilots."
+    }
+  ]
+}

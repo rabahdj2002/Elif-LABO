@@ -1,0 +1,16 @@
+{
+  "failure_conditions": [
+    {
+      "hypothesis_id": "H1",
+      "fails_if": "Outcome metrics at policy-cycle horizon fall outside prior-band variance."
+    },
+    {
+      "hypothesis_id": "H2",
+      "fails_if": "Year-5 authorization decisions are demonstrably contingent on replication results for irreversible track."
+    },
+    {
+      "hypothesis_id": "H3",
+      "fails_if": "Comparable-alternative pilots show resilience metrics <30% of bundled-program metrics."
+    }
+  ]
+}

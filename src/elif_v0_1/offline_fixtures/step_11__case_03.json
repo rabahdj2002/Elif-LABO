@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "kind": "judgment_act",
+      "description": "Frame validation returned `needs_decomposition` on scope-of-authority grounds.",
+      "refutable_with": "A case in which the bundle is genuinely within a single scope-of-authority and Step 1 returns `valid`."
+    },
+    {
+      "kind": "pattern_engaged",
+      "description": "Refuse-bundle-while-constraining-disaggregated-components engaged (second occurrence).",
+      "refutable_with": "A case in which the bundle is genuinely non-decomposable and the procedure still produces this shape."
+    },
+    {
+      "kind": "capacity_change",
+      "description": "Scope-of-authority-as-decomposition-axis registered as a candidate compositional structure.",
+      "refutable_with": "A case in which scope-of-authority is NOT the load-bearing axis but the procedure still imposes it."
+    }
+  ]
+}

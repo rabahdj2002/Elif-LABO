@@ -1,0 +1,16 @@
+{
+  "failure_conditions": [
+    {
+      "hypothesis_id": "H1",
+      "fails_if": "Cycle-time metrics at operational scale fall outside prior variance."
+    },
+    {
+      "hypothesis_id": "H2",
+      "fails_if": "Consent records show separate authorization for all out-of-scope interventions."
+    },
+    {
+      "hypothesis_id": "H3",
+      "fails_if": "Post-execution review records favor refusal over rationalization."
+    }
+  ]
+}

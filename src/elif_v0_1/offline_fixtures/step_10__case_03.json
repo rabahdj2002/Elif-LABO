@@ -1,0 +1,15 @@
+{
+  "operative": [
+    "Refuse the bundled execution as structured.",
+    "Execute in-scope interventions under existing delegation.",
+    "Require explicit consent for extended-scope interventions before execution.",
+    "Refuse out-of-scope interventions pending separate authorization process.",
+    "Mandate documentation of all scope-boundary decisions."
+  ],
+  "theoretical": [
+    "Whether scope-of-authority will be honored under execution pressure.",
+    "Whether retroactive rationalization can be prevented by upstream documentation.",
+    "Whether ecosystem-scale effects will be captured by current review processes."
+  ],
+  "absence_log": "No absence to log; both strands populated."
+}

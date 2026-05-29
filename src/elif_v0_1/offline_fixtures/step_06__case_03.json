@@ -1,0 +1,14 @@
+{
+  "scales": [
+    "unit-of-action",
+    "team",
+    "function",
+    "organization",
+    "ecosystem"
+  ],
+  "cross_scale_relations": [
+    "Authority delegated at function scale does not aggregate to organization-scale consent for cross-function effects.",
+    "Operational-cycle execution runs faster than scope-of-authority review.",
+    "Ecosystem-scale effects of repeated unit-of-action execution outlast any single authorization."
+  ]
+}

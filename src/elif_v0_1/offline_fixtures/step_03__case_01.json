@@ -1,0 +1,8 @@
+{
+  "assumptions": [
+    "The proposal assumes 'electroculture' is a category whose constituent techniques can be evaluated under a single authorization.",
+    "The proposal assumes pilot deployment authority can be granted alongside research authority rather than gated downstream.",
+    "The proposal assumes private-firm participation in research authorization is compatible with research-protocol integrity.",
+    "The proposal assumes drought-prone regions are appropriate test sites for unvalidated techniques."
+  ]
+}

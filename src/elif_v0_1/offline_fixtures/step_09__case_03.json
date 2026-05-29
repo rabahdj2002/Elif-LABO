@@ -1,0 +1,10 @@
+{
+  "verdict": "refuse",
+  "verdict_detail": "Refuse the bundled execution. Constrain disaggregated components: in-scope interventions execute under existing delegation; extended-scope require explicit consent; out-of-scope refused pending separate authorization process. Mandate documentation of all scope-boundary decisions.",
+  "confidence": "High on refusal of bundle-as-structured; medium-high on scope-boundary documentation mandate; medium on classification of borderline interventions.",
+  "unresolved_uncertainty_sources": [
+    "Whether scope-of-authority will be honored under operational-cycle execution pressure.",
+    "Whether retroactive rationalization can be prevented by upstream documentation.",
+    "Whether ecosystem-scale effects of repeated execution will be captured by current review processes."
+  ]
+}

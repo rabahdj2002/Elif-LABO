@@ -1,0 +1,19 @@
+{
+  "hypotheses": [
+    {
+      "hypothesis_id": "H1",
+      "statement": "Reversible-interventions track of the bundle, if authorized alone, will produce policy outcomes within accepted error bands.",
+      "distinguishing_prediction": "Outcome metrics at policy-cycle horizon remain within prior-band variance."
+    },
+    {
+      "hypothesis_id": "H2",
+      "statement": "Irreversible-interventions track, if bundled with reversible, will receive downstream authorization regardless of evidence accumulation.",
+      "distinguishing_prediction": "Authorization decisions at year 5 are independent of replication results for irreversible track."
+    },
+    {
+      "hypothesis_id": "H3",
+      "statement": "Comparable-alternative funding at matched scale will produce comparable or greater policy resilience than the bundled program.",
+      "distinguishing_prediction": "Parallel comparable-alternative pilots show resilience metrics >= bundled-program metrics at year 5."
+    }
+  ]
+}

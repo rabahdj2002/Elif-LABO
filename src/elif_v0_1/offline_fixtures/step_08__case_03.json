@@ -1,0 +1,24 @@
+{
+  "stages": [
+    {
+      "stage_id": "S1",
+      "description": "In-scope-of-authority interventions: execute under existing delegation.",
+      "continuation_gate": "Gate at cycle end: cycle-time and consent records within prior variance."
+    },
+    {
+      "stage_id": "S2",
+      "description": "Extended-scope interventions: require explicit consent before execution.",
+      "continuation_gate": "Gate: consent received with documented scope-boundary acknowledgment."
+    },
+    {
+      "stage_id": "S3",
+      "description": "Out-of-scope interventions: refuse execution. Indefinite hold pending separate authorization process.",
+      "continuation_gate": "Gate for hold lift: full scope-of-authority review by independent oversight."
+    },
+    {
+      "stage_id": "P1",
+      "description": "Parallel mandatory documentation of all scope-boundary decisions.",
+      "continuation_gate": "Gate at cycle end: documentation completeness reviewed independently."
+    }
+  ]
+}

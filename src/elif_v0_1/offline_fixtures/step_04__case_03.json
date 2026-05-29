@@ -1,0 +1,19 @@
+{
+  "hypotheses": [
+    {
+      "hypothesis_id": "H1",
+      "statement": "Operational interventions inside delegated authority, if separated, will execute within expected cycle times.",
+      "distinguishing_prediction": "Cycle-time metrics at operational scale remain within prior variance."
+    },
+    {
+      "hypothesis_id": "H2",
+      "statement": "Out-of-scope interventions, if bundled with in-scope, will be executed without separate consent.",
+      "distinguishing_prediction": "Consent records show no separate authorization for out-of-scope interventions."
+    },
+    {
+      "hypothesis_id": "H3",
+      "statement": "Scope-of-authority questioned downstream after bundled execution will be retroactively rationalized rather than refused.",
+      "distinguishing_prediction": "Post-execution review records favor rationalization over refusal."
+    }
+  ]
+}

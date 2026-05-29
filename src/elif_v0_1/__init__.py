@@ -23,12 +23,15 @@ from .base import (
     FrameInvalidError,
     GovernanceRefuseError,
     InputFrame,
+    LLMAdapterError,
+    LLMCallCapError,
     NonSelfPropagationError,
     PROCEDURE_STEP_IDS,
     ProcedureStepOutput,
+    SchemaValidationError,
 )
 
-VERSION = "0.1.0-scaffold"
+VERSION = "0.1.0-alpha"
 
 __all__ = [
     "ARTICLE_IDS",
@@ -38,9 +41,12 @@ __all__ = [
     "FrameInvalidError",
     "GovernanceRefuseError",
     "InputFrame",
+    "LLMAdapterError",
+    "LLMCallCapError",
     "NonSelfPropagationError",
     "PROCEDURE_STEP_IDS",
     "ProcedureStepOutput",
+    "SchemaValidationError",
     "VERSION",
     "assert_consistent",
 ]

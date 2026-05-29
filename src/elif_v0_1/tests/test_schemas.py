@@ -119,11 +119,26 @@ class TestSchemaValidatesSample(unittest.TestCase):
 
     def test_article_vii_sample_validates(self) -> None:
         sample = {
+            "schema_version": "v0.4.0",
             "case_id": "case_01",
-            "prior_structures_referenced": ["case_00"],
-            "reuse_count_total": 1,
-            "patterns_recognized": ["frame_collapse"],
-            "time_delta_vs_prior_similar": 0.0,
+            "procedure_version_used": "v1.0",
+            "compositional_reuse": {
+                "prior_structures_referenced": [],
+                "reuse_count_total": 0,
+                "fresh_structures_authored": 1,
+                "reuse_ratio": 0.0,
+            },
+            "pattern_emergence": {
+                "patterns_recognized": [],
+                "patterns_deprecated": [],
+                "candidate_frameworks": [],
+            },
+            "article_i_check": {
+                "any_pattern_confidence_above_0_9_missing_refutation": False
+            },
+            "article_ii_check": {
+                "any_reuse_where_frame_validator_should_have_refused": False
+            },
         }
         jsonschema.validate(  # type: ignore[name-defined]
             sample, ARTICLE_VII_TRACKING_SCHEMA

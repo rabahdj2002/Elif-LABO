@@ -1,0 +1,19 @@
+{
+  "hypotheses": [
+    {
+      "hypothesis_id": "H1",
+      "statement": "Replication-protocol-bound research on Family A techniques produces effect sizes that are either statistically detectable but small or not detectable above baseline variance.",
+      "distinguishing_prediction": "Pre-registered multi-site replication studies measure effect sizes consistent with this range."
+    },
+    {
+      "hypothesis_id": "H2",
+      "statement": "Family C techniques (no specified mechanism) will not produce statistically detectable effects under replication-protocol-bound testing.",
+      "distinguishing_prediction": "Pre-registered tests of Family C techniques show effect sizes indistinguishable from null."
+    },
+    {
+      "hypothesis_id": "H3",
+      "statement": "Pilot deployment of any proposed technique authorized alongside research will produce farmer-harm outcomes without yield improvements.",
+      "distinguishing_prediction": "Pilot-participating farmers at year 5 report higher cost-without-benefit ratios than matched controls."
+    }
+  ]
+}

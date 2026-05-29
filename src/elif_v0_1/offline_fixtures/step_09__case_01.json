@@ -1,0 +1,11 @@
+{
+  "verdict": "refuse",
+  "verdict_detail": "Refuse the proposed bundle. Constrain disaggregated components: Family A research-only at A1; Family B requires protocol specification; Family C refused pending mechanism evidence. Pilot deployment authority refused within initial five-year proposal. Private-firm role in research classification refused.",
+  "confidence": "Medium-high on refusal of bundle-as-structured; high on refusal of pilot deployment authority; medium on Family A/B/C boundaries.",
+  "unresolved_uncertainty_sources": [
+    "Whether bioelectrical-stimulation effects aggregate from organism-scale to field-scale.",
+    "Whether existing heterogeneous literature reflects real-but-weak signal or publication bias.",
+    "Whether independent advisory review can remain independent under political pressure.",
+    "Whether the coalition will accept Family A research-only authorization or treat refusal as total rejection."
+  ]
+}

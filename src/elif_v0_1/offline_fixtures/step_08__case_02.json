@@ -1,0 +1,24 @@
+{
+  "stages": [
+    {
+      "stage_id": "R1",
+      "description": "Reversible-interventions track: authorize separately under outcome monitoring.",
+      "continuation_gate": "Gate at policy cycle end: outcome metrics within prior-band variance."
+    },
+    {
+      "stage_id": "R2",
+      "description": "Partially-reversible track: protocol specification required before authorization.",
+      "continuation_gate": "Gate: independent review of reversibility-restoration protocols."
+    },
+    {
+      "stage_id": "R3",
+      "description": "Irreversible track: refuse authorization. Indefinite moratorium pending independent risk assessment.",
+      "continuation_gate": "Gate for moratorium lift: independent peer-reviewed risk-quantification with refutable predictions."
+    },
+    {
+      "stage_id": "P1",
+      "description": "Parallel mandatory comparable-alternative funding at matched scale.",
+      "continuation_gate": "Gate at policy cycle end: comparative resilience metrics inform future authorization decisions."
+    }
+  ]
+}

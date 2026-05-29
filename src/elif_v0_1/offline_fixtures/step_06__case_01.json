@@ -1,0 +1,16 @@
+{
+  "scales": [
+    "molecular/physical",
+    "organism",
+    "field",
+    "farm-economic",
+    "research-system",
+    "public-funding",
+    "civilizational"
+  ],
+  "cross_scale_relations": [
+    "Effect sizes detectable at molecular / organism scale may not aggregate to field-scale yield benefits.",
+    "Research-system scale operates on slower timescales than public-funding accountability cycles.",
+    "Pseudoscience-normalization at civilizational scale operates faster than mechanism-testing at research scale."
+  ]
+}

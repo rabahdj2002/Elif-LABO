@@ -1,0 +1,5 @@
+{
+  "verdict": "needs_decomposition",
+  "reasoning": "The input frame bundles distinct interventions under 'policy_governance' and asks a single binary verdict. The bundled components differ along reversibility profile per intervention; a binary verdict over the bundle treats categorically-distinct components as one decision.",
+  "reformulated_frame": "Per component in the proposed list, what evidence quality and authorization is appropriate at what evidence level?"
+}

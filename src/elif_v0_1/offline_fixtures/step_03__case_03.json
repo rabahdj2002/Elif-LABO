@@ -1,0 +1,8 @@
+{
+  "assumptions": [
+    "The proposal assumes delegated authority covers all proposed operational interventions.",
+    "The proposal assumes scope-of-authority is not itself a load-bearing decision axis.",
+    "The proposal assumes consented-scope expansion is procedurally trivial.",
+    "The proposal assumes downstream interventions inherit upstream authorization."
+  ]
+}

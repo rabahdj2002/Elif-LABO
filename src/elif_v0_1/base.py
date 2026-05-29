@@ -77,6 +77,30 @@ class NonSelfPropagationError(ELIFError):
     """Raised if scaffold attempts autonomous progression without authorization."""
 
 
+class LLMCallCapError(ELIFError):
+    """Raised when an LLM call would exceed the per-run call cap.
+
+    Step 8 §8.4: cost cap is `--max-llm-calls=22`. Cap is a hard halt;
+    no silent retry on cap exhaustion. The runner observes this as a
+    governance signal, not a transient error.
+    """
+
+
+class LLMAdapterError(ELIFError):
+    """Raised on transport / API failure inside the LLM adapter.
+
+    Distinct from `LLMCallCapError` (governance) — this is plumbing.
+    """
+
+
+class SchemaValidationError(ELIFError):
+    """Raised when a structured-output dict fails its declared JSON Schema.
+
+    Pinned schemas are doctrinal; drift in shape is a governance fail,
+    not a soft warning. v0.4.0 schema_version is frozen per Step 8 §8.7.
+    """
+
+
 # ---- Frozen data shapes ---------------------------------------------------
 @dataclass(frozen=True)
 class InputFrame:

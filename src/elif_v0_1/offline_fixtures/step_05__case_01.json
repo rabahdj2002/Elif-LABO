@@ -1,0 +1,16 @@
+{
+  "failure_conditions": [
+    {
+      "hypothesis_id": "H1",
+      "fails_if": "Pre-registered multi-site replications produce effect sizes >25% (real large effect) OR null across all conditions."
+    },
+    {
+      "hypothesis_id": "H2",
+      "fails_if": "Pre-registered tests of Family C techniques produce statistically detectable effects with replicable mechanism-consistent measurements."
+    },
+    {
+      "hypothesis_id": "H3",
+      "fails_if": "Pilot-participating farmers at year 5 report cost-benefit ratios indistinguishable from or better than matched controls."
+    }
+  ]
+}

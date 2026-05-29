@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "kind": "judgment_act",
+      "description": "Frame validation returned `needs_decomposition` on reversibility-profile grounds.",
+      "refutable_with": "A case in which the bundle conflates reversibility-distinct interventions and Step 1 returns `valid`."
+    },
+    {
+      "kind": "pattern_engaged",
+      "description": "Refuse-bundle-while-constraining-disaggregated-components first surfaced as a candidate Step 9 shape.",
+      "refutable_with": "A case where the bundle is genuinely non-decomposable and the procedure still produces this shape."
+    },
+    {
+      "kind": "capacity_change",
+      "description": "Reversibility-as-decomposition-axis registered as a candidate compositional structure pending cross-case validation.",
+      "refutable_with": "A case in which reversibility is NOT the load-bearing axis but the procedure still imposes it."
+    }
+  ]
+}

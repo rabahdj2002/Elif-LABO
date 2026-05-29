@@ -1,0 +1,19 @@
+{
+  "trajectories": [
+    {
+      "trajectory_id": "T1",
+      "tag": "outside-original-frame",
+      "reason": "Decompose the bundle by scope-of-authority and refuse the bundled execution."
+    },
+    {
+      "trajectory_id": "T2",
+      "tag": "outside-original-frame",
+      "reason": "Require explicit consent for any out-of-scope intervention prior to bundled execution."
+    },
+    {
+      "trajectory_id": "T3",
+      "tag": "outside-original-frame",
+      "reason": "Question whether scope-of-authority is itself the load-bearing axis."
+    }
+  ]
+}

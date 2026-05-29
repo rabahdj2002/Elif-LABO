@@ -1,0 +1,24 @@
+{
+  "trajectories": [
+    {
+      "trajectory_id": "T1",
+      "tag": "outside-original-frame",
+      "reason": "Decompose 'electroculture' as a category and refuse the bundle authorization."
+    },
+    {
+      "trajectory_id": "T2",
+      "tag": "outside-original-frame",
+      "reason": "Treat the comparison case as 'established drought-resilience pathways' rather than 'no action.'"
+    },
+    {
+      "trajectory_id": "T3",
+      "tag": "outside-original-frame",
+      "reason": "Question whether 'research' and 'pilot deployment' should be authorized in the same proposal at all."
+    },
+    {
+      "trajectory_id": "T4",
+      "tag": "outside-original-frame",
+      "reason": "Treat the coalition's actor mix (researchers + agencies + private firms) as a structural feature requiring analysis."
+    }
+  ]
+}

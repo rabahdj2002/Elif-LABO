@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "kind": "judgment_act",
+      "description": "Frame validation returned `needs_decomposition` on mechanism-plausibility grounds.",
+      "refutable_with": "A case in which the bundle conflates mechanism-distinct techniques and procedure Step 1 returns `valid`."
+    },
+    {
+      "kind": "pattern_engaged",
+      "description": "Refuse-bundle-while-constraining-disaggregated-components engaged for the third time (after cases 02, 03).",
+      "refutable_with": "A case in which the bundle is genuinely non-decomposable and the procedure still produces this Step 9 shape."
+    },
+    {
+      "kind": "capacity_change",
+      "description": "Mechanism-plausibility-as-decomposition-axis emerges as a framework candidate specific to scientific-evidential-ambiguity cases.",
+      "refutable_with": "A scientific-evidential-ambiguity case in which mechanism plausibility is NOT load-bearing."
+    }
+  ]
+}

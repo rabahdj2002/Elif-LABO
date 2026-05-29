@@ -1,0 +1,19 @@
+{
+  "trajectories": [
+    {
+      "trajectory_id": "T1",
+      "tag": "outside-original-frame",
+      "reason": "Decompose the bundle by reversibility profile and refuse the bundled authorization."
+    },
+    {
+      "trajectory_id": "T2",
+      "tag": "outside-original-frame",
+      "reason": "Mandate parallel comparable-alternative funding as a structural condition of any authorization."
+    },
+    {
+      "trajectory_id": "T3",
+      "tag": "outside-original-frame",
+      "reason": "Question whether the proposer's structural position permits good-faith disaggregated execution."
+    }
+  ]
+}

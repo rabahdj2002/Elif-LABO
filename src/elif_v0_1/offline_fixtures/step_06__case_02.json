@@ -1,0 +1,14 @@
+{
+  "scales": [
+    "individual",
+    "household",
+    "community",
+    "policy-cycle",
+    "intergenerational"
+  ],
+  "cross_scale_relations": [
+    "Reversibility profile at individual scale does not aggregate to community-scale reversibility.",
+    "Policy-cycle accountability runs faster than intergenerational outcome resolution.",
+    "Authorization decisions at policy-cycle scale outlast the political cycle that produced them."
+  ]
+}

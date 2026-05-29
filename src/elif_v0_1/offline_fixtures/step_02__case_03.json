@@ -1,0 +1,36 @@
+{
+  "axes": [
+    {
+      "axis_name": "scope-of-authority and consent",
+      "rationale": "Load-bearing axis: the case turns on whether bundled components share the same risk / mechanism / authority profile or whether bundling hides asymmetry.",
+      "families": [
+        {
+          "family_id": "A",
+          "description": "interventions inside delegated operational authority"
+        },
+        {
+          "family_id": "B",
+          "description": "interventions requiring extended-scope consent"
+        },
+        {
+          "family_id": "C",
+          "description": "interventions outside any consented scope-of-authority"
+        }
+      ]
+    },
+    {
+      "axis_name": "operational-cycle time-horizon",
+      "rationale": "Secondary axis: time-horizon of effects determines evidence threshold required before authorization.",
+      "families": [
+        {
+          "family_id": "D",
+          "description": "short-horizon, reversible-by-decision"
+        },
+        {
+          "family_id": "E",
+          "description": "medium-horizon, downstream-gated"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "assumptions": [
+    "The proposal assumes the bundled interventions share a reversibility profile.",
+    "The proposal assumes one-shot authorization is the appropriate decision unit for mixed-horizon interventions.",
+    "The proposal assumes the proposing actor is structurally good-faith about disaggregated authorization.",
+    "The proposal assumes 'comparable alternatives' do not require parallel funding mandate."
+  ]
+}
