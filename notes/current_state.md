@@ -35,10 +35,11 @@ This file is a working snapshot. It will be updated at phase transitions. Treat 
 - `benchmarks/component_engagement_tracking.md` — component engagement schema
 - `benchmarks/article_vii_capacity_accumulation_tracking.md` — Article VII longitudinal schema
 
-### Cases (one run, two scaffolded)
+### Cases (three run under procedure v1.0)
 - `cases/case_01_electroculture/` — RUN (original Round 7 + re-executed 2026-05-28 under procedure v1.0 / E1.5); results in `results/case_01/`
-- `cases/case_02_policy_governance/` — scaffolded; **input frame not yet authored**
-- `cases/case_03_operational_organizational/` — scaffolded; **input frame not yet authored**
+- `cases/case_02_policy_governance/` — RUN under procedure v1.0 / E1.5 (FIRST in v1.0 execution sequence per `results/case_02/article_vii_tracking.json`); input frame LOCKED 2026-05-28 (G0.1 cleared); results in `results/case_02/`
+- `cases/case_03_operational_organizational/` — RUN under procedure v1.0 / E1.5 (SECOND in v1.0 sequence per `results/case_03/article_vii_tracking.json`; reuses 4 structural patterns from case 02 as `reuse_kind=composed`); input frame LOCKED 2026-05-28 (G0.2 cleared); results in `results/case_03/`
+- Cross-case work (Steps 6-8): `results/step_6_cross_case_analysis.md`, `results/step_7_reclassification.md`, `results/step_8_architecture_decision.md`
 
 ### Notes
 - `notes/long_range_roadmap_v0_1.md` — long-range projection across Phase 0-9 (corrigible, deprecatable, non-self-propagating)
@@ -150,8 +151,9 @@ Once cases are authored, Phase 1 execution requires:
 - Benchmark template: `procedure/benchmark_template.md`
 - Article VII tracking: `benchmarks/article_vii_capacity_accumulation_tracking.md`
 - Case 1 (run): `cases/case_01_electroculture/` + `results/case_01/`
-- Case 2 (pending): `cases/case_02_policy_governance/`
-- Case 3 (pending): `cases/case_03_operational_organizational/`
+- Case 2 (run): `cases/case_02_policy_governance/` + `results/case_02/`
+- Case 3 (run): `cases/case_03_operational_organizational/` + `results/case_03/`
+- Cross-case Step 6/7/8 (run): `results/step_6_cross_case_analysis.md`, `results/step_7_reclassification.md`, `results/step_8_architecture_decision.md`
 - Deferred audit — world-model integration: `notes/future_audit_world_model_integration.md`
 - Deferred audit — UX / lived environment: `notes/future_audit_ux_lived_environment.md`
 
