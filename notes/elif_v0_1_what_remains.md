@@ -167,6 +167,39 @@ content in operative-list ("refuse the bundle") + theoretical-list
 (what pattern was engaged in declining the bundle). Schema validation
 passes under this path. Doctrinal review required.
 
+### G0 ADJUDICATED — 2026-05-30 — POSITION B ADOPTED
+
+Operator adjudicated G0 on 2026-05-30 in favor of **Position B**. Full
+adjudication record at [elif_g0_decision.md](elif_g0_decision.md).
+
+Operator's reading of Article V (verbatim, load-bearing): "Refusal must
+remain sovereign, but refusal must also remain observable, reviewable,
+and capable of contributing to future capacity without being transformed
+into truth. The refusal is not a wall. The refusal is a documented step
+in exploration."
+
+Consequences (per G0 package §3-§7):
+
+- Step 9 remains authoritative; closed-set verdict vocabulary frozen
+- Step 10 fires on refuse-cases (`operative=["refuse bundle"]`,
+  `theoretical=[uncertainty sources from Step 9]`)
+- Step 11 fires on refuse-cases (MemoryLogger content-pass entries
+  emit: `judgment_act_logged`, optionally `pattern_recognition_added`,
+  closed-set `capacity_change` entries)
+- Article VII content-level operationalization becomes available on
+  refuse-cases
+- The 17% structural-similarity gap to operator-authored Condition C
+  reference closes structurally
+- Article V's DUAL clause is the operative reading alongside the
+  first-clause halt-discipline
+- Phase 0 of the synthesis roadmap is CLOSED
+
+**Implementation NOT yet authorized.** The ~30-80 LoC runner change +
+test updates required for Position B remain SEPARATELY authorized.
+Operator's "no new implementation work" directive remains active until
+explicitly lifted. G0 adjudication = doctrinal closure, NOT implementation
+authorization.
+
 ---
 
 ## §4 Procedure steps that survived
