@@ -17,3 +17,6 @@ venv/
 
 # Local notes that should not be tracked
 notes/local_*
+
+# Runtime memory-logger persistence (created during smoke runs)
+.memory_logger/
