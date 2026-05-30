@@ -200,6 +200,50 @@ Operator's "no new implementation work" directive remains active until
 explicitly lifted. G0 adjudication = doctrinal closure, NOT implementation
 authorization.
 
+### POSITION B IMPLEMENTED — 2026-05-30 — Authorization 1 satisfied
+
+Operator authorized Position B implementation on 2026-05-30. Shipped at
+commit **`44b3e6e`** (runner + separator + tests) and commit **`ac79ad7`**
+(E.2 readiness addendum). Scope held to authorized envelope: runner-code
+modification only; no architecture changes; no new component; no new
+Article; no schema expansion; no roadmap changes; no v0.5 work.
+
+LoC delta:
+- `src/elif_v0_1/components/operative_truth_separator.py` — +59 LoC
+  (new `separate_for_refusal()` deterministic method, no LLM call)
+- `src/elif_v0_1/orchestration_runner.py` — +33 / −19 LoC
+  (refuse-branch routes through Step 10 + Step 11; close moves to
+  end-of-run; new `final_exit_code` dispatch; `run_summary` carries
+  `post_refusal_closure` flag)
+- `src/elif_v0_1/tests/test_orchestration_runner.py` — +203 / −33 LoC
+- `src/elif_v0_1/tests/test_operative_truth_separator.py` — +85 LoC
+
+Test results: **238 pass, 3 pre-existing skips** (jsonschema not installed).
+
+Behavioral comparison (offline re-baseline at `/tmp/elif_e2_preflight_position_b/`):
+- Before: refuse-case → 9 envelopes, 13 memory events, close at Step 9
+- After: refuse-case → 11 envelopes, 15 memory events, close at end-of-run
+- exit_code unchanged (20 on refuse, 0 on clean)
+- Refutation event PRECEDES Step 10 commit (pinned by test)
+- Close event is LAST event in log (pinned by test)
+- Step 10 deterministic on refuse-branch (no LLM call consumed)
+- Step 11 `post_refusal_closure=True` on refuse-branch only
+
+### E.2 READINESS RESTORED — 2026-05-30 — Authorization 2 satisfied
+
+[elif_e2_live_replay_preflight_pack_position_b_addendum.md](elif_e2_live_replay_preflight_pack_position_b_addendum.md) captures the delta between the
+Position A pre-flight pack and Position B behavior. Live execution remains
+operator-gated; `ANTHROPIC_API_KEY` still unset in sandbox.
+
+### ELIF RE-FROZEN — 2026-05-30 — Authorization 3 satisfied
+
+Per operator: "Return ELIF to review state. No additional implementation.
+No new phase. No world-model work. No V2 work. No architecture expansion.
+No speculative activation."
+
+**Next evidence event: E.2 live replay.** Everything else stays frozen
+until E.2 evidence exists.
+
 ---
 
 ## §4 Procedure steps that survived
