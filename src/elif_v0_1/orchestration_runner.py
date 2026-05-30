@@ -323,31 +323,39 @@ class ProcedureRunner:
                 )
             )
             commit_step("step_9", step_9)
-            # Article V/VI/VII tie: explicit refusal halts the run.
-            if step_9.get("verdict") == "refuse":
+            # G0 Position B (adjudicated 2026-05-30): refusal is sovereign
+            # but is not a silent termination. On verdict=refuse, the
+            # refutation event is preserved (refusal stays refusal), then
+            # Step 10 fires with a constrained refusal-closure payload and
+            # Step 11 records the closing summary. The close event is
+            # emitted at end-of-run with exit_code=20. The verdict itself
+            # is NOT modified; the closed-set verdict vocabulary stays
+            # frozen at {constrain, refuse, explicitly_abstain}.
+            refuse_branch = step_9.get("verdict") == "refuse"
+            if refuse_branch:
                 self._emit_refutation(
                     memory_logger,
                     run_context,
                     trigger="governance_refuse",
                     halt_reason=str(step_9.get("verdict_detail") or "refuse"),
                 )
-                self._emit_close(
-                    memory_logger, run_context, exit_code=20
-                )
-                raise GovernanceRefuseError(
-                    "Step 9 returned verdict=refuse; halting run"
-                )
-
-            # Step 10 — Operative vs theoretical separation.
-            step_10 = (
-                operative_truth_separator
-                .separate_operative_from_theoretical(
+                # Step 10 — constrained post-refusal closure (no LLM call).
+                step_10 = operative_truth_separator.separate_for_refusal(
                     prior_outputs,
                     run_context=run_context,
-                    max_calls=run_context.max_llm_calls,
                 )
-            )
-            commit_step("step_10", step_10)
+                commit_step("step_10", step_10)
+            else:
+                # Step 10 — Operative vs theoretical separation (live path).
+                step_10 = (
+                    operative_truth_separator
+                    .separate_operative_from_theoretical(
+                        prior_outputs,
+                        run_context=run_context,
+                        max_calls=run_context.max_llm_calls,
+                    )
+                )
+                commit_step("step_10", step_10)
 
             # Step 11 — Memory Logger summary. No LLM call; we record the
             # closing summary as a structured event payload + commit a
@@ -361,6 +369,7 @@ class ProcedureRunner:
                 "step_count": len(step_envelopes),
                 "final_verdict": step_9.get("verdict"),
                 "llm_calls_used": _call_counter(),
+                "post_refusal_closure": refuse_branch,
             }
             memory_logger.write_event(
                 case_id=run_context.case_id,
@@ -383,15 +392,20 @@ class ProcedureRunner:
             step_envelopes.append(step_11_envelope)
             prior_outputs["step_11"] = run_summary
 
-            # Successful close.
-            self._emit_close(memory_logger, run_context, exit_code=0)
+            # End-of-run close. exit_code=20 on refuse-branch (G0 Position B);
+            # exit_code=0 on clean runs. The verdict itself remains in
+            # step_9; the exit code carries the halt-class signal forward.
+            final_exit_code = 20 if refuse_branch else 0
+            self._emit_close(
+                memory_logger, run_context, exit_code=final_exit_code
+            )
             return RunReport(
                 run_context=run_context,
                 step_outputs=tuple(step_envelopes),
                 memory_logger_entries_written=self._count_memory_events(
                     memory_logger, run_context.case_id
                 ),
-                exit_code=0,
+                exit_code=final_exit_code,
                 completed_at_iso=_utc_now_iso(),
             )
 

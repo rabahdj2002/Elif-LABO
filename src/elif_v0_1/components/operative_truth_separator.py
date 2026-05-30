@@ -120,6 +120,19 @@ def _build_step10_prompt(prior_steps: Mapping[str, Any]) -> str:
     )
 
 
+# Post-refusal closure constants — operative bundle constrained to the
+# refusal itself per G0 adjudication 2026-05-30 (Position B) and operator's
+# verbatim reading: "operative output under refusal remains constrained to
+# the refusal itself; theoretical output records what remains unresolved."
+_REFUSAL_OPERATIVE_TOKEN = "refuse bundle"
+_REFUSAL_ABSENCE_LOG_DEFAULT = (
+    "Post-refusal closure (G0 Position B): operative bucket is constrained "
+    "to the refusal itself; theoretical bucket carries forward unresolved "
+    "uncertainty sources from Step 9 for future-capacity contribution. "
+    "Refusal is not transformed by this closure."
+)
+
+
 class OperativeTruthSeparator:
     """Owner of Step 10 (operative vs theoretical).
 
@@ -129,6 +142,52 @@ class OperativeTruthSeparator:
 
     component_id = "operative_truth_separator"
     article_ties = ("IV",)
+
+    def separate_for_refusal(
+        self,
+        prior_steps: Any,
+        *,
+        run_context: RunContext,
+    ) -> Dict[str, Any]:
+        """Step 10 — post-refusal closure path (G0 Position B, 2026-05-30).
+
+        Deterministic, no LLM call. Returns a constrained Step 10 payload
+        when Step 9 verdict is `refuse`:
+
+            operative:   ["refuse bundle"]
+            theoretical: <unresolved_uncertainty_sources from step_9, verbatim>
+            absence_log: post-refusal closure marker
+
+        The verdict itself is NOT modified here — the orchestrator preserves
+        `verdict="refuse"` end-to-end. This method exists so Step 10 can
+        fire on refuse-cases without violating Article V's first-clause
+        halt-discipline (the halt remains, it is just relocated to
+        post-closure) and without consuming an LLM call on a path whose
+        operative output is structurally pre-determined.
+        """
+        prior = _require_prior_steps(prior_steps)
+        _require_run_context(run_context)
+
+        step9 = prior.get("step_9") or {}
+        uncertainty_sources = []
+        if isinstance(step9, Mapping):
+            raw = step9.get("unresolved_uncertainty_sources") or []
+            if isinstance(raw, list):
+                uncertainty_sources = [
+                    str(s) for s in raw if isinstance(s, str) and s.strip()
+                ]
+
+        payload = {
+            "operative": [_REFUSAL_OPERATIVE_TOKEN],
+            "theoretical": uncertainty_sources,
+            "absence_log": _REFUSAL_ABSENCE_LOG_DEFAULT,
+        }
+        # Schema + semantic enforcement is identical to the live path; reuse
+        # so any future schema drift surfaces on refuse-cases too.
+        from ..llm_adapter import validate_against_schema as _validate
+        _validate(payload, STEP_10_OUTPUT_SCHEMA)
+        _enforce_step10_semantics(payload)
+        return payload
 
     def separate_operative_from_theoretical(
         self,

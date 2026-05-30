@@ -149,6 +149,91 @@ class TestInputValidation(unittest.TestCase):
             )
 
 
+class TestPositionBRefusalPath(unittest.TestCase):
+    """Step 10 — G0 Position B post-refusal closure path (2026-05-30).
+
+    Tests the new `separate_for_refusal()` method that fires when Step 9
+    returns verdict=refuse. Output is deterministic (no LLM call), the
+    operative bucket is constrained to ["refuse bundle"], and the
+    theoretical bucket carries forward step_9 uncertainty sources.
+    """
+
+    def setUp(self) -> None:
+        reset_call_counter()
+
+    def test_returns_constrained_refuse_bundle(self) -> None:
+        ots = OperativeTruthSeparator()
+        prior = {
+            "step_9": {
+                "verdict": "refuse",
+                "unresolved_uncertainty_sources": [
+                    "Whether bioelectrical effects aggregate to field scale.",
+                    "Whether independent advisory review remains independent.",
+                ],
+            },
+        }
+        result = ots.separate_for_refusal(prior, run_context=_make_ctx())
+        self.assertEqual(result.get("operative"), ["refuse bundle"])
+        self.assertEqual(
+            result.get("theoretical"),
+            [
+                "Whether bioelectrical effects aggregate to field scale.",
+                "Whether independent advisory review remains independent.",
+            ],
+        )
+        self.assertIsInstance(result.get("absence_log"), str)
+        self.assertIn("Position B", result.get("absence_log", ""))
+
+    def test_empty_uncertainty_sources_yields_empty_theoretical(self) -> None:
+        ots = OperativeTruthSeparator()
+        prior = {"step_9": {"verdict": "refuse"}}
+        result = ots.separate_for_refusal(prior, run_context=_make_ctx())
+        self.assertEqual(result.get("operative"), ["refuse bundle"])
+        self.assertEqual(result.get("theoretical"), [])
+        # absence_log non-empty per Article IV (both buckets near-empty
+        # case — operative is technically the marker token, but the
+        # absence_log clarifies the post-refusal frame).
+        self.assertTrue(result.get("absence_log"))
+
+    def test_non_string_uncertainty_entries_filtered(self) -> None:
+        ots = OperativeTruthSeparator()
+        prior = {
+            "step_9": {
+                "verdict": "refuse",
+                "unresolved_uncertainty_sources": [
+                    "ok",
+                    None,
+                    123,
+                    "",
+                    "   ",
+                    "another",
+                ],
+            },
+        }
+        result = ots.separate_for_refusal(prior, run_context=_make_ctx())
+        self.assertEqual(result.get("theoretical"), ["ok", "another"])
+
+    def test_deterministic_across_calls(self) -> None:
+        ots = OperativeTruthSeparator()
+        prior = {
+            "step_9": {
+                "verdict": "refuse",
+                "unresolved_uncertainty_sources": ["u1", "u2"],
+            },
+        }
+        a = ots.separate_for_refusal(prior, run_context=_make_ctx())
+        b = ots.separate_for_refusal(prior, run_context=_make_ctx())
+        self.assertEqual(a, b)
+
+    def test_non_dict_prior_raises(self) -> None:
+        ots = OperativeTruthSeparator()
+        with self.assertRaises(ELIFError):
+            ots.separate_for_refusal(
+                "not a dict",  # type: ignore[arg-type]
+                run_context=_make_ctx(),
+            )
+
+
 class TestSchemaValidationOnMalformedResponse(unittest.TestCase):
     def setUp(self) -> None:
         reset_call_counter()

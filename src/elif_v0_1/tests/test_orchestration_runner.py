@@ -1,17 +1,29 @@
 """Tests for ProcedureRunner — 11-step orchestration.
 
 Coverage:
-    * end-to-end offline run for case_01 (governance halts at refuse → exit 20)
+    * end-to-end offline run for case_01 (governance refuse → Position B
+      post-refusal closure: Step 10 + Step 11 fire; close emitted at
+      end-of-run; exit_code=20)
     * step commit order (steps committed in 1..11 order, no skipping)
     * call-cap enforcement (LLMCallCapError → exit_code=30)
     * frame-invalid halt (Step 1 verdict=invalid → exit_code=10)
-    * governance-refuse halt (Step 9 verdict=refuse → exit_code=20)
+    * governance-refuse → Position B closure (Step 9 verdict=refuse →
+      steps 10 + 11 still committed → exit_code=20)
     * memory logger event count includes open + step_committed + close
     * run_id uniqueness across runs
-    * all 3 cases offline (case_01, case_02, case_03 each halt at Step 9 refuse
-      per their fixtures; the runner reaches Step 9 cleanly in all three)
+    * all 3 cases offline (case_01, case_02, case_03 each fire the Position
+      B post-refusal closure path; the runner commits 11 envelopes for all
+      three)
+    * Position B explicit coverage: refutation emitted before step_10,
+      close emitted after step_11, step_11 run_summary records
+      post_refusal_closure=True on refuse-branch
     * RunReport shape (frozen dataclass; populated fields)
     * fresh per-run call counter (max_llm_calls cap applies per-run)
+
+Position B was adjudicated 2026-05-30 (see notes/elif_g0_decision.md).
+Refusal remains sovereign; the verdict in step_9 stays `refuse`; the
+closed-set verdict vocabulary {constrain, refuse, explicitly_abstain}
+is not modified. What changes is the post-Step-9 control-flow only.
 """
 
 from __future__ import annotations
@@ -89,9 +101,11 @@ class TestRunnerStructuralContract(unittest.TestCase):
 class TestRunnerEndToEndCase01(_TempPersistenceMixin, unittest.TestCase):
     """End-to-end offline run for case_01 — verdict=refuse → exit 20.
 
-    case_01's step_09 fixture has verdict=refuse, so the runner halts at
-    Step 9 with exit_code=20. Steps 1-9 commit; Step 10 + Step 11 are NOT
-    reached.
+    case_01's step_09 fixture has verdict=refuse. Under G0 Position B
+    (adjudicated 2026-05-30), Step 10 fires with the constrained
+    refusal-closure payload and Step 11 records the run summary; the
+    refutation event is preserved and the close event moves to the end
+    of the run. Exit code remains 20.
     """
 
     def setUp(self) -> None:
@@ -112,13 +126,9 @@ class TestRunnerEndToEndCase01(_TempPersistenceMixin, unittest.TestCase):
     def test_exit_code_is_20_governance_refuse(self) -> None:
         self.assertEqual(self.report.exit_code, 20)
 
-    def test_steps_1_through_9_are_committed(self) -> None:
+    def test_all_eleven_steps_are_committed_under_position_b(self) -> None:
         committed_ids = [env.step_id for env in self.report.step_outputs]
-        self.assertEqual(
-            committed_ids,
-            ["step_1", "step_2", "step_3", "step_4", "step_5",
-             "step_6", "step_7", "step_8", "step_9"],
-        )
+        self.assertEqual(committed_ids, list(PROCEDURE_STEP_IDS))
 
     def test_each_envelope_is_step_output_envelope(self) -> None:
         for env in self.report.step_outputs:
@@ -130,6 +140,27 @@ class TestRunnerEndToEndCase01(_TempPersistenceMixin, unittest.TestCase):
         self.assertTrue(self.report.completed_at_iso)
         # ISO timestamps end with Z in our format.
         self.assertTrue(self.report.completed_at_iso.endswith("Z"))
+
+    def test_step_10_payload_is_constrained_refuse_bundle(self) -> None:
+        # Position B: operative bucket is constrained to ["refuse bundle"];
+        # theoretical bucket carries forward step_9 uncertainty sources.
+        step_10_env = next(
+            e for e in self.report.step_outputs if e.step_id == "step_10"
+        )
+        self.assertEqual(step_10_env.content.get("operative"), ["refuse bundle"])
+        self.assertIsInstance(step_10_env.content.get("theoretical"), list)
+        self.assertTrue(step_10_env.content.get("absence_log"))
+
+    def test_step_11_run_summary_marks_post_refusal_closure(self) -> None:
+        step_11_env = next(
+            e for e in self.report.step_outputs if e.step_id == "step_11"
+        )
+        self.assertEqual(
+            step_11_env.content.get("final_verdict"), "refuse"
+        )
+        self.assertTrue(
+            step_11_env.content.get("post_refusal_closure")
+        )
 
 
 class TestRunnerStepCommitOrderClean(_TempPersistenceMixin, unittest.TestCase):
@@ -243,13 +274,16 @@ class TestRunnerFrameInvalidHalt(_TempPersistenceMixin, unittest.TestCase):
 class TestRunnerGovernanceRefuseHalt(
     _TempPersistenceMixin, unittest.TestCase
 ):
-    """Step 9 verdict=refuse → exit_code=20.
+    """Step 9 verdict=refuse → Position B closure → exit_code=20.
 
-    Real case_01 fixtures already exercise this path; we reassert here so
-    the halt-routing surface is covered explicitly.
+    Real case_01 fixtures exercise this path. Under G0 Position B, all 11
+    steps commit (Step 10 with constrained refusal-closure payload, Step 11
+    with run summary), then close fires at end-of-run with exit_code=20.
+    The verdict in step_9 remains `refuse`; the closed-set vocabulary is
+    not expanded.
     """
 
-    def test_governance_refuse_halts_with_exit_code_20(self) -> None:
+    def test_governance_refuse_runs_position_b_closure(self) -> None:
         runner = ProcedureRunner()
         report = runner.run(
             case_id="case_01_electroculture",
@@ -260,11 +294,16 @@ class TestRunnerGovernanceRefuseHalt(
             results_dir=self.persistence_dir,
         )
         self.assertEqual(report.exit_code, 20)
-        # Steps 1-9 commit; 10 + 11 not reached.
-        self.assertEqual(len(report.step_outputs), 9)
+        # Position B: all 11 steps commit; closure runs after refusal.
+        self.assertEqual(len(report.step_outputs), 11)
         self.assertEqual(
-            report.step_outputs[-1].step_id, "step_9"
+            report.step_outputs[-1].step_id, "step_11"
         )
+        # Step 9 verdict remains `refuse` — refusal is not transformed.
+        step_9_env = next(
+            e for e in report.step_outputs if e.step_id == "step_9"
+        )
+        self.assertEqual(step_9_env.content.get("verdict"), "refuse")
 
 
 class TestRunnerMemoryLoggerEventCount(
@@ -272,7 +311,7 @@ class TestRunnerMemoryLoggerEventCount(
 ):
     """Memory Logger events: 1 open + N step_committed + 0/1 refutation + 1 close."""
 
-    def test_event_count_on_refuse_halt_is_at_least_open_steps_close(self) -> None:
+    def test_event_count_on_refuse_branch_includes_post_closure(self) -> None:
         runner = ProcedureRunner()
         report = runner.run(
             case_id="case_01_electroculture",
@@ -282,10 +321,10 @@ class TestRunnerMemoryLoggerEventCount(
             max_llm_calls=22,
             results_dir=self.persistence_dir,
         )
-        # 1 open + 9 step_committed + 1 step_7_modeB (logged) + 1
-        # refutation + 1 close = 13 (lower bound)
+        # Under Position B: 1 open + 11 step_committed + 1 step_7_modeB
+        # (logged) + 1 refutation + 1 close = 15 (lower bound).
         self.assertGreaterEqual(
-            report.memory_logger_entries_written, 12
+            report.memory_logger_entries_written, 14
         )
 
 
@@ -320,9 +359,9 @@ class TestRunnerAllThreeCasesOffline(
 ):
     """Verify all 3 cases route deterministically through the runner.
 
-    Each case has a step_09 fixture with verdict=refuse, so each exits
-    with code 20. The test asserts the runner reaches Step 9 cleanly for
-    all three (no schema or call-cap errors).
+    Each case has a step_09 fixture with verdict=refuse. Under G0
+    Position B all three cases now commit 11 envelopes (Steps 1-9 + the
+    post-refusal closure pair Step 10 + Step 11) and exit with code 20.
     """
 
     def _run_case(self, case_id: str) -> RunReport:
@@ -336,20 +375,151 @@ class TestRunnerAllThreeCasesOffline(
             results_dir=self.persistence_dir,
         )
 
-    def test_case_01_reaches_step_9_and_halts(self) -> None:
+    def test_case_01_runs_position_b_closure(self) -> None:
         report = self._run_case("case_01_electroculture")
         self.assertEqual(report.exit_code, 20)
-        self.assertEqual(len(report.step_outputs), 9)
+        self.assertEqual(len(report.step_outputs), 11)
 
-    def test_case_02_reaches_step_9_and_halts(self) -> None:
+    def test_case_02_runs_position_b_closure(self) -> None:
         report = self._run_case("case_02_policy_governance")
         self.assertEqual(report.exit_code, 20)
-        self.assertEqual(len(report.step_outputs), 9)
+        self.assertEqual(len(report.step_outputs), 11)
 
-    def test_case_03_reaches_step_9_and_halts(self) -> None:
+    def test_case_03_runs_position_b_closure(self) -> None:
         report = self._run_case("case_03_operational_organizational")
         self.assertEqual(report.exit_code, 20)
-        self.assertEqual(len(report.step_outputs), 9)
+        self.assertEqual(len(report.step_outputs), 11)
+
+
+class TestRunnerPositionBEventOrdering(
+    _TempPersistenceMixin, unittest.TestCase
+):
+    """G0 Position B event-ordering pinning (2026-05-30).
+
+    Verifies that on a refuse-branch run the MemoryLogger event sequence is:
+        open → step_committed(step_1..step_9) → step_committed(step_7_modeB)
+        → refutation → step_committed(step_10) → step_committed(step_11)
+        → close
+
+    In particular: refutation precedes the post-closure pair, and the
+    close event is the LAST event in the case log.
+    """
+
+    def _read_case_events(self) -> list[dict]:
+        """Read the case event log written by MemoryLogger."""
+        # Discover the case-log file under the temp persistence root.
+        events: list[dict] = []
+        for path in self.persistence_dir.rglob("*.jsonl"):
+            with path.open() as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    events.append(json.loads(line))
+        return events
+
+    def test_close_event_is_last_under_position_b(self) -> None:
+        runner = ProcedureRunner()
+        runner.run(
+            case_id="case_01_electroculture",
+            condition="c",
+            input_frame=_make_input_frame("case_01_electroculture"),
+            offline_mode=True,
+            max_llm_calls=22,
+            results_dir=self.persistence_dir,
+        )
+        events = self._read_case_events()
+        self.assertTrue(events, "expected at least one event written")
+        event_types = [ev.get("event_type") for ev in events]
+        # Last event is the close (Position B: end-of-run close).
+        self.assertEqual(event_types[-1], "close")
+        # Close exit_code is 20 on refuse-branch.
+        self.assertEqual(events[-1].get("payload", {}).get("exit_code"), 20)
+
+    def test_refutation_precedes_step_10_commit(self) -> None:
+        runner = ProcedureRunner()
+        runner.run(
+            case_id="case_01_electroculture",
+            condition="c",
+            input_frame=_make_input_frame("case_01_electroculture"),
+            offline_mode=True,
+            max_llm_calls=22,
+            results_dir=self.persistence_dir,
+        )
+        events = self._read_case_events()
+        # Find first refutation event index.
+        refutation_idx = next(
+            (
+                i for i, ev in enumerate(events)
+                if ev.get("event_type") == "refutation"
+            ),
+            None,
+        )
+        self.assertIsNotNone(
+            refutation_idx,
+            "expected a refutation event on refuse-branch",
+        )
+        # Find first step_10 step_committed event index.
+        step_10_idx = next(
+            (
+                i for i, ev in enumerate(events)
+                if ev.get("event_type") == "step_committed"
+                and ev.get("payload", {}).get("step_id") == "step_10"
+            ),
+            None,
+        )
+        self.assertIsNotNone(
+            step_10_idx,
+            "expected step_10 commit event on refuse-branch (Position B)",
+        )
+        # Refutation precedes step_10 commit.
+        self.assertLess(refutation_idx, step_10_idx)
+
+
+class TestRunnerCleanRunStillExits0(
+    _TempPersistenceMixin, unittest.TestCase
+):
+    """Position B must not change the non-refuse path.
+
+    When Step 9 returns `constrain` the runner still commits all 11 steps
+    and exits with exit_code=0; the step_11 run_summary records
+    post_refusal_closure=False.
+    """
+
+    def test_constrain_verdict_still_exits_0_and_marks_closure_false(self) -> None:
+        from elif_v0_1.components import governance_kernel as gk_module
+
+        constrain_payload = {
+            "verdict": "constrain",
+            "verdict_detail": "Authorize Family A research-only.",
+            "confidence": "Medium",
+            "unresolved_uncertainty_sources": ["regulatory_window"],
+        }
+
+        with mock.patch.object(
+            gk_module,
+            "complete_structured",
+            side_effect=lambda *a, **kw: constrain_payload,
+        ):
+            runner = ProcedureRunner()
+            report = runner.run(
+                case_id="case_01_electroculture",
+                condition="c",
+                input_frame=_make_input_frame("case_01_electroculture"),
+                offline_mode=True,
+                max_llm_calls=22,
+                results_dir=self.persistence_dir,
+            )
+
+        self.assertEqual(report.exit_code, 0)
+        self.assertEqual(len(report.step_outputs), 11)
+        step_11_env = next(
+            e for e in report.step_outputs if e.step_id == "step_11"
+        )
+        self.assertFalse(
+            step_11_env.content.get("post_refusal_closure"),
+            "constrain-branch must NOT mark post_refusal_closure=True",
+        )
 
 
 if __name__ == "__main__":
