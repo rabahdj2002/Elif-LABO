@@ -1,8 +1,8 @@
 # ELIF E.2 Live-Replay Pre-flight Pack — Position B Addendum
 
-> **Captured:** 2026-05-30
-> **Status:** PRE-FLIGHT (ANTHROPIC_API_KEY still UNSET in this sandbox — live execution remains operator-gated).
-> **Supersedes (where named):** specific subsections of [elif_e2_live_replay_preflight_pack.md](elif_e2_live_replay_preflight_pack.md) that were authored under Position A and are now invalidated by the G0 Position B implementation committed at `44b3e6e`.
+> **Captured:** 2026-05-30 (updated same-day)
+> **Status:** READY (credentials provisioned 2026-05-30 under env var `ELIF_ANTHROPIC_API_KEY`; live execution remains operator-gated — credentials available ≠ authorization to run live).
+> **Supersedes (where named):** specific subsections of [elif_e2_live_replay_preflight_pack.md](elif_e2_live_replay_preflight_pack.md) that were authored under Position A and are now invalidated by the G0 Position B implementation committed at `44b3e6e`. The pre-flight pack's §1.1 "ANTHROPIC_API_KEY check" is superseded by §K below: ELIF now reads `ELIF_ANTHROPIC_API_KEY` (renamed per operator directive 2026-05-30 to isolate ELIF credentials from the OSG supervisor pool).
 > **Doctrinal frame:** see [elif_g0_decision.md](elif_g0_decision.md). Position B = Step 10 + Step 11 fire as post-refusal closure on refuse-cases. The verdict itself remains `refuse`; the closed-set vocabulary `{constrain, refuse, explicitly_abstain}` is frozen.
 
 This addendum is the **delta** between the existing pre-flight pack (which assumed Position A control flow) and the post-implementation behavior. The §1 (environment), §3 (live command bundle), §4 (schema / closed-set drift), §5 (cost-cap), §6 (analysis pipeline shape), §10 (out-of-scope), Appendix A/B all remain valid as written. Only the surfaces named below need to be read against this addendum.
@@ -179,10 +179,10 @@ The `--max-llm-calls 22` cap at the CLI is **unchanged** and remains the binding
 
 ## H. Final live-replay execution checklist
 
-When `ANTHROPIC_API_KEY` becomes available, the operator runs the following checklist in order. All steps are operator-driven; nothing fires autonomously.
+Credentials are provisioned (`ELIF_ANTHROPIC_API_KEY` set in local config); the operator runs the following checklist in order. All steps are operator-driven; nothing fires autonomously.
 
-1. **Environment** (pre-flight pack §1)
-   - [ ] `echo $ANTHROPIC_API_KEY | wc -c` returns a non-trivial length
+1. **Environment** (pre-flight pack §1; superseded for the env-var check)
+   - [ ] `[ -n "$ELIF_ANTHROPIC_API_KEY" ] && echo "key set (len=${#ELIF_ANTHROPIC_API_KEY})" || echo "MISSING"`
    - [ ] `python3 -c "from elif_v0_1.orchestration_runner import ProcedureRunner; ProcedureRunner()"` succeeds with no import errors
    - [ ] `python3 -m unittest discover -s src/elif_v0_1/tests` reports 238 pass, 3 skip
 
@@ -216,11 +216,36 @@ When `ANTHROPIC_API_KEY` becomes available, the operator runs the following chec
 
 ## I. What this addendum does NOT include
 
-- **Live execution.** `ANTHROPIC_API_KEY` is still unset in this sandbox; nothing live was run.
+- **Live execution.** Credentials are now provisioned (§K), but nothing live has been run. The operator's explicit "run E.2 live now" is still required — credentials available ≠ authorization to run live (real Anthropic billing fires from Step 2 onward).
 - **Architecture change.** No new component, no new Article, no new procedure step, no v0.5.
 - **Schema expansion.** STEP_10_OUTPUT_SCHEMA unchanged. Closed-set verdict vocabulary unchanged.
 - **Roadmap activation.** Phase 1 (E.2 live replay) remains operator-gated. This addendum prepares for it; it does not open it.
 - **V2 / world-model work.** Out of scope per Authorization 3 (ELIF re-freeze).
+
+---
+
+## K. Credential provisioning (added 2026-05-30)
+
+Per operator directive 2026-05-30: ELIF now reads its own dedicated env var `ELIF_ANTHROPIC_API_KEY`, separate from OSG's `OPENSTUDYGO_LLM_API_KEY_ANTHROPIC` pool. Adapter source change at [src/elif_v0_1/llm_adapter.py:178](https://github.com/assia-open/Elif-LABO/blob/main/src/elif_v0_1/llm_adapter.py#L178); committed alongside this addendum update.
+
+### K.1 Why the rename
+- Credential isolation: a key revocation on the OSG supervisor pool doesn't blast-radius ELIF, and vice versa
+- Per-component observability: live ELIF spend can be tracked against a distinct billing key
+- No coupling between four-organ separation principle and shared credential surface
+
+### K.2 What was provisioned `[CE]`
+- `ELIF_ANTHROPIC_API_KEY` — primary key, used by `_call_anthropic_tool_use` on every live call
+- `ELIF_ANTHROPIC_API_KEY_2`, `_3`, `_4` — three additional keys provisioned for future rotation / parallel-run capacity (NOT wired into the current adapter; single-key for E.2)
+
+Storage location: `/home/dev/.claude/settings.json` `env` block. This file is local-only (not in any git repo, not pushed). Keys are never committed to source control.
+
+### K.3 Cost envelope reminder
+Per §G, refresh: ~$0.19/refuse-case, ~$0.21/non-refuse case live-mode. 3-case E.2 run is therefore in the $0.57-$0.63 range with no anomalies. The `--max-llm-calls 22` per-run cap is the binding constraint; the cost-cap sentinel in pre-flight pack §3.3 is the secondary guard.
+
+### K.4 What does NOT change with credentials provisioned
+- Phase 1 gate (E.2 live replay opening) is still operator-gated
+- Authorization 3 (ELIF re-freeze) remains in force for everything OTHER than E.2 execution
+- Step 10 + Step 11 deterministic anchors (§C) still pin the offline reference
 
 ---
 
@@ -233,4 +258,4 @@ When `ANTHROPIC_API_KEY` becomes available, the operator runs the following chec
 
 ---
 
-**Addendum closed. E.2 readiness restored under Position B. Live execution awaits operator + `ANTHROPIC_API_KEY`.**
+**Addendum closed. E.2 readiness restored under Position B. Credentials provisioned. Live execution awaits operator's explicit "run live" instruction.**

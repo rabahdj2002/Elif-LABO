@@ -232,8 +232,10 @@ Behavioral comparison (offline re-baseline at `/tmp/elif_e2_preflight_position_b
 ### E.2 READINESS RESTORED — 2026-05-30 — Authorization 2 satisfied
 
 [elif_e2_live_replay_preflight_pack_position_b_addendum.md](elif_e2_live_replay_preflight_pack_position_b_addendum.md) captures the delta between the
-Position A pre-flight pack and Position B behavior. Live execution remains
-operator-gated; `ANTHROPIC_API_KEY` still unset in sandbox.
+Position A pre-flight pack and Position B behavior. Credentials were
+provisioned later the same day (4 keys under `ELIF_ANTHROPIC_API_KEY*`
+namespace, isolated from OSG pool — see addendum §K). Live execution
+remains operator-gated; credentials available ≠ authorization to run.
 
 ### ELIF RE-FROZEN — 2026-05-30 — Authorization 3 satisfied
 

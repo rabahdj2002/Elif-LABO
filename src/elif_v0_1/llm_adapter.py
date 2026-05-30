@@ -28,7 +28,7 @@ Behavioral contract:
         - issues an Anthropic tool-use call with `output_schema` as
           `input_schema` of a single declared tool, forces the tool, and
           returns the parsed tool input as a dict
-        - requires `ANTHROPIC_API_KEY` in the environment
+        - requires `ELIF_ANTHROPIC_API_KEY` in the environment
         - raises `LLMAdapterError` on any transport / parsing failure
     * Both modes raise `LLMCallCapError` BEFORE attempting the call if
       `_call_counter() + 1 > max_calls`.
@@ -175,10 +175,13 @@ def _call_anthropic_tool_use(
     Anthropic guarantees the model emits a tool_use block whose `input`
     matches the schema. We parse that input and return it as a dict.
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    # ELIF reads its own dedicated env var so its credentials are isolated
+    # from the OpenStudyGo supervisor's `OPENSTUDYGO_LLM_API_KEY_ANTHROPIC`
+    # pool. Operator directive 2026-05-30.
+    api_key = os.environ.get("ELIF_ANTHROPIC_API_KEY")
     if not api_key:
         raise LLMAdapterError(
-            "offline_mode=False requires ANTHROPIC_API_KEY in environment"
+            "offline_mode=False requires ELIF_ANTHROPIC_API_KEY in environment"
         )
     try:
         # Lazy import: SDK must not be required in offline mode.
