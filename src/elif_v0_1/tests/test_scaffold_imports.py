@@ -104,23 +104,12 @@ class TestStubsRaiseNotImplemented(unittest.TestCase):
     Preserves the planning-vs-build gate at runtime.
     """
 
-    def test_frame_validator_stubs(self) -> None:
-        fv = FrameValidator()
-        sample = _sample_input_frame()
-        with self.assertRaises(NotImplementedError):
-            fv.validate(sample)
-        with self.assertRaises(NotImplementedError):
-            fv.surface_assumptions(sample)
-        with self.assertRaises(NotImplementedError):
-            fv.surface_deeper_frame_rejection(sample)
-
-    def test_object_decomposer_stubs(self) -> None:
-        od = ObjectDecomposer()
-        sample = _sample_input_frame()
-        with self.assertRaises(NotImplementedError):
-            od.decompose(sample)
-        with self.assertRaises(NotImplementedError):
-            od.multi_scale_relate(None)
+    # NOTE: test_frame_validator_stubs + test_object_decomposer_stubs removed
+    # 2026-05-30 — those two components are now implemented per the v0.1-alpha
+    # build (Phase 2 partial salvage). Their behavior is exercised by
+    # test_frame_validator.py + test_object_decomposer.py. The remaining 5
+    # component stub tests below continue to enforce planning-vs-build
+    # discipline until those components are also implemented.
 
     def test_hypothesis_validator_stubs(self) -> None:
         hv = HypothesisValidator()
