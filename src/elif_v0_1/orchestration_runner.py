@@ -101,6 +101,7 @@ class ProcedureRunner:
         *,
         offline_mode: bool = False,
         max_llm_calls: int = 22,
+        model_id: str = "claude-sonnet-4-6",
         procedure_version: str = "v1.0",
         results_dir: Optional[Path] = None,
     ) -> RunReport:
@@ -112,6 +113,7 @@ class ProcedureRunner:
             input_frame        — frozen `InputFrame` instance
             offline_mode       — load fixtures instead of calling Anthropic
             max_llm_calls      — per-run hard cap (default 22 per §8.4)
+            model_id           — e.g. "claude-sonnet-4-6" (Step 8 §8.4)
             procedure_version  — "v1.0" (the only authorized v0.1 version)
             results_dir        — optional path for MemoryLogger persistence;
                                  defaults to .memory_logger/ under cwd
@@ -137,6 +139,7 @@ class ProcedureRunner:
             procedure_version=procedure_version,
             offline_mode=offline_mode,
             max_llm_calls=max_llm_calls,
+            model_id=model_id,
             started_at_iso=_utc_now_iso(),
             run_id=_new_run_id(),
         )
@@ -185,6 +188,7 @@ class ProcedureRunner:
         # ------------------------------------------------------------------
         def commit_step(step_id: str, payload: Dict[str, Any]) -> None:
             """Capture a committed step output + write a step_committed event."""
+            print(f"[COMMIT] {step_id}: {STEP_OWNER[int(step_id.split('_')[1])-1][1].upper()} logic finalized.")
             current_calls = _call_counter()
             envelope = StepOutputEnvelope(
                 step_id=step_id,
@@ -213,6 +217,7 @@ class ProcedureRunner:
         # ------------------------------------------------------------------
         try:
             # Step 1 — Frame validation.
+            print(f"[PROCESS] Initializing Step 1: Frame Validator...")
             step_1 = frame_validator.validate(input_frame)
             commit_step("step_1", step_1)
             if step_1.get("verdict") == "invalid":
@@ -231,6 +236,7 @@ class ProcedureRunner:
                 )
 
             # Step 2 — Family-axis decomposition.
+            print(f"[PROCESS] Transitioning to Step 2: Object Decomposer...")
             step_2 = object_decomposer.decompose(
                 input_frame,
                 run_context=run_context,
@@ -309,10 +315,12 @@ class ProcedureRunner:
             commit_step("step_7", step_7_modeA)
 
             # Step 8 — Stage-gated roadmap.
+            print(f"[PROCESS] Transitioning to Step 8: Branching Roadmap Engine...")
             step_8 = branching_roadmap_engine.stage_gated_roadmap(step_7_modeA)
             commit_step("step_8", step_8)
 
             # Step 9 — Governance verdict + confidence + uncertainty.
+            print(f"[PROCESS] Transitioning to Step 9: Governance Kernel (Article VI Adjudication)...")
             step_9 = (
                 governance_kernel
                 .verdict_with_confidence_and_uncertainty(
@@ -347,6 +355,7 @@ class ProcedureRunner:
                 commit_step("step_10", step_10)
             else:
                 # Step 10 — Operative vs theoretical separation (live path).
+                print(f"[PROCESS] Transitioning to Step 10: Operative Truth Separator (Final Verdict)...")
                 step_10 = (
                     operative_truth_separator
                     .separate_operative_from_theoretical(

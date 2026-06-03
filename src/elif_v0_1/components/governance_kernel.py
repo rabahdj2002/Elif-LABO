@@ -317,6 +317,7 @@ class GovernanceKernel:
             max_calls=max_calls,
             offline_mode=ctx.offline_mode,
             offline_fixture_id=fixture_id,
+            model_id=ctx.model_id,
         )
 
         # Defence-in-depth: the adapter already validated, but a malformed

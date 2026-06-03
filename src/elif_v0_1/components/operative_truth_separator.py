@@ -230,6 +230,7 @@ class OperativeTruthSeparator:
             max_calls=max_calls,
             offline_mode=ctx.offline_mode,
             offline_fixture_id=fixture_id,
+            model_id=ctx.model_id,
         )
 
         validate_against_schema(payload, STEP_10_OUTPUT_SCHEMA)

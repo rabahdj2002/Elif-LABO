@@ -211,6 +211,11 @@ class FrameValidator:
             if self._run_context
             else _DEFAULT_MAX_LLM_CALLS
         )
+        model_id = (
+            self._run_context.model_id
+            if self._run_context
+            else "claude-sonnet-4-6"
+        )
         fixture_id = ""
         if offline_mode:
             fixture_id = (
@@ -222,6 +227,7 @@ class FrameValidator:
             max_calls=max_calls,
             offline_mode=offline_mode,
             offline_fixture_id=fixture_id,
+            model_id=model_id,
         )
 
     def _build_step1_prompt(self, input_frame: InputFrame) -> str:

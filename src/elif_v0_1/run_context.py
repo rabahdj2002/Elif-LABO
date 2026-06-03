@@ -48,6 +48,7 @@ class RunContext:
         procedure_version  — e.g. "v1.0" (Step 8 §8.2 — v1.0 only at v0.1)
         offline_mode       — fixtures-only run (no network)
         max_llm_calls      — per-run cost cap (Step 8 §8.4 default: 22)
+        model_id           — e.g. "claude-sonnet-4-6" (Override default model)
         started_at_iso     — ISO 8601 start timestamp (UTC recommended)
         run_id             — unique per-run identifier
     """
@@ -57,6 +58,7 @@ class RunContext:
     procedure_version: str
     offline_mode: bool
     max_llm_calls: int
+    model_id: str
     started_at_iso: str
     run_id: str
 
