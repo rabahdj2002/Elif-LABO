@@ -20,3 +20,20 @@ notes/local_*
 
 # Runtime memory-logger persistence (created during smoke runs)
 .memory_logger/
+elif_universe/.memory_logger/
+
+# Django
+db.sqlite3
+elif_universe/db.sqlite3
+media/
+staticfiles/
+
+# Case Study Artifacts & Reports
+run_report*.json
+decision_room*.md
+exploration_lens*.md
+object_drift*.md
+offline_vs_live_diff*.md
+*.json.log
+results/case_*/
+
