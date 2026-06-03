@@ -23,8 +23,7 @@ notes/local_*
 elif_universe/.memory_logger/
 
 # Django
-db.sqlite3
-elif_universe/db.sqlite3
+# elif_universe/db.sqlite3 (Inclusion requested for audit)
 media/
 staticfiles/
 
