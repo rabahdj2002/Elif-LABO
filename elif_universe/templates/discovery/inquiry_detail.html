@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center space-x-2 text-xs text-gray-500 mb-8 uppercase tracking-widest">
+        <a href="{% url 'discovery:system_map' %}" class="hover:text-blue-400">Discovery</a>
+        <span>/</span>
+        <span class="text-gray-300">{{ inquiry.case_id }}</span>
+    </nav>
+
+    <div class="mb-16 flex justify-between items-start">
+        <div>
+            <h1 class="text-4xl font-bold mb-2">{{ inquiry.core_question }}</h1>
+            <p class="text-gray-400 text-sm italic">Status: Monitoring decision-logic chain...</p>
+        </div>
+        
+        <div class="flex space-x-3">
+            <button hx-post="{% url 'discovery:run_pulse' inquiry.pk %}"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    hx-swap="none"
+                    hx-indicator="#pulse-indicator"
+                    class="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-xl transition-all flex items-center space-x-4 shadow-xl shadow-blue-900/30">
+                <i class="fa-solid fa-bolt-lightning"></i>
+                <span class="font-bold tracking-widest uppercase text-sm">Execute 11-Step Engine</span>
+                <span id="pulse-indicator" class="htmx-indicator ml-2">
+                    <i class="fa-solid fa-atom animate-spin"></i>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Executive Summary / Active Focus -->
+    <div id="latest-insight" class="mb-16">
+        <div class="glass border-blue-500/20 p-8 rounded-3xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] -mr-32 -mt-32"></div>
+            
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                <h3 class="text-[10px] font-mono uppercase tracking-[0.3em] text-blue-400">Current Intelligence Objective</h3>
+            </div>
+
+            <div id="insight-content" class="relative z-10">
+                {% with last_planet=inquiry.planets.all.reverse|first %}
+                    {% if last_planet and last_planet.status == 'COMPLETED' %}
+                        <div class="flex justify-between items-start gap-12">
+                            <div class="flex-1">
+                                <h4 class="text-xl font-medium text-white mb-4 line-clamp-1">{{ last_planet.name }}</h4>
+                                <p class="text-gray-400 leading-relaxed font-light">
+                                    {% if last_planet.data.validation %}
+                                        {{ last_planet.data.validation }}
+                                    {% elif last_planet.data.analysis %}
+                                        {{ last_planet.data.analysis }}
+                                    {% elif last_planet.data.final_verdict %}
+                                        {{ last_planet.data.final_verdict }}
+                                    {% else %}
+                                        Reasoning step successfully integrated into the canonical logic chain. Click "Execute" to propagate to the next objective.
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="w-48 pt-2">
+                                <div class="text-[9px] uppercase tracking-widest text-gray-500 mb-2">Stage Confidence</div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-2xl font-mono text-white">{{ last_planet.data.confidence|default:"94" }}<span class="text-xs text-blue-500">%</span></span>
+                                    <div class="flex-1 h-[2px] bg-gray-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-blue-500" style="width: {{ last_planet.data.confidence|default:94 }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="py-12 text-center">
+                            <i class="fa-solid fa-compass-drafting text-gray-700 text-3xl mb-4"></i>
+                            <p class="text-gray-500 italic text-sm">Awaiting engine pulse to generate reasoning artifacts...</p>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Strategic Roadmap -->
+    <div class="mb-24">
+        <div class="flex justify-between items-end mb-10">
+            <div>
+                <h4 class="text-[10px] uppercase tracking-[0.4em] text-blue-500 font-bold mb-2">Strategic Navigation Path</h4>
+                <h2 class="text-2xl font-semibold text-white">Inquiry Roadmap</h2>
+            </div>
+            <div class="flex items-center space-x-6">
+                <div class="flex items-center space-x-2">
+                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    <span class="text-[10px] uppercase tracking-widest text-gray-500">Validated</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                    <span class="text-[10px] uppercase tracking-widest text-gray-500">Active</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                    <span class="text-[10px] uppercase tracking-widest text-gray-500">Uncertain</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative">
+            <!-- Central Vertical Spine -->
+            <div class="absolute left-[39px] top-0 bottom-0 w-[1px] bg-gradient-to-b from-blue-500/50 via-gray-800 to-transparent"></div>
+
+            <div class="space-y-12">
+                {% for planet in planets %}
+                <div class="relative flex items-start group">
+                    <!-- Status Indicator -->
+                    <div class="relative z-10 mr-10">
+                        <div class="w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-500 border
+                                    {% if planet.status == 'COMPLETED' %}
+                                        bg-green-500/10 border-green-500/30 text-green-400
+                                    {% elif planet.status == 'IN_PROGRESS' %}
+                                        bg-blue-500/10 border-blue-500/40 text-blue-400 animate-pulse
+                                    {% elif planet.data.uncertain %}
+                                        bg-yellow-500/10 border-yellow-500/30 text-yellow-400
+                                    {% else %}
+                                        bg-gray-900 border-gray-800 text-gray-600
+                                    {% endif %}">
+                            <i class="fa-solid {{ planet.icon_class }} text-xl"></i>
+                        </div>
+                        {% if not forloop.last %}
+                        <div class="absolute top-20 left-1/2 -translate-x-1/2 w-[1px] h-12 bg-gray-800"></div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Stage Card -->
+                    <div class="flex-1 bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 hover:bg-white/[0.04] hover:border-white/10 transition-all cursor-pointer overflow-hidden relative group/card">
+                        {% if planet.status == 'COMPLETED' %}
+                        <div class="absolute top-0 right-0 p-4">
+                            <i class="fa-solid fa-circle-check text-green-500/50 text-xs"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <div class="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 mb-1">Stage 0{{ planet.order }}</div>
+                                <h3 class="text-base font-medium text-white group-hover/card:text-blue-400 transition-colors">{{ planet.name }}</h3>
+                            </div>
+                            {% if planet.data.confidence %}
+                            <div class="text-right">
+                                <div class="text-[9px] uppercase tracking-widest text-gray-500 mb-1">Confidence Score</div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 h-1 bg-gray-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-blue-500" style="width: {{ planet.data.confidence }}%"></div>
+                                    </div>
+                                    <span class="text-[10px] font-mono text-blue-400">{{ planet.data.confidence }}%</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Key Finding / Content Snippet -->
+                        <div class="text-sm text-gray-400 font-light leading-relaxed mb-4">
+                            {% if planet.status == 'COMPLETED' %}
+                                {% if planet.data.analysis %}
+                                    {{ planet.data.analysis|truncatewords:25 }}
+                                {% elif planet.data.content %}
+                                    {{ planet.data.content|truncatewords:25 }}
+                                {% else %}
+                                    Analysis finalized. Click to review detailed findings and evidence logs.
+                                {% endif %}
+                            {% elif planet.status == 'IN_PROGRESS' %}
+                                Engine actively decomposing objects and mapping logical dependencies...
+                            {% else %}
+                                Pending activation. This stage requires validation of all preceding logical nodes.
+                            {% endif %}
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <a href="{% url 'discovery:inquiry_detail' inquiry.pk %}" class="text-[10px] uppercase tracking-widest text-blue-500 font-bold hover:text-blue-400 flex items-center">
+                                Open Stage <i class="fa-solid fa-arrow-right ml-2 text-[8px]"></i>
+                            </a>
+                            {% if planet.status == 'COMPLETED' %}
+                            <span class="text-[10px] uppercase tracking-widest text-gray-600 border-l border-white/10 pl-4">
+                                <i class="fa-solid fa-database mr-1"></i> {{ planet.data.artifacts|length|default:1 }} Artifacts
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Branching Logic Visualization -->
+                        {% if planet.data.branch_active %}
+                        <div class="mt-6 pt-6 border-t border-white/5">
+                            <div class="text-[9px] uppercase tracking-widest text-purple-400 font-bold mb-3 flex items-center">
+                                <i class="fa-solid fa-code-branch mr-2"></i> Active Reality Branch
+                            </div>
+                            <div class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 text-[11px] text-purple-300 italic">
+                                "{{ planet.data.divergence_point }}"
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Solution Space & Uncertainty (Refined) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-24">
+        <!-- Open Questions / Uncertainty -->
+        <div class="glass border-white/5 p-8 rounded-3xl">
+            <h4 class="text-xs uppercase tracking-[0.3em] text-yellow-500 font-bold mb-8">Unresolved Uncertainty</h4>
+            <div class="space-y-4">
+                <div class="bg-white/5 border border-white/5 p-5 rounded-2xl group hover:border-yellow-500/30 transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded uppercase font-bold tracking-tighter">High Impact</span>
+                        <span class="text-[9px] text-gray-500 uppercase font-mono">Stage 05</span>
+                    </div>
+                    <p class="text-sm text-gray-200 mb-3">Does temporal dominance remain stable under high-velocity scaling?</p>
+                    <div class="text-[10px] text-gray-500 italic flex items-center">
+                        <i class="fa-solid fa-circle-question mr-2"></i> Evidence gap detected in falsification layer
+                    </div>
+                </div>
+                <div class="bg-white/5 border border-white/5 p-5 rounded-2xl opacity-50">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] bg-gray-500/20 text-gray-500 px-2 py-0.5 rounded uppercase font-bold tracking-tighter">Low Impact</span>
+                        <span class="text-[9px] text-gray-500 uppercase font-mono">Stage 02</span>
+                    </div>
+                    <p class="text-sm text-gray-400">Object metadata fragmentation in legacy systems.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Solution Families (Verdict Preview) -->
+        <div class="glass border-white/5 p-8 rounded-3xl">
+            <h4 class="text-xs uppercase tracking-[0.3em] text-blue-500 font-bold mb-8">Solution Space Comparison</h4>
+            <div class="space-y-4">
+                <div class="bg-blue-500/5 border border-blue-500/20 p-5 rounded-2xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 blur-3xl -mr-12 -mt-12 transition-all group-hover:bg-blue-500/20"></div>
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm font-semibold text-white">Solution Family A: Agile Transition</span>
+                        <span class="text-xs font-mono text-blue-400">72% Confidence</span>
+                    </div>
+                    <div class="w-full h-1 bg-gray-800 rounded-full mb-3">
+                        <div class="h-full bg-blue-500" style="width: 72%"></div>
+                    </div>
+                    <p class="text-[11px] text-gray-400 leading-relaxed">Prioritizes temporal stability and user experience continuity over raw efficiency gains.</p>
+                </div>
+                <div class="bg-white/5 border border-white/5 p-5 rounded-2xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm font-semibold text-white">Solution Family B: Direct Hard-Fork</span>
+                        <span class="text-xs font-mono text-gray-500">45% Confidence</span>
+                    </div>
+                    <div class="w-full h-1 bg-gray-800 rounded-full mb-3">
+                        <div class="h-full bg-gray-500" style="width: 45%"></div>
+                    </div>
+                    <p class="text-[11px] text-gray-500 leading-relaxed">High initial risk but delivers maximum long-range structural integrity.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    style Q fill:#0f172a,stroke:#3b82f6,color:#fff,stroke-width:4px,rx:12,ry:12
+            </pre>
+        </div>
+    </div>
+
+    <!-- Parallel Exploration Branches -->
+    {% if inquiry.explorations.exists %}
+    <div class="mb-24">
+        <div class="flex items-center space-x-4 mb-10">
+            <h4 class="text-[10px] uppercase tracking-[0.4em] text-purple-500 font-bold">Parallel Realities</h4>
+            <div class="flex-1 h-[1px] bg-purple-500/10"></div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="exploration-branches-list">
+            {% for branch in inquiry.explorations.all|dictsortreversed:"created_at" %}
+            <a href="{% url 'discovery:inquiry_detail' inquiry.pk %}" 
+               class="group relative bg-[#0a0a0c] border border-white/[0.05] rounded-3xl p-8 hover:border-purple-500/30 transition-all overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-100 group-hover:text-purple-500 transition-opacity">
+                    <i class="fa-solid fa-code-merge text-2xl"></i>
+                </div>
+                
+                <div class="flex items-center space-x-3 mb-6">
+                    <span class="text-[9px] font-mono text-purple-400 bg-purple-500/10 px-2 py-1 rounded tracking-tighter">DIVERGENCE {{ forloop.revcounter }}</span>
+                    <span class="text-[9px] text-gray-600 font-mono">{{ branch.created_at|date:"H:i:s" }} UTC</span>
+                </div>
+
+                <h5 class="text-white font-medium mb-3 group-hover:text-purple-300 transition-colors">Filtered through: {{ branch.choice_made }}</h5>
+                
+                <p class="text-xs text-gray-500 leading-relaxed font-light mb-6 line-clamp-3">
+                    {{ branch.branch_data.perspective_shift|slice:"57:"|default:"Strategic alternative path identified and isolated for comparison." }}
+                </p>
+
+                <div class="flex items-center justify-between pt-6 border-t border-white/[0.03]">
+                    <span class="text-[10px] text-gray-600 uppercase tracking-widest">Source: {{ branch.parent_planet.name }}</span>
+                    <span class="text-[10px] text-purple-500 font-bold group-hover:translate-x-1 transition-transform">Explore Branch <i class="fa-solid fa-chevron-right ml-1"></i></span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Live Output / Log Terminal -->
+    <div class="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2">
+            <h4 class="text-xs uppercase tracking-[0.2em] text-gray-500 mb-4 px-4 font-mono">System Telemetry</h4>
+            <div id="telemetry-log" 
+                 class="glass rounded-xl p-6 font-mono text-sm h-80 overflow-y-auto border-blue-900/30 scroll-smooth">
+                <div class="text-green-400 mb-1">> ELIF Kernel 0.1 active.</div>
+                <div class="text-gray-500 mt-2 italic">Awaiting pulse...</div>
+            </div>
+        </div>
+
+        <div>
+            <h4 class="text-xs uppercase tracking-[0.2em] text-gray-500 mb-4 px-4 font-mono">Inquiry Frame</h4>
+            <div class="glass rounded-xl p-6 h-80 overflow-y-auto border-purple-900/30">
+                <div class="space-y-4">
+                    <div>
+                        <div class="text-[10px] text-purple-400 uppercase font-bold tracking-tighter">Core Intent</div>
+                        <div class="text-sm text-gray-300 mt-1">{{ inquiry.core_question }}</div>
+                    </div>
+                    {% if inquiry.current_frame %}
+                        {% for key, val in inquiry.current_frame.items %}
+                        <div>
+                            <div class="text-[10px] text-gray-500 uppercase">{{ key }}</div>
+                            <div class="text-xs text-gray-400">{{ val }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-10">
+                            <i class="fa-solid fa-box-open text-3xl text-gray-700 mb-2"></i>
+                            <p class="text-[10px] text-gray-600 italic">Frame data will populate after Step 1 (Validation).</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

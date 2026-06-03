@@ -1,0 +1,16 @@
+<a href="{% url 'discovery:inquiry_detail' planet.inquiry.pk %}" 
+   id="planet-{{ planet.pk }}"
+   hx-swap-oob="outerHTML:#planet-{{ planet.pk }}"
+   class="p-4 rounded-2xl border transition-all text-center group
+          {% if planet.status == 'COMPLETED' %}bg-blue-500/10 border-blue-500/40{% elif planet.status == 'IN_PROGRESS' %}bg-blue-500/5 border-blue-500/20 animate-pulse{% else %}bg-white/5 border-white/5 opacity-50{% endif %}">
+    <div class="w-10 h-10 mx-auto rounded-lg flex items-center justify-center mb-3 
+                {% if planet.status == 'COMPLETED' %}bg-blue-500 text-white{% else %}bg-gray-800 text-gray-500{% endif %}">
+        <i class="fa-solid {{ planet.icon_class }}"></i>
+    </div>
+    <div class="text-[10px] font-bold uppercase tracking-tighter {% if planet.status == 'COMPLETED' %}text-blue-300{% else %}text-gray-600{% endif %}">
+        Step {{ planet.order }}
+    </div>
+    <div class="text-[11px] mt-1 font-medium truncate {% if planet.status == 'COMPLETED' %}text-white{% else %}text-gray-500{% endif %}">
+        {{ planet.name }}
+    </div>
+</a>

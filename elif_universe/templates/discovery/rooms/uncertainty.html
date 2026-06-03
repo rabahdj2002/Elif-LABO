@@ -1,0 +1,76 @@
+{% extends "discovery/rooms/room_base.html" %}
+
+{% block room_projection %}
+<div class="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <header class="text-center">
+        <h2 class="text-3xl font-bold text-white mb-2">Uncertainty Room</h2>
+        <p class="text-red-400/80 font-light italic">"Monitoring the residual darkness and load-bearing gaps."</p>
+    </header>
+
+    <!-- The One: Residual Darkness -->
+    <section class="max-w-4xl mx-auto">
+        <div class="glass p-8 rounded-[3rem] border-red-500/20 bg-red-500/[0.02] relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-[50px] -mr-16 -mt-16"></div>
+            <h4 class="text-[10px] uppercase tracking-[0.4em] text-red-500 font-bold mb-6 flex items-center">
+                <i class="fa-solid fa-cloud-moon mr-3 opacity-50"></i> Residual Darkness (Unresolved Zones)
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if inquiry.unresolved_zones %}
+                    {% for zone in inquiry.unresolved_zones %}
+                    <div class="p-5 rounded-2xl bg-black/40 border border-white/5 flex items-start space-x-4">
+                        <div class="w-2 h-2 rounded-full bg-red-500/40 mt-1 animate-pulse"></div>
+                        <p class="text-[11px] text-gray-300 leading-relaxed italic">{{ zone }}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-span-2 text-center py-10 opacity-30 text-[10px] italic">
+                        No structural uncertainty detected in the current orbit.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Structural Biases -->
+        <div class="glass p-6 rounded-[2rem] border-white/5 bg-white/[0.01]">
+            <h4 class="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold mb-6">Falsification Conditions</h4>
+            <div class="space-y-4">
+                {% for bias in room_data.biases %}
+                <div class="p-4 rounded-xl bg-black/20 border border-white/5 group">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] font-mono text-gray-500">{{ bias.name }}</span>
+                    </div>
+                    <p class="text-[10px] text-gray-400 leading-tight italic">"Potential failure if: {{ bias.impact }}"</p>
+                </div>
+                {% empty %}
+                <p class="text-[10px] text-gray-600 italic">No primary failure conditions identified.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Pattern Gaps -->
+        <div class="glass p-6 rounded-[2rem] border-white/5 bg-white/[0.01]">
+            <h4 class="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-6">Unresolved Ambiguities</h4>
+            <div class="space-y-3">
+                {% for entry in room_data.ambiguities %}
+                <div class="flex items-start space-x-3 p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                    <div class="w-6 h-6 rounded-lg bg-gray-900 border border-white/10 flex items-center justify-center text-gray-600 text-[10px]">
+                        {% if entry.kind == 'capacity_change' %}<i class="fa-solid fa-battery-half"></i>
+                        {% elif entry.kind == 'pattern_engaged' %}<i class="fa-solid fa-microchip"></i>
+                        {% elif entry.kind == 'judgment_act' %}<i class="fa-solid fa-gavel"></i>
+                        {% else %}?{% endif %}
+                    </div>
+                    <div>
+                        <div class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">{{ entry.kind }}</div>
+                        <p class="text-[10px] text-gray-400 leading-tight">{{ entry.description }}</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-[10px] text-gray-600 italic text-center py-10">Current model is operationally stable.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

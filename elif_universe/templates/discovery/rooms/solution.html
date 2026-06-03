@@ -1,0 +1,79 @@
+{% extends "discovery/rooms/room_base.html" %}
+
+{% block room_projection %}
+<div class="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <header class="text-center">
+        <h2 class="text-3xl font-bold text-white mb-2">Solution Room</h2>
+        <p class="text-yellow-400/80 font-light italic">"Landscape of possibilities and competing transformations."</p>
+    </header>
+
+    <!-- Pluralism: Competing Solution Families -->
+    <section>
+        <h4 class="text-[10px] uppercase tracking-[0.4em] text-gray-500 font-bold mb-6 text-center">Competing Solution Families</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% if inquiry.solution_families %}
+                {% for family in inquiry.solution_families %}
+                <div class="glass p-6 rounded-3xl border-yellow-500/10 bg-yellow-500/[0.02] hover:bg-yellow-500/[0.05] transition-all">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <span class="w-8 h-8 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 text-xs font-black">
+                            {{ forloop.counter }}
+                        </span>
+                        <h5 class="text-sm font-bold text-white">{{ family.name|default:"Alternative Pathway" }}</h5>
+                    </div>
+                    <p class="text-[11px] text-gray-400 leading-relaxed mb-4">
+                        {{ family.description|default:"Detailed transformation mechanics and potential sacrifices." }}
+                    </p>
+                    <div class="pt-4 border-t border-white/5">
+                        <div class="flex justify-between items-center text-[9px] uppercase tracking-widest font-bold">
+                            <span class="text-gray-500">Resource Intensity</span>
+                            <span class="text-yellow-500/60">{{ family.intensity|default:"Variable" }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="md:col-span-2 lg:col-span-3 h-24 glass rounded-3xl flex items-center justify-center italic text-gray-600 text-xs">
+                    Multi-family synthesis pending final engine pulse.
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Branching Roadmap -->
+    <section>
+        <h4 class="text-[10px] uppercase tracking-[0.4em] text-gray-500 font-bold mb-8 text-center">Stage-Gated Evolution Roadmap</h4>
+        <div class="max-w-4xl mx-auto">
+            <div class="relative">
+                <div class="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-white/5 top-0"></div>
+                <div class="space-y-8">
+                    {% for stage in room_data.roadmap_stages %}
+                    <div class="relative flex items-center justify-between group">
+                        <div class="w-5/12 text-right pr-6">
+                            <div class="text-[9px] uppercase tracking-widest text-yellow-500 font-bold mb-1">Stage {{ stage.stage_id }}</div>
+                            <h4 class="text-sm text-white mb-1">{{ stage.title }}</h4>
+                            <p class="text-[10px] text-gray-500 italic leading-tight">{{ stage.description }}</p>
+                        </div>
+
+                        <div class="absolute left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full bg-yellow-500 border-2 border-black group-hover:scale-125 transition-transform z-10"></div>
+
+                        <div class="w-5/12 pl-6">
+                            <div class="p-4 glass rounded-xl bg-white/[0.02] border-white/5">
+                                <h5 class="text-[8px] uppercase font-bold text-gray-400 mb-2 tracking-widest">Continuation Gates</h5>
+                                <div class="space-y-1">
+                                    {% for gate in stage.continuation_gates %}
+                                    <div class="flex items-center space-x-2 text-[10px] text-gray-500">
+                                        <div class="w-1 h-1 rounded-full bg-yellow-500/40"></div>
+                                        <span>{{ gate }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

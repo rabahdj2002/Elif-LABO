@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center space-x-2 text-xs text-gray-500 mb-8 uppercase tracking-widest">
+        <a href="{% url 'discovery:system_map' %}" class="hover:text-blue-400">Discovery</a>
+        <span>/</span>
+        <a href="{% url 'discovery:inquiry_detail' planet.inquiry.pk %}" class="hover:text-blue-400">{{ planet.inquiry.case_id }}</a>
+        <span>/</span>
+        <span class="text-gray-300">{{ planet.name }}</span>
+    </nav>
+
+    <div class="flex items-center space-x-6 mb-12">
+        <div class="w-20 h-20 rounded-full bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center glow-blue">
+            <i class="fa-solid {{ planet.icon_class }} text-3xl text-white"></i>
+        </div>
+        <div>
+            <h1 class="text-4xl font-bold">{{ planet.name }}</h1>
+            <p class="text-blue-400 font-mono text-sm">COORDINATES: sector-7g // step-{{ planet.order }}</p>
+        </div>
+    </div>
+
+    <!-- Planet Content (The Room) -->
+    <div class="glass p-8 rounded-3xl min-h-[400px] relative">
+        <div id="loading-overlay" class="htmx-indicator absolute inset-0 bg-black/60 backdrop-blur-md z-50 rounded-3xl flex items-center justify-center">
+            <div class="text-center">
+                <div class="relative w-24 h-24 mx-auto mb-4">
+                    <div class="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
+                    <i class="fa-solid fa-microchip absolute inset-0 flex items-center justify-center text-3xl text-blue-400 animate-pulse"></i>
+                </div>
+                <div class="text-blue-100 font-mono tracking-[0.3em] text-sm uppercase">Engine Synchronizing...</div>
+                <div class="text-blue-500/50 text-[10px] mt-2 font-mono">RECALIBRATING WORLD MODEL</div>
+            </div>
+        </div>
+
+        <h3 class="text-xl font-bold mb-6 border-b border-white/10 pb-4 flex justify-between items-center text-blue-400">
+            <span>{{ planet.name }}</span>
+            <span id="planet-status-tag" class="text-[10px] font-mono tracking-widest uppercase {% if planet.status == 'COMPLETED' %}bg-green-500/20 text-green-400{% else %}bg-blue-500/20 text-blue-400 animate-pulse{% endif %} px-3 py-1 rounded-full border border-current/20">
+                {{ planet.status }}
+            </span>
+        </h3>
+        
+        <div id="planet-data-container" class="space-y-6">
+            {% if planet.data %}
+                {% if planet.data.divergence_point and not planet.data.branch_active %}
+                <div id="active-divergence-badge" class="bg-purple-600/10 border border-purple-500/30 p-4 rounded-xl mb-6 animate-pulse">
+                    <div class="text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-1 flex items-center justify-between">
+                        <span><i class="fa-solid fa-code-branch mr-2"></i> THREAD DIVERGED</span>
+                        <span class="bg-purple-500/40 px-2 py-0.5 rounded text-[8px] border border-purple-500/30">
+                            {% if planet.status == 'COMPLETED' %}STABLE{% else %}{{ planet.status }}{% endif %}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-300 italic">{{ planet.data.divergence_point }}</p>
+                </div>
+                {% endif %}
+                
+                {% for key, value in planet.data.items %}
+                {% if key != 'divergence_point' and key != 'branch_active' %}
+                <div class="group/item relative">
+                    <div class="flex justify-between items-end mb-2 px-1">
+                        <div class="text-[10px] text-blue-500/60 font-mono uppercase tracking-[0.2em]">{{ key }}</div>
+                        <button onclick="copyToClipboard(this)" 
+                                data-copy="{{ value }}"
+                                style="z-index: 100; cursor: pointer;"
+                                class="text-[10px] text-gray-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded flex items-center space-x-2 relative">
+                            <i class="fa-regular fa-copy pointer-events-none"></i>
+                            <span class="font-mono uppercase tracking-widest text-[8px] pointer-events-none">Copy</span>
+                        </button>
+                    </div>
+                    <div class="bg-blue-900/10 p-5 rounded-2xl border border-blue-500/10 group-hover/item:border-blue-500/30 transition-all">
+                        <p class="text-gray-200 leading-relaxed font-light">{{ value }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-24">
+                    <div class="inline-flex w-16 h-16 rounded-full bg-white/5 items-center justify-center mb-6">
+                        <i class="fa-solid {{ planet.icon_class }} text-3xl text-gray-700"></i>
+                    </div>
+                    <p class="text-gray-500 font-mono text-sm tracking-wide">WAITING FOR ENGINE PULSE...<br><span class="text-[10px] opacity-50">CANONICAL STEP {{ planet.order }} NOT YET INITIALIZED</span></p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="mt-8 grid grid-cols-2 gap-4">
+        <button hx-post="{% url 'discovery:re_validate' planet.pk %}"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-indicator="#loading-overlay"
+                hx-target="#planet-data-container"
+                class="glass p-4 rounded-2xl hover:bg-blue-500/10 transition-all border-blue-500/20 group text-left">
+            <div class="text-blue-400 text-sm mb-1 flex items-center">
+                <i class="fa-solid fa-rotate mr-2 group-hover:rotate-180 transition-all duration-500"></i>
+                RE-EXECUTE CANONICAL STEP
+            </div>
+            <div class="text-xs text-gray-500 group-hover:text-gray-300">Run actual Alpha Engine logic for Step {{ planet.order }}.</div>
+        </button>
+
+        <div id="divergence-control" class="space-y-4">
+        {% if planet.data.branch_active %}
+            <div class="glass p-5 rounded-2xl bg-purple-500/10 border-purple-500/30 border relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
+                    <i class="fa-solid fa-code-merge text-4xl text-purple-500"></i>
+                </div>
+                <div class="text-purple-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2 flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-purple-500 mr-2 animate-pulse"></span>
+                    ACTIVE COGNITIVE ANCHOR
+                </div>
+                <div class="text-sm text-white font-medium mb-1 line-clamp-2">
+                    {{ planet.data.divergence_point }}
+                </div>
+                <div class="text-[10px] text-purple-300/50 italic">
+                    All reasoning within this sector is now locked to this perspective.
+                </div>
+            </div>
+        {% endif %}
+
+        {% if "DECOMPOSITION" in planet.data.verdict or "DECOMPOSITION" in planet.data.final_verdict or "DECOMPOSITION" in planet.data.validation or "DECOMPOSITION" in planet.data.analysis or planet.data.axes %}
+        <div class="relative group">
+            <button onclick="this.nextElementSibling.classList.toggle('hidden')"
+                    class="glass p-4 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 transition-all border-purple-500/40 text-left w-full">
+                <div class="text-purple-400 text-sm mb-1 flex items-center">
+                    <i class="fa-solid fa-code-branch mr-2 animate-pulse"></i>
+                    {% if planet.data.branch_active %}REFINE DIVERGENCE{% else %}RESOLVE DECOMPOSITION VIA BRANCH{% endif %}
+                </div>
+                <div class="text-xs text-gray-300">{% if planet.data.branch_active %}Multiple decomposition axes detected. You can further refine the branch.{% else %}The engine requires a selection to proceed.{% endif %}</div>
+            </button>
+            <div class="hidden absolute bottom-full left-0 w-full bg-gray-900 border border-purple-500/30 rounded-xl p-4 shadow-2xl mb-2 z-50 max-h-96 overflow-y-auto">
+                <div class="text-[10px] text-purple-400 font-bold uppercase mb-3">Select Cognitive Path to Diverge:</div>
+                <div class="space-y-2">
+                    {% if planet.data.axes %}
+                        {% for axis in planet.data.axes %}
+                        <div class="border-t border-white/5 pt-2 mt-2">
+                            <div class="text-[9px] text-gray-500 uppercase">{{ axis.axis_name }}</div>
+                            <div class="grid grid-cols-1 gap-1 mt-1">
+                                {% for family in axis.families %}
+                                <button hx-post="{% url 'discovery:branch_out' planet.pk %}"
+                                        hx-vals='{"family_id": "{{ family.family_id }}", "family_desc": "{{ family.description }}"}'
+                                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                        hx-swap="none"
+                                        hx-indicator="#loading-overlay"
+                                        onclick="this.closest('.relative').querySelector('div.absolute').classList.add('hidden'); document.getElementById('planet-data-container').insertAdjacentHTML('afterbegin', '<div id=\'active-divergence-badge\' class=\'bg-purple-600/10 border border-purple-500/30 p-4 rounded-xl mb-6 animate-pulse\'><div class=\'text-[10px] text-purple-400 font-bold uppercase tracking-widest mb-1 flex items-center justify-between\'><span><i class=\'fa-solid fa-code-branch mr-2\'></i> THREAD DIVERGED</span><span class=\'bg-purple-500 px-2 py-0.5 rounded text-[8px] text-white\'>RUNNING...</span></div><p class=\'text-sm text-gray-300 italic\'>Resolving Path: {{ family.family_id }}</p></div>')"
+                                        class="text-left text-[11px] bg-white/5 hover:bg-purple-500/20 p-3 rounded-lg border border-white/5 hover:border-purple-500/30 transition-all text-gray-300 flex items-start space-x-3 w-full group">
+                                    <span class="text-purple-400 font-bold shrink-0">[{{ family.family_id }}]</span> 
+                                    <span class="leading-relaxed">{{ family.description }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-[10px] text-gray-500 italic p-4 text-center">
+                            AI recognized decomposition but did not provide specific axes. Use local re-validation.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% elif not planet.data.branch_active %}
+        <div class="glass p-4 rounded-2xl opacity-20 grayscale cursor-not-allowed">
+            <div class="text-gray-500 text-sm mb-1 flex items-center">
+                <i class="fa-solid fa-lock mr-2"></i>
+                DIVERGENCE LOCKED
+            </div>
+            <div class="text-[10px] text-gray-600">Only enabled during "NEEDS_DECOMPOSITION" state.</div>
+        </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELIF Universe | Decision Navigation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
+        }
+        .nebula-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 20% 30%, #1e1b4b 0%, transparent 40%),
+                        radial-gradient(circle at 80% 70%, #312e81 0%, transparent 40%);
+            z-index: -1;
+            opacity: 0.6;
+        }
+        .glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .planet-nav {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+        .glow-purple { box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
+        .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 200ms ease-in;
+        }
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+        }
+        .htmx-request.htmx-indicator {
+            opacity: 1;
+        }
+        
+        @media (max-width: 1024px) {
+            .side-nav { display: none; }
+            main { margin-left: 0 !important; }
+        }
+    </style>
+    <script>
+        function copyToClipboard(button, text) {
+            // Priority 1: Passed text argument. Priority 2: data-copy attribute
+            const content = text || button.getAttribute('data-copy');
+            if (!content) return;
+
+            navigator.clipboard.writeText(content).then(() => {
+                const icon = button.querySelector('i');
+                const span = button.querySelector('span');
+                const originalIconClass = icon.className;
+                
+                // Success State
+                icon.className = 'fa-solid fa-check text-green-400';
+                if (span) {
+                    const originalText = span.innerText;
+                    span.innerText = 'COPIED';
+                    setTimeout(() => { span.innerText = originalText; }, 2000);
+                }
+                
+                setTimeout(() => {
+                    icon.className = originalIconClass;
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy failed: ', err);
+                // Fallback for non-secure contexts or failures
+                const textArea = document.createElement("textarea");
+                textArea.value = content;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    button.querySelector('i').className = 'fa-solid fa-check text-green-400';
+                } catch (e) {}
+                document.body.removeChild(textArea);
+            });
+        }
+    </script>
+</head>
+<body class="min-h-screen">
+    <div class="nebula-bg"></div>
+    
+    <!-- Sidebar Navigation (Star Charts) -->
+    <nav class="fixed left-0 top-0 h-full w-20 flex flex-col items-center py-8 glass border-r border-white/10 z-50 side-nav">
+        <div class="mb-12">
+            <a href="{% url 'discovery:system_map' %}">
+                <i class="fa-solid fa-atom text-blue-400 text-3xl animate-pulse hover:text-blue-300 transition-colors"></i>
+            </a>
+        </div>
+        
+        {% if system_settings.offline_mode %}
+        <div class="mb-6 group relative">
+            <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.8)]"></div>
+            <span class="absolute left-10 top-0 bg-yellow-500 text-[8px] text-black px-2 py-0.5 rounded font-black uppercase hidden group-hover:block whitespace-nowrap">Token Saver Active</span>
+        </div>
+        {% endif %}
+
+        <div class="flex-1 flex flex-col space-y-8">
+            <a href="{% url 'discovery:system_map' %}" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
+                <i class="fa-solid fa-satellite-dish text-xl"></i>
+                <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Discovery</span>
+            </a>
+            <a href="{% url 'discovery:initialize' %}" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
+                <i class="fa-solid fa-plus-circle text-xl"></i>
+                <span class="absolute left-16 top-3 bg-purple-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">New Mission</span>
+            </a>
+            <a href="#" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
+                <i class="fa-solid fa-fort-awesome text-xl"></i>
+                <span class="absolute left-16 top-3 bg-gray-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Citadel (Locked)</span>
+            </a>
+            <a href="#" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
+                <i class="fa-solid fa-shield-halved text-xl"></i>
+                <span class="absolute left-16 top-3 bg-green-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Governance</span>
+            </a>
+        </div>
+        <div>
+            <a href="{% url 'discovery:settings' %}" class="p-3 text-gray-500 hover:text-white"><i class="fa-solid fa-gear"></i></a>
+        </div>
+    </nav>
+
+    <!-- Main Viewport -->
+    <main class="ml-20 p-8">
+        {% if messages %}
+        <div class="fixed top-8 right-8 z-[200] space-y-4 max-w-sm w-full">
+            {% for message in messages %}
+            <div class="glass p-4 rounded-2xl border {% if message.tags == 'error' %}border-red-500/30 text-red-400{% else %}border-blue-500/30 text-blue-400{% endif %} flex items-start space-x-3 shadow-2xl animate-in slide-in-from-right duration-300">
+                <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-check{% endif %} mt-1"></i>
+                <div class="flex-1">
+                    <p class="text-[11px] font-bold uppercase tracking-wider mb-1">{{ message.tags|default:"Notice" }}</p>
+                    <p class="text-xs text-white/80 leading-relaxed">{{ message }}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-white/20 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Offline Mode Notification Modal -->
+    <div id="offline-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm hidden animate-in fade-in duration-300">
+        <div class="glass max-w-md w-full p-8 rounded-[2.5rem] border-yellow-500/20 shadow-2xl shadow-yellow-900/10 text-center space-y-6">
+            <div class="w-16 h-16 bg-yellow-500/10 border border-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-cloud-slash text-2xl text-yellow-500"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white uppercase tracking-widest">Token Saver Active</h3>
+            <p class="text-gray-400 text-sm leading-relaxed">
+                The engine is currently in <span class="text-yellow-500 font-bold">Offline Simulation Mode</span>. 
+                Live reasoning and API tokens are restricted. Verification will proceed using stored fixtures.
+            </p>
+            <div class="pt-4">
+                <button onclick="hideOfflineNotice()" class="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 px-8 py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] font-bold transition-all">
+                    Proceed with Simulation
+                </button>
+                <a href="{% url 'discovery:settings' %}" class="block mt-4 text-[10px] text-gray-500 hover:text-white uppercase tracking-widest font-bold transition-all">
+                    Disable in System Control
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showOfflineNotice() {
+            document.getElementById('offline-modal').classList.remove('hidden');
+        }
+        function hideOfflineNotice() {
+            document.getElementById('offline-modal').classList.add('hidden');
+            // Check if we were supposed to trigger a sync
+            if (window.pendingSyncUrl) {
+                const url = window.pendingSyncUrl;
+                window.pendingSyncUrl = null;
+                // Actually trigger it after the modal is acknowledged
+                htmx.ajax('POST', url, {
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    indicator: '#sync-spinner'
+                });
+            }
+        }
+    </script>
+
+    {% block extra_js %}
+    <script>
+        document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+            const telemetryLog = document.getElementById('telemetry-log');
+            if (telemetryLog) {
+                telemetryLog.scrollTop = telemetryLog.scrollHeight;
+            }
+        });
+    </script>
+    {% endblock %}
+</body>
+</html>

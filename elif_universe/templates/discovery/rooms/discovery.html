@@ -1,0 +1,62 @@
+{% extends "discovery/rooms/room_base.html" %}
+
+{% block room_projection %}
+<div class="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <header class="text-center">
+        <h2 class="text-3xl font-bold text-white mb-2">Discovery Room</h2>
+        <p class="text-gray-400 font-light italic">"Defining the mission boundary and the core intent of the inquiry."</p>
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="glass p-8 rounded-[2rem] border-white/5 bg-white/[0.01]">
+            <h4 class="text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-4">Formalized Frame</h4>
+            <div class="relative">
+                <textarea class="w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-gray-200 focus:border-blue-500/50 outline-none transition-all" rows="3">{{ room_data.reformulation }}</textarea>
+                <div class="absolute bottom-4 right-4 text-[8px] uppercase text-gray-600 font-mono">Formalized by Step 1</div>
+            </div>
+            {% if room_data.verdict %}
+            <p class="mt-4 text-[10px] text-gray-500 italic">Verdict: {{ room_data.verdict }}</p>
+            {% endif %}
+        </div>
+
+        <div class="glass p-8 rounded-[2rem] border-white/5 bg-white/[0.01]">
+            <h4 class="text-[10px] uppercase tracking-[0.3em] text-purple-400 font-bold mb-4">Object Family Decomposition</h4>
+            <div class="grid grid-cols-2 gap-3">
+                {% for family in room_data.objects %}
+                <div class="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10 hover:border-purple-500/30 transition-all">
+                    <div class="text-[9px] uppercase text-purple-400/60 mb-1 font-mono">{{ family.name }}</div>
+                    <ul class="space-y-0.5">
+                        {% for obj in family.objects %}
+                        <li class="text-[10px] text-gray-400 flex items-center">
+                            <i class="fa-solid fa-cube text-[8px] mr-2 text-purple-900"></i>
+                            {{ obj }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% empty %}
+                <div class="col-span-2 text-center py-8 text-gray-600 italic text-xs">Waiting for engine extraction...</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h4 class="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold mb-4 text-center">Refining Trajectory</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
+                <div class="text-[9px] text-gray-600 uppercase mb-1">Reframing A</div>
+                <p class="text-[11px] text-gray-400 leading-tight">"How does temporal drift impact long-range governance?"</p>
+            </div>
+            <div class="p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
+                <div class="text-[9px] text-gray-600 uppercase mb-1">Reframing B</div>
+                <p class="text-[11px] text-gray-400 leading-tight">"What is the minimum viable truth separator for this case?"</p>
+            </div>
+            <div class="p-4 bg-white/[0.03] border border-white/5 rounded-2xl dashed opacity-30">
+                <div class="text-[9px] text-gray-600 uppercase mb-1">Reframing C</div>
+                <p class="text-[11px] text-gray-400 italic">Calculating alternative framings...</p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

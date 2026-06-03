@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-12">
+    <div class="glass p-12 rounded-3xl border-blue-500/20">
+        <h2 class="text-3xl font-bold planet-nav mb-8 text-blue-400">MISSION INITIALIZATION</h2>
+        
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2 font-mono">Mission Sector (Case Context)</label>
+                <select name="case_id" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:border-blue-500 outline-none transition-all text-blue-100 appearance-none">
+                    <option value="case_01">Sector 01: Electroculture (Agri-Logic)</option>
+                    <option value="case_02">Sector 02: Policy Governance (System-Logic)</option>
+                    <option value="case_03">Sector 03: Operational Organizational (Corp-Logic)</option>
+                    <option value="custom">Custom Sector (Advanced Mode)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2 font-mono">Core Exploration Question</label>
+                <textarea name="question" rows="4" placeholder="What truth are we seeking in this sector?"
+                          class="w-full bg-white/5 border border-white/10 rounded-xl p-4 focus:border-blue-500 outline-none transition-all text-blue-100"></textarea>
+            </div>
+
+            <div class="pt-6">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-900/40 flex items-center justify-center space-x-3">
+                    <i class="fa-solid fa-rocket"></i>
+                    <span>LAUNCH ENGINE</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
