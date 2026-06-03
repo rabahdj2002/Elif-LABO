@@ -336,7 +336,7 @@ class BranchingRoadmapEngine:
             else _DEFAULT_MAX_LLM_CALLS
         )
         model_id = (
-            self._run_context.model_id if self._run_context else "claude-sonnet-4-6"
+            self._run_context.model_id if self._run_context else "sonnet"
         )
         fixture_id = ""
         if offline_mode:

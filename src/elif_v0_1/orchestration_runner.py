@@ -24,7 +24,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Callable
 
 from .base import (
     FrameInvalidError,
@@ -34,6 +34,7 @@ from .base import (
     PROCEDURE_STEP_IDS,
     SchemaValidationError,
 )
+from .model_registry import MODEL_REGISTRY
 from .components import (
     BranchingRoadmapEngine,
     FrameValidator,
@@ -43,7 +44,7 @@ from .components import (
     ObjectDecomposer,
     OperativeTruthSeparator,
 )
-from .llm_adapter import reset_call_counter, _call_counter
+from .llm_adapter import reset_call_counter, _call_counter, complete_structured
 from .run_context import RunContext, RunReport, StepOutputEnvelope
 
 
@@ -101,9 +102,10 @@ class ProcedureRunner:
         *,
         offline_mode: bool = False,
         max_llm_calls: int = 22,
-        model_id: str = "claude-sonnet-4-6",
+        model_id: str = "sonnet",
         procedure_version: str = "v1.0",
         results_dir: Optional[Path] = None,
+        status_callback: Optional[Callable[[str], None]] = None,
     ) -> RunReport:
         """Execute the 11-step procedure sequentially.
 
@@ -113,10 +115,11 @@ class ProcedureRunner:
             input_frame        — frozen `InputFrame` instance
             offline_mode       — load fixtures instead of calling Anthropic
             max_llm_calls      — per-run hard cap (default 22 per §8.4)
-            model_id           — e.g. "claude-sonnet-4-6" (Step 8 §8.4)
+            model_id           — logical model key (e.g. "sonnet") or raw ID
             procedure_version  — "v1.0" (the only authorized v0.1 version)
             results_dir        — optional path for MemoryLogger persistence;
                                  defaults to .memory_logger/ under cwd
+            status_callback    — optional string callback for status updates
 
         Returns:
             RunReport          — step outputs + exit_code + meta
@@ -189,7 +192,27 @@ class ProcedureRunner:
         def commit_step(step_id: str, payload: Dict[str, Any]) -> None:
             """Capture a committed step output + write a step_committed event."""
             print(f"[COMMIT] {step_id}: {STEP_OWNER[int(step_id.split('_')[1])-1][1].upper()} logic finalized.")
+            if status_callback:
+                # Map step_id to human readable title for the UI
+                step_map = {
+                    "step_1": "Frame Validation",
+                    "step_2": "Object Decomposition",
+                    "step_3": "Normalization Layer",
+                    "step_4": "Hypothesis Construction",
+                    "step_5": "Falsification Design",
+                    "step_6": "Multi-Scale Propagation",
+                    "step_7": "Outside-Frame Generation",
+                    "step_8": "Stage-Gated Roadmap",
+                    "step_9": "Constraint Synthesis",
+                    "step_10": "Verdict Engine",
+                    "step_11": "Audit / Drift Layer",
+                }
+                status_callback(f"Committed: {step_map.get(step_id, step_id)}")
+
             current_calls = _call_counter()
+            # Retrieve usage metadata from the most recent LLM call
+            usage = getattr(complete_structured, "last_usage", {})
+            
             envelope = StepOutputEnvelope(
                 step_id=step_id,
                 content=payload,
@@ -197,6 +220,7 @@ class ProcedureRunner:
                 llm_calls_used=current_calls,
                 time_box_status="within_budget",
                 structured_output_dict=payload,
+                usage_metadata=usage,
             )
             step_envelopes.append(envelope)
             prior_outputs[step_id] = payload
@@ -218,6 +242,7 @@ class ProcedureRunner:
         try:
             # Step 1 — Frame validation.
             print(f"[PROCESS] Initializing Step 1: Frame Validator...")
+            if status_callback: status_callback("Initializing Step 1: Frame Validator...")
             step_1 = frame_validator.validate(input_frame)
             commit_step("step_1", step_1)
             if step_1.get("verdict") == "invalid":
@@ -237,6 +262,7 @@ class ProcedureRunner:
 
             # Step 2 — Family-axis decomposition.
             print(f"[PROCESS] Transitioning to Step 2: Object Decomposer...")
+            if status_callback: status_callback("Propagating Step 2: Object Decomposer...")
             step_2 = object_decomposer.decompose(
                 input_frame,
                 run_context=run_context,
@@ -245,10 +271,12 @@ class ProcedureRunner:
             commit_step("step_2", step_2)
 
             # Step 3 — Surface assumptions.
+            if status_callback: status_callback("Extracting Step 3: Normalization Layer...")
             step_3 = frame_validator.surface_assumptions(input_frame)
             commit_step("step_3", step_3)
 
             # Step 4 — Hypotheses with distinguishing predictions.
+            if status_callback: status_callback("Synthesizing Step 4: Hypothesis Construction...")
             step_4 = (
                 hypothesis_validator
                 .enumerate_hypotheses_with_distinguishing_predictions(
@@ -260,6 +288,7 @@ class ProcedureRunner:
             commit_step("step_4", step_4)
 
             # Step 5 — Failure conditions per hypothesis.
+            if status_callback: status_callback("Analyzing Step 5: Falsification Design...")
             step_5 = hypothesis_validator.failure_conditions_per_hypothesis(
                 step_4,
                 run_context=run_context,
@@ -268,6 +297,7 @@ class ProcedureRunner:
             commit_step("step_5", step_5)
 
             # Step 6 — Multi-scale relations.
+            if status_callback: status_callback("Relating Step 6: Multi-Scale Propagation...")
             step_6 = object_decomposer.multi_scale_relate(
                 step_2,
                 run_context=run_context,
@@ -279,6 +309,7 @@ class ProcedureRunner:
             # (FrameValidator deeper-frame-rejection) is generated alongside
             # but the canonical committed envelope tracks mode A per
             # build plan §4.1 (Step 8 reads mode A only).
+            if status_callback: status_callback("Evaluating Step 7: Outside-Frame Generation...")
             step_7_modeA = (
                 branching_roadmap_engine
                 .outside_frame_trajectories_bre_feed(step_4, step_5)
@@ -316,11 +347,13 @@ class ProcedureRunner:
 
             # Step 8 — Stage-gated roadmap.
             print(f"[PROCESS] Transitioning to Step 8: Branching Roadmap Engine...")
+            if status_callback: status_callback("Developing Step 8: Branching Roadmap Engine...")
             step_8 = branching_roadmap_engine.stage_gated_roadmap(step_7_modeA)
             commit_step("step_8", step_8)
 
             # Step 9 — Governance verdict + confidence + uncertainty.
             print(f"[PROCESS] Transitioning to Step 9: Governance Kernel (Article VI Adjudication)...")
+            if status_callback: status_callback("Adjudicating Step 9: Governance Kernel...")
             step_9 = (
                 governance_kernel
                 .verdict_with_confidence_and_uncertainty(
@@ -348,6 +381,7 @@ class ProcedureRunner:
                     halt_reason=str(step_9.get("verdict_detail") or "refuse"),
                 )
                 # Step 10 — constrained post-refusal closure (no LLM call).
+                if status_callback: status_callback("G0 Refusal: Finalizing closure...")
                 step_10 = operative_truth_separator.separate_for_refusal(
                     prior_outputs,
                     run_context=run_context,
@@ -356,6 +390,7 @@ class ProcedureRunner:
             else:
                 # Step 10 — Operative vs theoretical separation (live path).
                 print(f"[PROCESS] Transitioning to Step 10: Operative Truth Separator (Final Verdict)...")
+                if status_callback: status_callback("Finalizing Step 10: Verdict Engine...")
                 step_10 = (
                     operative_truth_separator
                     .separate_operative_from_theoretical(
@@ -370,6 +405,7 @@ class ProcedureRunner:
             # closing summary as a structured event payload + commit a
             # synthesized envelope so the procedure step is represented in
             # RunReport.step_outputs.
+            if status_callback: status_callback("Auditing Step 11: Audit / Drift Layer...")
             run_summary = {
                 "run_id": run_context.run_id,
                 "case_id": run_context.case_id,

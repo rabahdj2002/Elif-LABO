@@ -214,7 +214,7 @@ class FrameValidator:
         model_id = (
             self._run_context.model_id
             if self._run_context
-            else "claude-sonnet-4-6"
+            else "sonnet"
         )
         fixture_id = ""
         if offline_mode:

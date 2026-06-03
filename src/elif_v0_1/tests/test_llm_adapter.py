@@ -194,7 +194,7 @@ class TestModuleConstants(unittest.TestCase):
 
     def test_default_model_is_claude_sonnet_4_6(self) -> None:
         # Step 8 §8.1 operator-approved model.
-        self.assertEqual(DEFAULT_MODEL_ID, "claude-sonnet-4-6")
+        self.assertEqual(DEFAULT_MODEL_ID, "claude-3-5-sonnet-20240620")
 
     def test_step_schemas_cover_all_eleven_steps(self) -> None:
         for i in range(1, 12):

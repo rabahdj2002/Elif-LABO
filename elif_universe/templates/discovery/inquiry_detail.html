@@ -3,50 +3,49 @@
 {% block content %}
 <div class="max-w-6xl mx-auto">
     <!-- Breadcrumbs -->
-    <nav class="flex items-center space-x-2 text-xs text-gray-500 mb-8 uppercase tracking-widest">
-        <a href="{% url 'discovery:system_map' %}" class="hover:text-blue-400">Discovery</a>
-        <span>/</span>
-        <span class="text-gray-300">{{ inquiry.case_id }}</span>
+    <nav class="flex items-center space-x-2 text-[10px] md:text-xs text-gray-500 mb-8 uppercase tracking-widest overflow-x-auto whitespace-nowrap pb-2 no-scrollbar">
+        <a href="{% url 'discovery:system_map' %}" class="hover:text-blue-400 shrink-0">Discovery Archive</a>
+        <span class="shrink-0">/</span>
+        <a href="{% url 'discovery:topic_detail' inquiry.topic %}" class="hover:text-blue-400 shrink-0">{{ inquiry.topic }}</a>
+        <span class="shrink-0">/</span>
+        <span class="text-gray-300 shrink-0">{{ inquiry.case_id }}</span>
     </nav>
 
-    <div class="mb-16 flex justify-between items-start">
-        <div>
-            <h1 class="text-4xl font-bold mb-2">{{ inquiry.core_question }}</h1>
-            <p class="text-gray-400 text-sm italic">Status: Monitoring decision-logic chain...</p>
+    <div class="mb-8 md:mb-16 flex flex-col md:flex-row justify-between items-start space-y-6 md:space-y-0 text-center md:text-left">
+        <div class="w-full md:w-auto">
+            <h1 class="text-xl md:text-4xl font-black md:font-bold mb-2 break-words leading-tight">{{ inquiry.core_question }}</h1>
+            <p class="text-gray-400 text-[10px] md:text-sm italic uppercase tracking-widest font-mono opacity-60">STATUS: MONITORING COGNITIVE CHAIN</p>
         </div>
         
-        <div class="flex space-x-3">
-            <button hx-post="{% url 'discovery:run_pulse' inquiry.pk %}"
+        <div class="w-full md:w-auto flex flex-col space-y-4">
+            <button hx-post="{% url 'discovery:sync_engine' inquiry.pk %}"
                     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                     hx-swap="none"
-                    hx-indicator="#pulse-indicator"
-                    class="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-xl transition-all flex items-center space-x-4 shadow-xl shadow-blue-900/30">
-                <i class="fa-solid fa-bolt-lightning"></i>
-                <span class="font-bold tracking-widest uppercase text-sm">Execute 11-Step Engine</span>
-                <span id="pulse-indicator" class="htmx-indicator ml-2">
-                    <i class="fa-solid fa-atom animate-spin"></i>
-                </span>
+                    hx-indicator="#global-sync-overlay"
+                    class="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white px-6 md:px-10 py-3 md:py-4 rounded-xl transition-all flex items-center justify-center space-x-3 md:space-x-4 shadow-xl shadow-blue-900/30">
+                <i class="fa-solid fa-bolt-lightning text-xs md:text-base"></i>
+                <span class="font-bold tracking-widest uppercase text-[10px] md:text-sm">Execute 11-Step Engine</span>
             </button>
         </div>
     </div>
 
     <!-- Executive Summary / Active Focus -->
-    <div id="latest-insight" class="mb-16">
-        <div class="glass border-blue-500/20 p-8 rounded-3xl relative overflow-hidden">
+    <div id="latest-insight" class="mb-12 md:mb-16">
+        <div class="glass border-blue-500/20 p-6 md:p-8 rounded-3xl relative overflow-hidden">
             <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] -mr-32 -mt-32"></div>
             
             <div class="flex items-center space-x-3 mb-6">
                 <div class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-                <h3 class="text-[10px] font-mono uppercase tracking-[0.3em] text-blue-400">Current Intelligence Objective</h3>
+                <h3 class="text-[9px] md:text-[10px] font-mono uppercase tracking-[0.3em] text-blue-400">Intelligence Objective</h3>
             </div>
 
             <div id="insight-content" class="relative z-10">
                 {% with last_planet=inquiry.planets.all.reverse|first %}
                     {% if last_planet and last_planet.status == 'COMPLETED' %}
-                        <div class="flex justify-between items-start gap-12">
+                        <div class="flex flex-col md:flex-row justify-between items-start gap-6 md:gap-12 text-left">
                             <div class="flex-1">
-                                <h4 class="text-xl font-medium text-white mb-4 line-clamp-1">{{ last_planet.name }}</h4>
-                                <p class="text-gray-400 leading-relaxed font-light">
+                                <h4 class="text-lg md:text-xl font-medium text-white mb-3 line-clamp-2 break-words leading-tight">{{ last_planet.name }}</h4>
+                                <p class="text-[11px] md:text-xs text-gray-400 leading-relaxed font-light">
                                     {% if last_planet.data.validation %}
                                         {{ last_planet.data.validation }}
                                     {% elif last_planet.data.analysis %}
@@ -58,10 +57,10 @@
                                     {% endif %}
                                 </p>
                             </div>
-                            <div class="w-48 pt-2">
-                                <div class="text-[9px] uppercase tracking-widest text-gray-500 mb-2">Stage Confidence</div>
+                            <div class="w-full md:w-48 pt-4 md:pt-2 border-t md:border-t-0 border-white/5">
+                                <div class="text-[8px] md:text-[9px] uppercase tracking-widest text-gray-500 mb-2">Stage Stability</div>
                                 <div class="flex items-center space-x-3">
-                                    <span class="text-2xl font-mono text-white">{{ last_planet.data.confidence|default:"94" }}<span class="text-xs text-blue-500">%</span></span>
+                                    <span class="text-xl md:text-2xl font-mono text-white">{{ last_planet.data.confidence|default:"94" }}<span class="text-xs text-blue-500">%</span></span>
                                     <div class="flex-1 h-[2px] bg-gray-800 rounded-full overflow-hidden">
                                         <div class="h-full bg-blue-500" style="width: {{ last_planet.data.confidence|default:94 }}%"></div>
                                     </div>
@@ -80,38 +79,38 @@
     </div>
 
     <!-- Premium Strategic Roadmap -->
-    <div class="mb-24">
-        <div class="flex justify-between items-end mb-10">
+    <div class="mb-16 md:mb-24 px-1 md:px-0">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 md:mb-10 space-y-4 md:space-y-0">
             <div>
-                <h4 class="text-[10px] uppercase tracking-[0.4em] text-blue-500 font-bold mb-2">Strategic Navigation Path</h4>
-                <h2 class="text-2xl font-semibold text-white">Inquiry Roadmap</h2>
+                <h4 class="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-blue-500 font-bold mb-1 md:mb-2">Strategic Navigation Path</h4>
+                <h2 class="text-xl md:text-2xl font-semibold text-white">Inquiry Roadmap</h2>
             </div>
-            <div class="flex items-center space-x-6">
+            <div class="flex flex-wrap items-center gap-4 md:gap-6">
                 <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    <span class="text-[10px] uppercase tracking-widest text-gray-500">Validated</span>
+                    <span class="text-[9px] md:text-[10px] uppercase tracking-widest text-gray-500">Validated</span>
                 </div>
                 <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                    <span class="text-[10px] uppercase tracking-widest text-gray-500">Active</span>
+                    <span class="text-[9px] md:text-[10px] uppercase tracking-widest text-gray-500">Active</span>
                 </div>
                 <div class="flex items-center space-x-2">
                     <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
-                    <span class="text-[10px] uppercase tracking-widest text-gray-500">Uncertain</span>
+                    <span class="text-[9px] md:text-[10px] uppercase tracking-widest text-gray-500">Uncertain</span>
                 </div>
             </div>
         </div>
 
         <div class="relative">
             <!-- Central Vertical Spine -->
-            <div class="absolute left-[39px] top-0 bottom-0 w-[1px] bg-gradient-to-b from-blue-500/50 via-gray-800 to-transparent"></div>
+            <div class="absolute left-[31px] md:left-[39px] top-0 bottom-0 w-[1px] bg-gradient-to-b from-blue-500/50 via-gray-800 to-transparent"></div>
 
-            <div class="space-y-12">
+            <div class="space-y-8 md:space-y-12">
                 {% for planet in planets %}
                 <div class="relative flex items-start group">
                     <!-- Status Indicator -->
-                    <div class="relative z-10 mr-10">
-                        <div class="w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-500 border
+                    <div class="relative z-10 mr-5 md:mr-10">
+                        <div class="w-16 h-16 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-500 border
                                     {% if planet.status == 'COMPLETED' %}
                                         bg-green-500/10 border-green-500/30 text-green-400
                                     {% elif planet.status == 'IN_PROGRESS' %}
@@ -121,53 +120,53 @@
                                     {% else %}
                                         bg-gray-900 border-gray-800 text-gray-600
                                     {% endif %}">
-                            <i class="fa-solid {{ planet.icon_class }} text-xl"></i>
+                            <i class="fa-solid {{ planet.icon_class }} text-base md:text-xl"></i>
                         </div>
                         {% if not forloop.last %}
-                        <div class="absolute top-20 left-1/2 -translate-x-1/2 w-[1px] h-12 bg-gray-800"></div>
+                        <div class="absolute top-16 md:top-20 left-1/2 -translate-x-1/2 w-[1px] h-8 md:h-12 bg-gray-800"></div>
                         {% endif %}
                     </div>
 
                     <!-- Stage Card -->
-                    <div class="flex-1 bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 hover:bg-white/[0.04] hover:border-white/10 transition-all cursor-pointer overflow-hidden relative group/card">
+                    <div class="flex-1 bg-white/[0.02] border border-white/[0.05] rounded-2xl p-5 md:p-6 hover:bg-white/[0.04] hover:border-white/10 transition-all cursor-pointer overflow-hidden relative group/card">
                         {% if planet.status == 'COMPLETED' %}
-                        <div class="absolute top-0 right-0 p-4">
-                            <i class="fa-solid fa-circle-check text-green-500/50 text-xs"></i>
+                        <div class="absolute top-0 right-0 p-3 md:p-4">
+                            <i class="fa-solid fa-circle-check text-green-500/50 text-[10px]"></i>
                         </div>
                         {% endif %}
                         
-                        <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-col md:flex-row md:justify-between items-start mb-4 space-y-2 md:space-y-0 text-left">
                             <div>
-                                <div class="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 mb-1">Stage 0{{ planet.order }}</div>
-                                <h3 class="text-base font-medium text-white group-hover/card:text-blue-400 transition-colors">{{ planet.name }}</h3>
+                                <div class="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 mb-0.5 md:mb-1">Stage 0{{ planet.order }}</div>
+                                <h3 class="text-sm md:text-base font-medium text-white group-hover/card:text-blue-400 transition-colors">{{ planet.name }}</h3>
                             </div>
                             {% if planet.data.confidence %}
-                            <div class="text-right">
-                                <div class="text-[9px] uppercase tracking-widest text-gray-500 mb-1">Confidence Score</div>
+                            <div class="text-left md:text-right w-full md:w-auto">
+                                <div class="text-[8px] uppercase tracking-widest text-gray-500 mb-1">Stability Score</div>
                                 <div class="flex items-center space-x-2">
-                                    <div class="w-16 h-1 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="w-12 md:w-16 h-1 bg-gray-800 rounded-full overflow-hidden">
                                         <div class="h-full bg-blue-500" style="width: {{ planet.data.confidence }}%"></div>
                                     </div>
-                                    <span class="text-[10px] font-mono text-blue-400">{{ planet.data.confidence }}%</span>
+                                    <span class="text-[9px] md:text-[10px] font-mono text-blue-400">{{ planet.data.confidence }}%</span>
                                 </div>
                             </div>
                             {% endif %}
                         </div>
 
                         <!-- Key Finding / Content Snippet -->
-                        <div class="text-sm text-gray-400 font-light leading-relaxed mb-4">
+                        <div class="text-xs md:text-sm text-gray-400 font-light leading-relaxed mb-4">
                             {% if planet.status == 'COMPLETED' %}
                                 {% if planet.data.analysis %}
-                                    {{ planet.data.analysis|truncatewords:25 }}
+                                    {{ planet.data.analysis|truncatewords:15 }}
                                 {% elif planet.data.content %}
-                                    {{ planet.data.content|truncatewords:25 }}
+                                    {{ planet.data.content|truncatewords:15 }}
                                 {% else %}
-                                    Analysis finalized. Click to review detailed findings and evidence logs.
+                                    Analysis finalized. Click to review detailed findings.
                                 {% endif %}
                             {% elif planet.status == 'IN_PROGRESS' %}
-                                Engine actively decomposing objects and mapping logical dependencies...
+                                Engine actively decomposing objects and mapping dependencies...
                             {% else %}
-                                Pending activation. This stage requires validation of all preceding logical nodes.
+                                Pending activation. Requires validation of all preceding nodes.
                             {% endif %}
                         </div>
 

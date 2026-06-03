@@ -7,131 +7,190 @@
     .htmx-request.htmx-indicator { display: flex !important; }
 </style>
 
-<div class="max-w-[1500px] mx-auto px-6 h-[calc(100vh-80px)] overflow-hidden flex flex-col">
-    <!-- Global Sync Overlay -->
-    <div id="global-sync-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center htmx-indicator pointer-events-none">
-        <div class="glass p-16 rounded-[4rem] border border-blue-500/30 flex flex-col items-center space-y-8 shadow-2xl shadow-blue-500/30">
-            <div class="relative w-32 h-32">
-                <div class="absolute inset-0 border-[12px] border-blue-500/10 rounded-full"></div>
-                <div class="absolute inset-0 border-[12px] border-t-blue-500 rounded-full animate-spin"></div>
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <i class="fa-solid fa-atom text-blue-400 text-4xl animate-pulse"></i>
-                </div>
+<div class="max-w-[1500px] w-full mx-auto px-4 md:px-6 flex-1 flex flex-col min-h-0 overflow-y-auto">
+    <!-- NAVIGATION HEADER -->
+    <header class="flex flex-col items-center py-4 border-b border-white/5 shrink-0 px-2 lg:px-8">
+        <div class="w-full flex flex-col lg:flex-row items-center justify-between space-y-4 lg:space-y-0">
+            <div class="flex items-center space-x-4 min-w-[100px] lg:min-w-[200px]">
+                <a href="/" class="text-white/40 hover:text-white transition-colors" title="Home">
+                    <i class="fa-solid fa-home text-sm"></i>
+                </a>
+                {% if inquiry.topic %}
+                <div class="h-4 w-[1px] bg-white/10"></div>
+                <a href="{% url 'discovery:topic_detail' inquiry.topic %}" class="text-white/40 hover:text-white transition-colors flex items-center space-x-2" title="Back to Topic Sector">
+                    <i class="fa-solid fa-folder-open text-sm"></i>
+                    <span class="text-[8px] font-black uppercase tracking-widest hidden lg:block">{{ inquiry.topic }}</span>
+                </a>
+                {% endif %}
             </div>
-            <div class="text-center">
-                <h5 class="text-2xl font-bold text-white uppercase tracking-[0.6em] mb-3 planet-nav">Engine Propagation</h5>
-                <p class="text-xs text-blue-400 font-mono tracking-widest italic animate-bounce">Executing 11-Step Cognitive Pipeline...</p>
-            </div>
-        </div>
-    </div>
 
-    <!-- 1. NAVIGATION HEADER -->
-    <header class="flex flex-col items-center py-4 border-b border-white/5 shrink-0">
-        <div class="w-full flex flex-col lg:flex-row items-center justify-center space-y-4 lg:space-y-0 lg:space-x-12">
-            <nav class="flex items-center justify-center space-x-1 lg:space-x-2 py-1 overflow-x-auto no-scrollbar">
+            <nav class="flex items-center justify-center space-x-1 lg:space-x-2 py-1 overflow-x-auto no-scrollbar w-full lg:w-auto px-2">
                 {% for r_val, r_label in nav_rooms %}
                 <a href="{% url 'discovery:room_view' inquiry.pk r_val|lower %}" 
-                   class="whitespace-nowrap px-4 lg:px-6 py-2 rounded-xl text-[9px] lg:text-[10px] uppercase tracking-widest font-bold transition-all
+                   class="whitespace-nowrap px-3 lg:px-6 py-2 rounded-xl text-[8px] lg:text-[10px] uppercase tracking-widest font-bold transition-all
                           {% if room_type == r_val %}text-blue-400 bg-blue-500/10 border border-blue-500/20 shadow-lg shadow-blue-500/10{% else %}text-gray-500 hover:text-white hover:bg-white/5 border border-transparent{% endif %}">
                     {{ r_label|slice:":-5" }}
                 </a>
                 {% endfor %}
             </nav>
             
-            <div class="flex items-center shrink-0">
-                <button {% if system_settings.offline_mode %}
-                        onclick="window.pendingSyncUrl='{% url 'discovery:sync_engine' inquiry.pk %}'; showOfflineNotice()"
-                        {% else %}
-                        hx-post="{% url 'discovery:sync_engine' inquiry.pk %}"
-                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                        hx-indicator="#global-sync-overlay, #sync-spinner"
-                        {% endif %}
-                        class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-2xl text-[9px] uppercase tracking-[0.2em] font-black shadow-xl shadow-blue-900/40 transition-all flex items-center group">
-                    <i id="sync-spinner" class="fa-solid fa-sync mr-2 group-[.htmx-request]:animate-spin"></i>
-                    <span class="group-[.htmx-request]:opacity-50">Sync Pulse</span>
-                </button>
+            <div class="flex items-center shrink-0 min-w-[100px] lg:min-w-[200px] justify-end space-x-4">
+                <a href="{% url 'discovery:delete' inquiry.pk %}" 
+                   onclick="return confirm('Sovereign Override: Permanently delete this inquiry thread?')"
+                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/5 hover:bg-red-500/20 text-red-500/30 hover:text-red-500 transition-all border border-red-500/10 hover:border-red-500/30">
+                    <i class="fa-solid fa-trash-can text-[10px]"></i>
+                </a>
             </div>
         </div>
     </header>
 
-    <!-- 2. MAIN SCROLLABLE AREA -->
-    <div class="flex-1 overflow-y-auto no-scrollbar pt-6 pb-12">
-        <div class="space-y-12">
+    <!-- 2. MAIN AREA -->
+    <div class="flex-1 min-h-0 py-4 flex flex-col">
+        <div class="flex-1 min-h-0">
             
-            <!-- Recursive Inquiry Evolution (Top-Mounted) -->
-            <section class="max-w-4xl mx-auto w-full">
-                <div class="glass p-6 rounded-[2.5rem] bg-blue-500/[0.02] border-blue-500/10">
-                    <form hx-post="{% url 'discovery:refine_inquiry' inquiry.pk %}" 
-                          hx-indicator="#global-sync-overlay"
-                          class="relative flex flex-col md:flex-row items-center gap-4">
-                        {% csrf_token %}
-                        <div class="flex-1 w-full relative">
-                            <i class="fa-solid fa-wand-magic-sparkles absolute left-4 top-1/2 -translate-y-1/2 text-blue-500/40 text-sm"></i>
-                            <input type="text" 
-                                   name="directive" 
-                                   placeholder="Refine inquiry with new constraints..."
-                                   class="w-full bg-black/40 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white focus:border-blue-500/50 outline-none transition-all text-xs placeholder:text-gray-700">
-                        </div>
-                        <button type="submit" 
-                                class="w-full md:w-auto bg-white/5 hover:bg-white/10 text-white border border-white/10 px-6 py-3 rounded-xl text-[9px] font-bold uppercase tracking-[0.2em] transition-all">
-                            Evolve
-                        </button>
-                    </form>
-                </div>
-            </section>
-
             <!-- Layout Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch h-full min-h-0">
                 
-                <!-- Sidebar (Left) -->
-                <aside class="lg:col-span-3 space-y-8 glass p-6 rounded-[2rem] border-white/5 bg-white/[0.01]">
-                    <div>
-                        <h4 class="text-[9px] uppercase tracking-[0.4em] text-gray-500 mb-4 font-bold">Inquiry State</h4>
-                        <p class="text-[11px] font-medium text-gray-300 leading-relaxed italic">"{{ inquiry.current_question_state }}"</p>
-                    </div>
-
-                    <div class="py-4 border-y border-white/5 flex justify-between items-center">
-                        <span class="text-[9px] text-gray-500 uppercase font-bold tracking-widest">Confidence</span>
-                        <span class="text-xs font-mono text-blue-400 font-bold">
-                            {% if inquiry.confidence_evolution %}{{ inquiry.confidence_evolution|last }}%{% else %}--{% endif %}
-                        </span>
-                    </div>
-
-                    <div>
-                        <h4 class="text-[9px] uppercase tracking-[0.4em] text-gray-500 mb-4 font-bold">Cognitive History</h4>
-                        <div class="space-y-3 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
-                            {% for entry in inquiry.history_log reversed %}
-                            <div class="p-3 rounded-xl {% if entry.event == 'Question Refinement' %}bg-blue-500/10 border-blue-500/20{% else %}bg-white/5 border-white/5{% endif %} border transition-all">
-                                <div class="flex justify-between items-center mb-1">
-                                    <span class="text-[7px] uppercase tracking-widest text-gray-600 font-black">{{ entry.event }}</span>
-                                    <span class="text-[6px] text-gray-800 font-mono">{{ entry.timestamp|slice:6 }}</span>
-                                </div>
-                                <p class="text-[9px] text-gray-400 leading-snug">
-                                    {{ entry.description|default:entry.event|truncatewords:10 }}
-                                </p>
-                            </div>
-                            {% endfor %}
+                <!-- Room Content (Primary on Mobile) -->
+                <main class="lg:col-span-9 order-1 lg:order-2 h-[calc(100vh-320px)] lg:h-[calc(100vh-160px)] flex flex-col glass p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] border-white/5 bg-black/[0.1] overflow-hidden">
+                    <div class="flex-1 overflow-y-scroll pr-2 scrollbar-hide">
+                        <div class="min-h-full">
+                            {% block room_projection %}{% endblock %}
                         </div>
-                    </div>
-
-                    <div class="pt-4">
-                        <a href="{% url 'discovery:delete' inquiry.pk %}" 
-                           onclick="return confirm('DANGER: Permanent deletion?')"
-                           class="flex items-center justify-center py-2 rounded-xl text-red-500/30 hover:text-red-500 transition-all text-[8px] font-bold uppercase tracking-widest border border-red-500/10">
-                            Delete Inquiry
-                        </a>
-                    </div>
-                </aside>
-
-                <!-- Room Content (Right) -->
-                <main class="lg:col-span-9">
-                    <div class="w-full">
-                        {% block room_projection %}{% endblock %}
                     </div>
                 </main>
 
+                <!-- Sidebar (Secondary on Mobile) -->
+                <aside class="lg:col-span-3 order-2 lg:order-1 h-auto lg:h-full flex flex-col space-y-6 glass p-6 rounded-[2rem] border-white/5 bg-white/[0.01]">
+                    <div class="shrink-0">
+                        <h4 class="text-[9px] uppercase tracking-[0.4em] text-gray-500 mb-2 font-bold">Inquiry State</h4>
+                        <div class="max-h-24 md:max-h-32 overflow-y-scroll scrollbar-hide">
+                            <p class="text-[10px] md:text-[11px] font-medium text-gray-400 md:text-gray-300 leading-relaxed italic">"{{ inquiry.current_question_state }}"</p>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 space-y-6 overflow-y-auto pr-2 scrollbar-hide">
+                        <!-- Confidence Index -->
+                        <div class="p-4 rounded-2xl bg-black/20 border border-white/5">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[8px] uppercase tracking-widest text-gray-500 font-bold">Confidence Index</span>
+                                <span class="text-[10px] font-mono text-blue-400 font-black">{{ inquiry.confidence|default:"85" }}%</span>
+                            </div>
+                            <div class="h-1 bg-gray-900 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500/40 w-[85%]"></div>
+                            </div>
+                        </div>
+
+                        <!-- Stability Index -->
+                        <div class="p-4 rounded-2xl bg-black/20 border border-white/5">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[8px] uppercase tracking-widest text-gray-500 font-bold">Stability Index</span>
+                                <span class="text-[10px] font-mono text-green-400 font-black">{{ inquiry.stability|default:"92" }}%</span>
+                            </div>
+                            <div class="h-1 bg-gray-900 rounded-full overflow-hidden">
+                                <div class="h-full bg-green-500/40 w-[92%] shadow-[0_0_10px_rgba(34,197,94,0.2)]"></div>
+                            </div>
+                        </div>
+
+                        <!-- Topology Metadata -->
+                        <div class="space-y-3 pt-4 border-t border-white/5">
+                            <div class="flex justify-between text-[8px] uppercase tracking-widest">
+                                <span class="text-gray-600">Case ID</span>
+                                <span class="text-gray-400 font-mono">{{ inquiry.case_id|slice:":8" }}</span>
+                            </div>
+                            <div class="flex justify-between text-[8px] uppercase tracking-widest">
+                                <span class="text-gray-600">Topology</span>
+                                <span class="text-gray-400 font-mono">{{ inquiry.topology|default:"Alpha-Engine" }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sync Status Indicator -->
+                    <div class="pt-4 border-t border-white/5 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                            <span class="text-[8px] uppercase tracking-widest text-gray-500 font-bold">Engine Sync: Active</span>
+                        </div>
+                        <div id="sync-spinner" class="htmx-indicator">
+                            <i class="fa-solid fa-circle-notch fa-spin text-blue-500 text-[10px]"></i>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <!-- Divergence Modal (Persistent/Global) -->
+    <div id="divergence-tray" class="fixed bottom-0 left-0 w-full max-h-[35vh] overflow-hidden border-t border-purple-500/20 bg-black/80 backdrop-blur-3xl transition-all duration-500 transform translate-y-full opacity-0 z-50">
+        <div class="w-full px-10 py-8 flex flex-col h-full">
+            <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+                <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+                    <h5 class="text-[10px] uppercase tracking-[0.5em] text-purple-400 font-black">Reality Forks Detected</h5>
+                </div>
+                <button onclick="toggleDivergence()" class="text-gray-500 hover:text-white transition-colors">
+                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-x-scroll flex flex-row items-stretch space-x-6 pb-8 custom-horizontal-scroll min-h-0" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch;">
+                {% for divergence in inquiry.divergences %}
+                <div class="shrink-0 w-80 min-h-[180px]">
+                    <form hx-post="{% url 'discovery:spawn_branch' inquiry.id %}" 
+                          hx-indicator="#global-sync-overlay, #sync-spinner"
+                          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                          class="h-full">
+                        <input type="hidden" name="title" value="{{ divergence.title }}">
+                        <input type="hidden" name="description" value="{{ divergence.impact_if_true }}">
+                        <button type="submit" class="w-full h-full text-left glass p-5 rounded-[2rem] border-white/5 bg-white/[0.03] hover:bg-purple-500/10 hover:border-purple-500/30 transition-all group relative overflow-hidden flex flex-col">
+                            <div class="absolute -right-4 -top-4 w-16 h-16 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/20"></div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-[9px] font-black text-purple-400 uppercase tracking-widest">{{ divergence.title }}</span>
+                                <span class="text-[7px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 font-bold">{{ divergence.confidence_impact }}</span>
+                            </div>
+                            <h6 class="text-[12px] font-bold text-white mb-4 line-clamp-3 leading-relaxed flex-1">{{ divergence.impact_if_true }}</h6>
+                            <div class="flex items-center text-[8px] text-gray-500 uppercase tracking-widest font-black group-hover:text-purple-400 transition-colors">
+                                <span>Evolve Trajectory</span>
+                                <i class="fa-solid fa-code-branch ml-2 text-purple-500 animate-pulse"></i>
+                            </div>
+                        </button>
+                    </form>
+                </div>
+                {% empty %}
+                <div class="w-full text-center py-4">
+                    <p class="text-[10px] text-gray-600 italic">No unresolved trajectories detected in this topology.</p>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
 </div>
+
+<button id="divergence-trigger" onclick="toggleDivergence()" class="fixed bottom-6 right-8 z-[60] px-6 py-3 rounded-2xl bg-purple-600 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-purple-900/40 border border-purple-500/50 hover:bg-purple-500 transition-all">
+    <i class="fa-solid fa-code-branch mr-2"></i>
+    Analyze Diversions ({{ inquiry.divergences|length }})
+</button>
+
+<script>
+    function toggleDivergence() {
+        const tray = document.getElementById('divergence-tray');
+        const trigger = document.getElementById('divergence-trigger');
+        if (tray.classList.contains('translate-y-full')) {
+            tray.classList.remove('translate-y-full', 'opacity-0');
+            trigger.innerHTML = '<i class="fa-solid fa-xmark mr-2"></i> Close Divergions';
+            trigger.classList.replace('bg-purple-600', 'bg-black/60');
+        } else {
+            tray.classList.add('translate-y-full', 'opacity-0');
+            trigger.innerHTML = '<i class="fa-solid fa-code-branch mr-2"></i> Analyze Diversions ({{ inquiry.divergences|length }})';
+            trigger.classList.replace('bg-black/60', 'bg-purple-600');
+        }
+    }
+
+    // Auto-show if new divergences exist on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        if ({{ inquiry.divergences|length }} > 0) {
+            setTimeout(toggleDivergence, 1500);
+        }
+    });
+</script>
 {% endblock %}

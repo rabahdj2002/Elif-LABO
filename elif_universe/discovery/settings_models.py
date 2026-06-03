@@ -5,15 +5,13 @@ class SystemSettings(models.Model):
     Control layer for the ELIF Engine and UX parameters.
     """
     engine_model_choices = [
-        ('gpt-4o', 'GPT-4o (High Accuracy)'),
-        ('claude-sonnet-4-6', 'Claude Sonnet (High Reasoning)'),
-        ('gpt-4-turbo', 'GPT-4 Turbo'),
+        ('sonnet', 'Claude 3.5 Sonnet (Canonical)'),
     ]
 
     # Engine Config
-    active_model = models.CharField(max_length=50, choices=engine_model_choices, default='claude-sonnet-4-6')
+    active_model = models.CharField(max_length=50, choices=engine_model_choices, default='sonnet')
     anthropic_api_key = models.CharField(max_length=255, blank=True, null=True, help_text="API Key for Claude models")
-    openai_api_key = models.CharField(max_length=255, blank=True, null=True, help_text="API Key for GPT models")
+    # Gemini and OpenAI removed per operator directive 2026-06-03
     offline_mode = models.BooleanField(default=False, help_text="Simulate reasoning without API calls")
     reasoning_depth = models.IntegerField(default=7, help_text="Depth of Step 6 propagation")
     enable_web_search = models.BooleanField(default=True)
@@ -22,6 +20,7 @@ class SystemSettings(models.Model):
     # UX Config
     linear_ui_mode = models.BooleanField(default=True)
     auto_refresh_ms = models.IntegerField(default=5000)
+    debug_mode = models.BooleanField(default=False, help_text="Expose engine telemetry during execution")
     
     updated_at = models.DateTimeField(auto_now=True)
 

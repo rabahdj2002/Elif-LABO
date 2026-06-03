@@ -1,7 +1,7 @@
 """ELIF v0.1 LLM adapter — single frontier-LLM call boundary.
 
 Per `notes/elif_v0_1_build_plan.md` §1.2: one adapter file, no multi-family
-yet. Per Step 8 decision package §8.1: model = `claude-sonnet-4-6`.
+yet. Per Step 8 decision package §8.1: model = `claude-3-5-sonnet-20240620`.
 Per §8.4: per-run cost cap implemented as `max_calls` ceiling (default 22).
 Per §8.8: offline fixture mode is shipped in v0.1; fixtures are deterministic.
 Per §8.9: each LLM call starts fresh (no sub-behavior state retention).
@@ -50,10 +50,11 @@ from .base import (
     LLMCallCapError,
     SchemaValidationError,
 )
+from .model_registry import MODEL_REGISTRY, resolve_model_id
 
 # ---- Model + paths ---------------------------------------------------------
 # Operator-approved per Step 8 §8.1.
-DEFAULT_MODEL_ID: str = "claude-sonnet-4-6"
+DEFAULT_MODEL_ID: str = MODEL_REGISTRY["sonnet"]
 
 # Tool name used in tool-use forcing. Single tool; deterministic.
 _STRUCTURED_TOOL_NAME: str = "emit_structured_output"
@@ -212,6 +213,17 @@ def _call_anthropic_tool_use(
     except Exception as exc:
         raise LLMAdapterError(f"anthropic API call failed: {exc}") from exc
 
+    # Spend Calculation Logic (Article II Financial Tracking)
+    input_tokens = getattr(message.usage, "input_tokens", 0)
+    output_tokens = getattr(message.usage, "output_tokens", 0)
+    # Store in metadata for caller (engine_bridge) to persist
+    _last_usage = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "model_id": model_id
+    }
+    complete_structured.last_usage = _last_usage
+
     # Find the tool_use block; pull its `input`.
     content_blocks = getattr(message, "content", None) or []
     for block in content_blocks:
@@ -264,10 +276,11 @@ def complete_structured(
     if offline_mode:
         payload = _load_offline_fixture(offline_fixture_id)
     else:
+        active_id = resolve_model_id(model_id or DEFAULT_MODEL_ID)
         payload = _call_anthropic_tool_use(
             prompt,
             output_schema,
-            model_id=model_id or DEFAULT_MODEL_ID,
+            model_id=active_id,
         )
 
     validate_against_schema(payload, output_schema)

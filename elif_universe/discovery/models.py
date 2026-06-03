@@ -12,11 +12,16 @@ class Inquiry(models.Model):
     while maintaining non-sovereign boundaries.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    case_id = models.CharField(max_length=100, unique=True, default=uuid.uuid4)
+    case_id = models.CharField(max_length=100, default=uuid.uuid4)
+    topic = models.CharField(max_length=255, default="General", help_text="The thematic folder/category for this inquiry.")
     core_question = models.TextField(help_text="The original input frame.")
     current_question_state = models.TextField(blank=True, help_text="The evolved inquiry state.")
     
     # Structured State (Corrigibility Substrate)
+    parent_inquiry = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
+    branch_name = models.CharField(max_length=255, blank=True, help_text="The name of the trajectory this branch represents.")
+    divergences = models.JSONField(default=list, help_text="First-class inquiry forks / competing futures.")
+    
     assumptions = models.JSONField(default=list, help_text="Load-bearing assumptions surfaced by Step 3.")
     evidence_map = models.JSONField(default=dict)
     hypothesis_set = models.JSONField(default=dict, help_text="Active and falsified possibilities.")
@@ -25,6 +30,7 @@ class Inquiry(models.Model):
     constraints = models.JSONField(default=list)
     history_log = models.JSONField(default=list, help_text="Traceable audit of all cognitive mutations.")
     confidence_evolution = models.JSONField(default=list)
+    current_status_msg = models.CharField(max_length=255, default="Initializing Engine...", blank=True)
     
     # Legacy compatibility fields (deprecated in UI)
     current_frame = models.JSONField(default=dict)
@@ -225,15 +231,42 @@ class RoomState(models.Model):
             }
 
         elif self.room_type == 'DECISION':
-            # Map Step 10 (Operative vs Theoretical)
+            # Map Step 10 (Operative vs Theoretical) + Inquiry Divergences
             step10 = find_planet("Step 10")
             
             self.room_data = {
                 "decision": step10.data.get("operative", ["N/A"])[0] if step10 and step10.data.get("operative") else "DIVERGENCE UNRESOLVED",
                 "summary": step10.data.get("absence_log", "") if step10 else "",
-                "requirements": step10.data.get("operative", []) if step10 else []
+                "requirements": step10.data.get("operative", []) if step10 else [],
+                "divergences": self.inquiry.divergences # First-class Navigable Trajectories
             }
 
         self.save()
+
+class SpendRecord(models.Model):
+    """
+    METRIC: REAL-TIME COST ACCUMULATION
+    Tracks every LLM call's financial footprint.
+    Prices (Canonical Sonnet 20241022):
+    Input: $3.00 / MTok
+    Output: $15.00 / MTok
+    """
+    inquiry = models.ForeignKey(Inquiry, on_delete=models.SET_NULL, null=True, blank=True, related_name='spend_records')
+    step_name = models.CharField(max_length=100, help_text="The ELIF reasoning step (e.g. Frame Validator)")
+    model_id = models.CharField(max_length=100)
+    input_tokens = models.IntegerField(default=0)
+    output_tokens = models.IntegerField(default=0)
+    cost_usd = models.DecimalField(max_digits=10, decimal_places=6, default=0.0)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def calculate_cost(self):
+        # Claude 3.5 Sonnet Prices
+        input_rate = 0.000003  # $3 / 1M
+        output_rate = 0.000015 # $15 / 1M
+        self.cost_usd = (self.input_tokens * input_rate) + (self.output_tokens * output_rate)
+        return self.cost_usd
+
+    def __str__(self):
+        return f"{self.timestamp.strftime('%Y-%m-%d %H:%M:%S')} | {self.step_name} | ${self.cost_usd:.4f}"
 
 

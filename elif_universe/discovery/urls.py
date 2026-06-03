@@ -9,8 +9,13 @@ urlpatterns = [
     path('inquiry/<pk>/', views.inquiry_detail, name='inquiry_detail'),
     path('inquiry/<pk>/room/<str:room_type>/', views.room_view, name='room_view'),
     path('inquiry/<pk>/sync/', views.sync_engine_pulse, name='sync_engine'),
+    path('inquiry/<pk>/branch/', views.spawn_branch_view, name='spawn_branch'),
     path('inquiry/<pk>/refine/', views.refine_inquiry, name='refine_inquiry'),
     path('inquiry/<pk>/reset/', views.reset_inquiry, name='reset'),
     path('inquiry/<pk>/delete/', views.delete_inquiry, name='delete'),
+    path('inquiry/<pk>/telemetry/', views.engine_telemetry, name='telemetry'),
     path('settings/', views.system_settings_view, name='settings'),
+    path('spend/', views.spend_history, name='spend_history'),
+    path('documentation/', views.documentation_view, name='documentation'),
+    path('topic/<str:topic_name>/', views.topic_detail, name='topic_detail'),
 ]

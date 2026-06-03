@@ -48,7 +48,7 @@ class RunContext:
         procedure_version  — e.g. "v1.0" (Step 8 §8.2 — v1.0 only at v0.1)
         offline_mode       — fixtures-only run (no network)
         max_llm_calls      — per-run cost cap (Step 8 §8.4 default: 22)
-        model_id           — e.g. "claude-sonnet-4-6" (Override default model)
+        model_id           — e.g. "claude-3-5-sonnet-20240620" (Override default model)
         started_at_iso     — ISO 8601 start timestamp (UTC recommended)
         run_id             — unique per-run identifier
     """
@@ -100,6 +100,7 @@ class StepOutputEnvelope:
     llm_calls_used: int
     time_box_status: str
     structured_output_dict: Dict[str, Any]
+    usage_metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.step_id not in PROCEDURE_STEP_IDS:

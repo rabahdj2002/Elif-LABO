@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELIF Universe | Decision Navigation</title>
+    <!-- ELIF favicon using Emoji as fallback if no asset exists -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧬</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -17,6 +19,24 @@
             font-family: 'Space Grotesk', sans-serif;
             overflow-x: hidden;
         }
+        /* Unified Global Spinner styles */
+        .htmx-indicator { 
+            display: none !important; 
+        }
+        .htmx-request .htmx-indicator,
+        .htmx-request.htmx-indicator { 
+            display: flex !important; 
+            pointer-events: auto !important;
+        }
+        
+        /* Manual trigger class for standard form submits */
+        .forced-show {
+            display: flex !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            visibility: visible !important;
+        }
+        
         .nebula-bg {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -36,23 +56,74 @@
         .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
         .glow-purple { box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
         .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
-        .htmx-indicator {
-            opacity: 0;
-            transition: opacity 200ms ease-in;
+        
+        /* Scrollbar Hider */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
         }
-        .htmx-request .htmx-indicator {
-            opacity: 1;
+        .scrollbar-hide {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
         }
-        .htmx-request.htmx-indicator {
-            opacity: 1;
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .custom-horizontal-scroll::-webkit-scrollbar {
+            height: 10px !important;
+            display: block !important;
+        }
+        .custom-horizontal-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-radius: 20px;
+        }
+        .custom-horizontal-scroll::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.6) !important;
+            border-radius: 20px;
+            border: 2px solid rgba(0, 0, 0, 0.4);
+        }
+        .custom-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(168, 85, 247, 0.9) !important;
+        }
+        .custom-horizontal-scroll {
+            scrollbar-width: thin !important;
+            scrollbar-color: rgba(168, 85, 247, 0.6) rgba(255, 255, 255, 0.05) !important;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
         }
         
         @media (max-width: 1024px) {
-            .side-nav { display: none; }
+            .side-nav { 
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                width: 80px !important;
+            }
+            .side-nav.mobile-active {
+                transform: translateX(0);
+                display: flex !important;
+            }
             main { margin-left: 0 !important; }
         }
     </style>
     <script>
+        function toggleMobileMenu() {
+            const nav = document.querySelector('.side-nav');
+            const overlay = document.getElementById('mobile-nav-overlay');
+            nav.classList.toggle('mobile-active');
+            overlay.classList.toggle('hidden');
+        }
+
+        function showEngineSpinner() {
+            const overlay = document.getElementById('global-sync-overlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                overlay.classList.add('forced-show');
+            }
+        }
+
         function copyToClipboard(button, text) {
             // Priority 1: Passed text argument. Priority 2: data-copy attribute
             const content = text || button.getAttribute('data-copy');
@@ -90,14 +161,56 @@
         }
     </script>
 </head>
-<body class="min-h-screen">
+<body class="h-screen flex flex-col overflow-hidden">
     <div class="nebula-bg"></div>
+
+    {% if user.is_authenticated %}
+    <!-- Mobile Top Bar -->
+    <header class="lg:hidden glass border-b border-white/10 p-4 flex items-center justify-between z-[60]">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-dna text-blue-400 text-xl"></i>
+            <span class="text-[10px] font-black text-blue-500 tracking-[0.2em] uppercase">ELIF Archive</span>
+        </div>
+        <button onclick="toggleMobileMenu()" class="w-10 h-10 border border-white/10 rounded-xl flex items-center justify-center text-gray-400">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </header>
+
+    <!-- Mobile Navigation Overlay -->
+    <div id="mobile-nav-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden lg:hidden"></div>
+    {% endif %}
+
+    <!-- Global Sync Overlay (Available to all templates) -->
+    <div id="global-sync-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] items-center justify-center htmx-indicator pointer-events-none">
+        <div class="glass p-16 rounded-[4rem] border border-blue-500/30 flex flex-col items-center space-y-8 shadow-2xl shadow-blue-500/30">
+            <div class="relative w-32 h-32">
+                <div class="absolute inset-0 border-[12px] border-blue-500/10 rounded-full"></div>
+                <div class="absolute inset-0 border-[12px] border-t-blue-500 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <i class="fa-solid fa-dna text-blue-400 text-4xl animate-pulse"></i>
+                </div>
+            </div>
+            <div class="text-center">
+                <h5 class="text-2xl font-bold text-white uppercase tracking-[0.6em] mb-3 planet-nav">Engine Propagation</h5>
+                <p class="text-xs text-blue-400 font-mono tracking-widest italic animate-bounce">Executing 11-Step Cognitive Pipeline...</p>
+            </div>
+        </div>
+    </div>
     
+    {% if user.is_authenticated %}
     <!-- Sidebar Navigation (Star Charts) -->
     <nav class="fixed left-0 top-0 h-full w-20 flex flex-col items-center py-8 glass border-r border-white/10 z-50 side-nav">
-        <div class="mb-12">
-            <a href="{% url 'discovery:system_map' %}">
-                <i class="fa-solid fa-atom text-blue-400 text-3xl animate-pulse hover:text-blue-300 transition-colors"></i>
+        <div class="mb-12 flex flex-col items-center">
+            <div class="text-[10px] font-black text-blue-500 mb-2 tracking-[0.2em] opacity-50">ELIF</div>
+            <a href="/" class="w-12 h-12 flex items-center justify-center bg-blue-600/20 rounded-2xl border border-blue-500/30 hover:bg-blue-600/30 transition-all group relative">
+                <i class="fa-solid fa-dna text-blue-400 text-2xl group-hover:rotate-180 transition-transform duration-1000"></i>
+                <span class="absolute left-16 top-3 bg-blue-600 text-[10px] px-2 py-1 rounded hidden group-hover:block whitespace-nowrap z-[200]">Home Archive</span>
+            </a>
+        </div>
+        <div class="mb-8">
+            <a href="{% url 'discovery:spend_history' %}" class="w-12 h-12 flex items-center justify-center bg-emerald-600/20 rounded-2xl border border-emerald-500/30 hover:bg-emerald-600/30 transition-all group relative">
+                <i class="fa-solid fa-wallet text-emerald-400 text-xl group-hover:scale-110 transition-transform"></i>
+                <span class="absolute left-16 top-3 bg-emerald-600 text-[10px] px-2 py-1 rounded hidden group-hover:block whitespace-nowrap z-[200]">Network Wallet</span>
             </a>
         </div>
         
@@ -117,22 +230,31 @@
                 <i class="fa-solid fa-plus-circle text-xl"></i>
                 <span class="absolute left-16 top-3 bg-purple-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">New Mission</span>
             </a>
-            <a href="#" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
-                <i class="fa-solid fa-fort-awesome text-xl"></i>
-                <span class="absolute left-16 top-3 bg-gray-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Citadel (Locked)</span>
-            </a>
-            <a href="#" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
-                <i class="fa-solid fa-shield-halved text-xl"></i>
-                <span class="absolute left-16 top-3 bg-green-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Governance</span>
+            <a href="{% url 'discovery:documentation' %}" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
+                <i class="fa-solid fa-book-open text-xl"></i>
+                <span class="absolute left-16 top-3 bg-emerald-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Protocol</span>
             </a>
         </div>
-        <div>
-            <a href="{% url 'discovery:settings' %}" class="p-3 text-gray-500 hover:text-white"><i class="fa-solid fa-gear"></i></a>
+        <div class="flex flex-col space-y-4">
+            <a href="{% url 'discovery:settings' %}" class="p-3 text-gray-500 hover:text-white transition-all group relative">
+                <i class="fa-solid fa-gear text-xl"></i>
+                <span class="absolute left-16 top-3 bg-gray-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Settings</span>
+            </a>
+            {% if user.is_authenticated %}
+            <form action="{% url 'logout' %}" method="post" class="p-0 m-0">
+                {% csrf_token %}
+                <button type="submit" class="p-3 text-red-500 hover:text-red-400 transition-all group relative">
+                    <i class="fa-solid fa-power-off text-xl"></i>
+                    <span class="absolute left-16 top-3 bg-red-600 text-xs px-2 py-1 text-white rounded hidden group-hover:block whitespace-nowrap">Terminate Session</span>
+                </button>
+            </form>
+            {% endif %}
         </div>
     </nav>
+    {% endif %}
 
     <!-- Main Viewport -->
-    <main class="ml-20 p-8">
+    <main class="{% if user.is_authenticated %}ml-0 lg:ml-20{% else %}ml-0 w-full{% endif %} p-4 md:p-8 flex-1 flex flex-col min-h-0 overflow-y-auto custom-horizontal-scroll">
         {% if messages %}
         <div class="fixed top-8 right-8 z-[200] space-y-4 max-w-sm w-full">
             {% for message in messages %}

@@ -1,48 +1,52 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
+<div class="max-w-4xl mx-auto px-1 md:px-0">
     <!-- Breadcrumbs -->
-    <nav class="flex items-center space-x-2 text-xs text-gray-500 mb-8 uppercase tracking-widest">
-        <a href="{% url 'discovery:system_map' %}" class="hover:text-blue-400">Discovery</a>
-        <span>/</span>
-        <a href="{% url 'discovery:inquiry_detail' planet.inquiry.pk %}" class="hover:text-blue-400">{{ planet.inquiry.case_id }}</a>
-        <span>/</span>
-        <span class="text-gray-300">{{ planet.name }}</span>
+    <nav class="flex items-center space-x-2 text-[9px] md:text-xs text-gray-500 mb-6 md:mb-8 uppercase tracking-widest overflow-x-auto whitespace-nowrap pb-2 no-scrollbar border-b border-white/5 md:border-b-0">
+        <a href="{% url 'discovery:system_map' %}" class="hover:text-blue-400 shrink-0 font-bold transition-colors">Archive</a>
+        <span class="shrink-0 opacity-30">/</span>
+        <a href="{% url 'discovery:topic_detail' planet.inquiry.topic %}" class="hover:text-blue-400 shrink-0 font-bold transition-colors">{{ planet.inquiry.topic }}</a>
+        <span class="shrink-0 opacity-30">/</span>
+        <span class="text-gray-300 shrink-0 font-mono">{{ planet.inquiry.case_id|slice:":8" }}...</span>
     </nav>
 
-    <div class="flex items-center space-x-6 mb-12">
-        <div class="w-20 h-20 rounded-full bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center glow-blue">
-            <i class="fa-solid {{ planet.icon_class }} text-3xl text-white"></i>
+    <div class="flex flex-col md:flex-row items-center md:items-center space-y-4 md:space-y-0 md:space-x-8 mb-8 md:mb-12 text-center md:text-left pt-2 md:pt-0">
+        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-blue-600/10 border-2 border-blue-500/30 flex items-center justify-center glow-blue shrink-0 relative">
+            <div class="absolute inset-0 rounded-full border border-blue-400/20 animate-pulse"></div>
+            <i class="fa-solid {{ planet.icon_class }} text-3xl md:text-4xl text-white"></i>
         </div>
         <div>
-            <h1 class="text-4xl font-bold">{{ planet.name }}</h1>
-            <p class="text-blue-400 font-mono text-sm">COORDINATES: sector-7g // step-{{ planet.order }}</p>
+            <h1 class="text-3xl md:text-5xl font-black uppercase tracking-tighter text-white">{{ planet.name }}</h1>
+            <p class="text-blue-500 font-mono text-[10px] md:text-sm uppercase tracking-[0.3em] font-bold">COORDINATES // SECTOR-7G // STEP-{{ planet.order }}</p>
         </div>
     </div>
 
     <!-- Planet Content (The Room) -->
-    <div class="glass p-8 rounded-3xl min-h-[400px] relative">
-        <div id="loading-overlay" class="htmx-indicator absolute inset-0 bg-black/60 backdrop-blur-md z-50 rounded-3xl flex items-center justify-center">
-            <div class="text-center">
-                <div class="relative w-24 h-24 mx-auto mb-4">
-                    <div class="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
-                    <div class="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
-                    <i class="fa-solid fa-microchip absolute inset-0 flex items-center justify-center text-3xl text-blue-400 animate-pulse"></i>
+    <div class="glass p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] min-h-[350px] md:min-h-[450px] relative overflow-hidden">
+        <!-- Background decorative pulse -->
+        <div class="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/5 blur-[100px] rounded-full"></div>
+        
+        <div id="loading-overlay" class="htmx-indicator absolute inset-0 bg-black/80 backdrop-blur-2xl z-50 rounded-[2rem] md:rounded-[3rem] flex items-center justify-center p-6 text-center">
+            <div class="max-w-xs">
+                <div class="relative w-20 h-20 md:w-28 md:h-28 mx-auto mb-6">
+                    <div class="absolute inset-0 border-[3px] border-blue-500/10 rounded-full"></div>
+                    <div class="absolute inset-0 border-[3px] border-t-blue-500 rounded-full animate-spin"></div>
+                    <i class="fa-solid fa-microchip absolute inset-0 flex items-center justify-center text-2xl md:text-4xl text-blue-400 animate-pulse"></i>
                 </div>
-                <div class="text-blue-100 font-mono tracking-[0.3em] text-sm uppercase">Engine Synchronizing...</div>
-                <div class="text-blue-500/50 text-[10px] mt-2 font-mono">RECALIBRATING WORLD MODEL</div>
+                <div class="text-white font-mono tracking-[0.4em] text-[11px] md:text-sm uppercase font-black">Engine Synchronizing</div>
+                <div class="text-blue-500/50 text-[9px] md:text-[10px] mt-3 font-mono uppercase tracking-widest font-bold">Recalibrating World Model</div>
             </div>
         </div>
 
-        <h3 class="text-xl font-bold mb-6 border-b border-white/10 pb-4 flex justify-between items-center text-blue-400">
-            <span>{{ planet.name }}</span>
-            <span id="planet-status-tag" class="text-[10px] font-mono tracking-widest uppercase {% if planet.status == 'COMPLETED' %}bg-green-500/20 text-green-400{% else %}bg-blue-500/20 text-blue-400 animate-pulse{% endif %} px-3 py-1 rounded-full border border-current/20">
+        <h3 class="text-xl md:text-2xl font-black mb-8 border-b border-white/5 pb-6 flex flex-col md:flex-row md:justify-between md:items-center text-blue-400 space-y-4 md:space-y-0">
+            <span class="uppercase tracking-tight">{{ planet.name }} Context</span>
+            <span id="planet-status-tag" class="text-[9px] md:text-[10px] font-mono tracking-[0.2em] uppercase {% if planet.status == 'COMPLETED' %}bg-green-500/20 text-green-400{% else %}bg-blue-600/20 text-blue-400 animate-pulse{% endif %} px-4 py-1.5 rounded-full border border-current/20 self-start md:self-center font-black">
                 {{ planet.status }}
             </span>
         </h3>
         
-        <div id="planet-data-container" class="space-y-6">
+        <div id="planet-data-container" class="space-y-6 md:space-y-8 relative z-10">
             {% if planet.data %}
                 {% if planet.data.divergence_point and not planet.data.branch_active %}
                 <div id="active-divergence-badge" class="bg-purple-600/10 border border-purple-500/30 p-4 rounded-xl mb-6 animate-pulse">
@@ -60,17 +64,16 @@
                 {% if key != 'divergence_point' and key != 'branch_active' %}
                 <div class="group/item relative">
                     <div class="flex justify-between items-end mb-2 px-1">
-                        <div class="text-[10px] text-blue-500/60 font-mono uppercase tracking-[0.2em]">{{ key }}</div>
+                        <div class="text-[9px] md:text-[10px] text-blue-500/60 font-mono uppercase tracking-[0.3em] font-black">{{ key }}</div>
                         <button onclick="copyToClipboard(this)" 
                                 data-copy="{{ value }}"
-                                style="z-index: 100; cursor: pointer;"
-                                class="text-[10px] text-gray-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded flex items-center space-x-2 relative">
-                            <i class="fa-regular fa-copy pointer-events-none"></i>
-                            <span class="font-mono uppercase tracking-widest text-[8px] pointer-events-none">Copy</span>
+                                class="text-[10px] md:text-[11px] text-gray-400 hover:text-white transition-colors bg-white/[0.04] hover:bg-white/[0.1] px-3 py-2 rounded-lg flex items-center space-x-2 border border-white/10 active:scale-95 transition-transform">
+                            <i class="fa-regular fa-copy"></i>
+                            <span class="font-mono uppercase tracking-widest text-[8px] md:text-[9px] font-black">Copy</span>
                         </button>
                     </div>
-                    <div class="bg-blue-900/10 p-5 rounded-2xl border border-blue-500/10 group-hover/item:border-blue-500/30 transition-all">
-                        <p class="text-gray-200 leading-relaxed font-light">{{ value }}</p>
+                    <div class="bg-black/30 p-4 md:p-6 rounded-2xl border border-white/5 group-hover/item:border-blue-500/20 transition-all">
+                        <p class="text-gray-300 text-xs md:text-sm leading-relaxed font-light italic">"{{ value }}"</p>
                     </div>
                 </div>
                 {% endif %}
@@ -87,7 +90,7 @@
     </div>
 
     <!-- Control Panel -->
-    <div class="mt-8 grid grid-cols-2 gap-4">
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
         <button hx-post="{% url 'discovery:re_validate' planet.pk %}"
                 hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                 hx-indicator="#loading-overlay"
