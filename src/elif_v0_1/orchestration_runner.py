@@ -91,6 +91,122 @@ class ProcedureRunner:
         assert STEP_OWNER[-1] == ("step_11", "memory_logger")
         assert tuple(s for s, _ in STEP_OWNER) == PROCEDURE_STEP_IDS
 
+    def get_context_and_components(
+        self,
+        case_id: str,
+        condition: str,
+        input_frame: InputFrame,
+        offline_mode: bool = False,
+        max_llm_calls: int = 22,
+        model_id: str = "sonnet",
+        procedure_version: str = "v1.0",
+        results_dir: Optional[Path] = None,
+    ) -> Tuple[RunContext, Dict[str, Any]]:
+        """
+        Initializes the RunContext and all 7 engine components.
+        Used by external orchestrators (like Django-Q) that need to 
+        manage step-by-step execution manually.
+        """
+        run_context = RunContext(
+            case_id=case_id,
+            condition=condition,
+            procedure_version=procedure_version,
+            offline_mode=offline_mode,
+            max_llm_calls=max_llm_calls,
+            model_id=model_id,
+            started_at_iso=_utc_now_iso(),
+            run_id=_new_run_id(),
+        )
+
+        components = {
+            "frame_validator": FrameValidator(run_context=run_context),
+            "object_decomposer": ObjectDecomposer(),
+            "hypothesis_validator": HypothesisValidator(),
+            "branching_roadmap_engine": BranchingRoadmapEngine(run_context=run_context),
+            "governance_kernel": GovernanceKernel(),
+            "operative_truth_separator": OperativeTruthSeparator(),
+            "memory_logger": MemoryLogger(base_persistence_dir=results_dir),
+        }
+        return run_context, components
+
+    def execute_step(
+        self,
+        step_id: str,
+        run_context: RunContext,
+        components: Dict[str, Any],
+        input_frame: InputFrame,
+        prior_outputs: Dict[str, Any]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Executes a single step of the 11-step procedure.
+        Returns (payload, usage_metadata).
+        """
+        # Ensure token counter is fresh for this isolated step call
+        reset_call_counter()
+        
+        step_index = int(step_id.split('_')[1])
+        
+        if step_id == "step_1":
+            payload = components["frame_validator"].validate(input_frame)
+        elif step_id == "step_2":
+            payload = components["object_decomposer"].decompose(
+                input_frame, run_context=run_context, max_calls=run_context.max_llm_calls
+            )
+        elif step_id == "step_3":
+            payload = components["frame_validator"].surface_assumptions(input_frame)
+        elif step_id == "step_4":
+            payload = components["hypothesis_validator"].enumerate_hypotheses_with_distinguishing_predictions(
+                prior_outputs.get("step_2"), run_context=run_context, max_calls=run_context.max_llm_calls
+            )
+        elif step_id == "step_5":
+            payload = components["hypothesis_validator"].failure_conditions_per_hypothesis(
+                prior_outputs.get("step_4"), run_context=run_context, max_calls=run_context.max_llm_calls
+            )
+        elif step_id == "step_6":
+            payload = components["object_decomposer"].multi_scale_relate(
+                prior_outputs.get("step_2"), run_context=run_context, max_calls=run_context.max_llm_calls
+            )
+        elif step_id == "step_7":
+            payload = components["branching_roadmap_engine"].outside_frame_trajectories_bre_feed(
+                prior_outputs.get("step_4"), prior_outputs.get("step_5")
+            )
+        elif step_id == "step_8":
+            payload = components["branching_roadmap_engine"].stage_gated_roadmap(
+                prior_outputs.get("step_7")
+            )
+        elif step_id == "step_9":
+            payload = components["governance_kernel"].verdict_with_confidence_and_uncertainty(
+                prior_outputs.get("step_8"), prior_outputs, run_context=run_context, max_calls=run_context.max_llm_calls
+            )
+        elif step_id == "step_10":
+            if prior_outputs.get("step_9", {}).get("verdict") == "refuse":
+                payload = components["operative_truth_separator"].separate_for_refusal(
+                    prior_outputs, run_context=run_context
+                )
+            else:
+                payload = components["operative_truth_separator"].separate_operative_from_theoretical(
+                    prior_outputs, run_context=run_context, max_calls=run_context.max_llm_calls
+                )
+        elif step_id == "step_11":
+            payload = {
+                "run_id": run_context.run_id,
+                "case_id": run_context.case_id,
+                "condition": run_context.condition,
+                "procedure_version": run_context.procedure_version,
+                "step_count": 11,
+                "final_verdict": prior_outputs.get("step_9", {}).get("verdict"),
+                "llm_calls_used": _call_counter(),
+                "post_refusal_closure": prior_outputs.get("step_9", {}).get("verdict") == "refuse"
+            }
+        else:
+            raise ValueError(f"Unknown step_id: {step_id}")
+
+        usage = getattr(complete_structured, "last_usage", {})
+        if not usage:
+            usage = {"input_tokens": 0, "output_tokens": 0, "model_id": run_context.model_id}
+            
+        return payload, usage
+
     # ------------------------------------------------------------------
     # Public entry point
     # ------------------------------------------------------------------
