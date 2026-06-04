@@ -118,6 +118,24 @@ class EngineService:
         return child
 
     @staticmethod
+    def call_serverless_engine(payload):
+        """
+        Calls the decoupled ELIF engine via HTTP.
+        """
+        import requests
+        url = getattr(settings, 'ELIF_ENGINE_URL', None)
+        if not url:
+            raise ValueError("ELIF_ENGINE_URL is not configured in settings.py")
+            
+        response = requests.post(url, json=payload, timeout=120)
+        
+        if response.status_code != 200:
+            error_data = response.json() if response.headers.get('content-type') == 'application/json' else {"error": response.text}
+            raise Exception(f"Engine Serverless Error ({response.status_code}): {error_data.get('error', 'Unknown error')}")
+            
+        return response.json()
+
+    @staticmethod
     def initialize_orchestration(inquiry_obj):
         """Initializes the runner and context for a step-by-step procedure execution."""
         from discovery.models import SystemSettings

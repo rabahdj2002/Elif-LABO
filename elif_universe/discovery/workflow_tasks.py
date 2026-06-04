@@ -124,17 +124,31 @@ def execute_engine_step_task(self, prev_result, inquiry_id, step_id):
             inquiry.save(update_fields=['status', 'current_status_msg'])
             Planet.objects.filter(inquiry=inquiry, order=order).update(status='IN_PROGRESS')
 
-        runner, run_context, components, input_frame = EngineService.initialize_orchestration(inquiry)
+        # Check if we should use serverless or local execution
+        engine_url = getattr(django_settings, 'ELIF_ENGINE_URL', None)
+        
         prior_outputs = {f"step_{p.order}": p.data for p in inquiry.planets.filter(status='COMPLETED').order_by('order')}
 
-        logger.info(f"Step {step_id} starting for Inquiry {inquiry_id}")
-        payload, usage = runner.execute_step(
-            step_id=step_id,
-            run_context=run_context,
-            components=components,
-            input_frame=input_frame,
-            prior_outputs=prior_outputs
-        )
+        if engine_url:
+            logger.info(f"Step {step_id} starting (SERVERLESS) for Inquiry {inquiry_id}")
+            serverless_payload = EngineService.get_serverless_payload(inquiry, step_id, prior_outputs)
+            result = EngineService.call_serverless_engine(serverless_payload)
+            
+            if result.get("status") != "success":
+                raise Exception(f"Engine returned failure: {result.get('error')}")
+                
+            payload = result.get("payload")
+            usage = result.get("usage", {})
+        else:
+            logger.info(f"Step {step_id} starting (LOCAL) for Inquiry {inquiry_id}")
+            runner, run_context, components, input_frame = EngineService.initialize_orchestration(inquiry)
+            payload, usage = runner.execute_step(
+                step_id=step_id,
+                run_context=run_context,
+                components=components,
+                input_frame=input_frame,
+                prior_outputs=prior_outputs
+            )
 
         from discovery.models import SpendRecord
         with transaction.atomic():

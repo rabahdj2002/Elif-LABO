@@ -38,6 +38,10 @@ ELIF_ANTHROPIC_API_KEY = os.getenv('ELIF_ANTHROPIC_API_KEY', '')
 if ELIF_ANTHROPIC_API_KEY:
     os.environ["ELIF_ANTHROPIC_API_KEY"] = ELIF_ANTHROPIC_API_KEY
 
+# Serverless Engine Configuration
+# Set to None for local execution, or URL of deployed Cloud Function
+ELIF_ENGINE_URL = os.getenv('ELIF_ENGINE_URL', 'http://127.0.0.1:8080')
+
 
 # Application definition
 

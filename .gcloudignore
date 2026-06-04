@@ -1,0 +1,15 @@
+.git
+.gitignore
+architecture/
+benchmarks/
+cases/
+doctrine/
+notes/
+procedure/
+results/
+elif_universe/
+README.md
+DEPLOY_GOOGLE_CLOUD.md
+.venv/
+__pycache__/
+*.pyc
