@@ -157,6 +157,35 @@ class EngineService:
         return runner, run_context, components, input_frame
 
     @staticmethod
+    def get_serverless_payload(inquiry_obj, step_id, prior_outputs):
+        """
+        Generates a JSON-serializable payload to invoke a serverless engine function.
+        """
+        runner, run_context, components, input_frame = EngineService.initialize_orchestration(inquiry_obj)
+        
+        return {
+            "step_id": step_id,
+            "case_id": inquiry_obj.case_id,
+            "condition": "c",
+            "input_frame": {
+                "id": input_frame.id,
+                "text": input_frame.text,
+                "locked_at_iso": input_frame.locked_at_iso,
+                "doctrinal_scope_tag": input_frame.doctrinal_scope_tag,
+                "companion_case": input_frame.companion_case
+            },
+            "prior_outputs": prior_outputs,
+            "run_context_data": {
+                "procedure_version": run_context.procedure_version,
+                "max_llm_calls": run_context.max_llm_calls,
+                "started_at_iso": run_context.started_at_iso,
+                "run_id": run_context.run_id
+            },
+            "model_id": run_context.model_id,
+            "offline_mode": run_context.offline_mode
+        }
+
+    @staticmethod
     def run_full_procedure(inquiry_obj, request=None):
         """Triggers the distributed Celery workflow for the procedure."""
         from discovery.workflow_tasks import start_engine_workflow

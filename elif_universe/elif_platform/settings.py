@@ -102,10 +102,13 @@ LOGIN_REDIRECT_URL = '/'
 # Celery Settings
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/1')
-# EMERGENCY FALLBACK: If Redis is not detected, use Synchronous Execution
-# This prevents the UI from "looking active" when tasks are actually stuck in limbo
-CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'True') == 'True'
+
+# --- SERVERLESS / DISTRIBUTED CONFIG ---
+# If False, tasks are sent to Redis and handled by separate elastically scaling workers.
+CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'False') == 'True'
 CELERY_TASK_EAGER_PROPAGATES = True
+# ----------------------------------------
+
 # --- PRODUCTION SCALABILITY & PROTECTION ---
 CELERY_WORKER_CONCURRENCY = 4      # Limit parallel engine steps
 CELERY_TASK_ACKS_LATE = True       # Re-run tasks if worker dies
