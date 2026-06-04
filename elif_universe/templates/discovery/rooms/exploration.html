@@ -61,7 +61,9 @@
                                 <div class="text-[8px] md:text-[9px] uppercase text-cyan-500/60 font-mono font-bold">Traj {{ traj.trajectory_id }}</div>
                                 <span class="text-[7px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-md border border-cyan-500/20 uppercase font-black tracking-tighter">{{ traj.tag }}</span>
                             </div>
-                            <p class="text-[10px] md:text-[11px] text-gray-400 leading-tight font-light">{{ traj.reason }}</p>
+                            <p class="text-[10px] md:text-[11px] text-gray-400 leading-tight font-light">
+                                {{ traj.description }}
+                            </p>
                         </div>
                         {% empty %}
                         <p class="text-[10px] text-gray-600 italic text-center py-4">No trajectories found.</p>

@@ -30,7 +30,16 @@ class Inquiry(models.Model):
     constraints = models.JSONField(default=list)
     history_log = models.JSONField(default=list, help_text="Traceable audit of all cognitive mutations.")
     confidence_evolution = models.JSONField(default=list)
+    stability_evolution = models.JSONField(default=list)
     current_status_msg = models.CharField(max_length=255, default="Initializing Engine...", blank=True)
+    status = models.CharField(max_length=20, default="PENDING", choices=[
+        ("PENDING", "Pending"),
+        ("RUNNING", "Running"),
+        ("COMPLETED", "Completed"),
+        ("FAILED", "Failed"),
+        ("REFUSED", "Refused"),
+    ])
+    final_verdict = models.CharField(max_length=100, blank=True, null=True)
     
     # Legacy compatibility fields (deprecated in UI)
     current_frame = models.JSONField(default=dict)
@@ -38,6 +47,18 @@ class Inquiry(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def current_confidence(self):
+        """Latest entry in confidence_evolution or default 25."""
+        if self.confidence_evolution:
+            return self.confidence_evolution[-1]
+        return 25
+
+    @property
+    def total_spend(self):
+        """Aggregate USD cost from all associated SpendRecords."""
+        return sum(f.cost_usd for f in self.spend_records.all())
 
     def __str__(self):
         return f"{self.case_id}: {self.core_question[:50]}..."
@@ -51,7 +72,7 @@ class Planet(models.Model):
         ('NOT_STARTED', 'Not Started'),
         ('IN_PROGRESS', 'In Progress'),
         ('COMPLETED', 'Completed'),
-        ('ERROR', 'Error'),
+        ('FAILED', 'Failed'),
     ]
     inquiry = models.ForeignKey(Inquiry, on_delete=models.CASCADE, related_name='planets')
     name = models.CharField(max_length=100)
@@ -147,10 +168,22 @@ class RoomState(models.Model):
             # Map Step 3 (Assumptions) + Step 4 (Hypotheses)
             step3 = find_planet("Step 3")
             step4 = find_planet("Step 4")
+            step5 = find_planet("Step 5")
             
+            # Map contradictions from failure conditions or unresolved zones
+            contradictions = []
+            if step5:
+                for fc in step5.data.get("failure_conditions", []):
+                    if fc.get("is_contradiction"):
+                        contradictions.append(fc.get("fails_if", "Unknown conflict"))
+            
+            if not contradictions:
+                contradictions = self.inquiry.unresolved_zones
+
             self.room_data = {
-                "assumptions": step3.data.get("assumptions", []) if step3 else [],
-                "hypotheses": step4.data.get("hypotheses", []) if step4 else []
+                "assumptions": step3.data.get("assumptions", []) if step3 else self.inquiry.assumptions,
+                "hypotheses": step4.data.get("hypotheses", []) if step4 else [],
+                "contradictions": contradictions
             }
             
         elif self.room_type == 'EXPLORATION':
@@ -159,11 +192,22 @@ class RoomState(models.Model):
             step6 = find_planet("Step 6")
             step7 = find_planet("Step 7")
             
+            # Normalize trajectories to ensure consistent keys
+            raw_trajectories = step7.data.get("trajectories", []) if step7 else []
+            normalized_trajs = []
+            for t in raw_trajectories:
+                if isinstance(t, dict):
+                    t_norm = t.copy()
+                    t_norm['description'] = t.get('reason') or t.get('description') or t.get('impact_if_true') or "No details."
+                    normalized_trajs.append(t_norm)
+                else:
+                    normalized_trajs.append({"reason": str(t), "description": str(t), "tag": "unknown"})
+
             self.room_data = {
                 "hypotheses": step4.data.get("hypotheses", []) if step4 else [],
                 "scales": step6.data.get("scales", []) if step6 else [],
                 "relations": step6.data.get("cross_scale_relations", []) if step6 else [],
-                "trajectories": step7.data.get("trajectories", []) if step7 else []
+                "trajectories": normalized_trajs
             }
             
         elif self.room_type == 'SOLUTION':
@@ -233,12 +277,29 @@ class RoomState(models.Model):
         elif self.room_type == 'DECISION':
             # Map Step 10 (Operative vs Theoretical) + Inquiry Divergences
             step10 = find_planet("Step 10")
+            step7 = find_planet("Step 7")
             
+            # Use persistent divergences if available, else pull from Step 7 live
+            divergences = self.inquiry.divergences
+            if not divergences and step7 and step7.data:
+                divergences = step7.data.get("trajectories", [])
+
+            # NORMALIZE: Ensure every divergence has a title, description, and confidence
+            # This prevents template lookup errors
+            normalized_divergences = []
+            for d in (divergences or []):
+                norm = d.copy() if isinstance(d, dict) else {"reason": str(d)}
+                # Map various engine outputs to consistent keys
+                norm['title'] = norm.get('title') or norm.get('tag') or "Alternative Trajectory"
+                norm['description'] = norm.get('reason') or norm.get('impact_if_true') or norm.get('description') or "No details available."
+                norm['confidence_impact'] = norm.get('confidence_impact') or "Step 7 Evolution"
+                normalized_divergences.append(norm)
+                
             self.room_data = {
                 "decision": step10.data.get("operative", ["N/A"])[0] if step10 and step10.data.get("operative") else "DIVERGENCE UNRESOLVED",
                 "summary": step10.data.get("absence_log", "") if step10 else "",
                 "requirements": step10.data.get("operative", []) if step10 else [],
-                "divergences": self.inquiry.divergences # First-class Navigable Trajectories
+                "divergences": normalized_divergences
             }
 
         self.save()
@@ -260,9 +321,23 @@ class SpendRecord(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def calculate_cost(self):
-        # Claude 3.5 Sonnet Prices
-        input_rate = 0.000003  # $3 / 1M
-        output_rate = 0.000015 # $15 / 1M
+        # Pricing Table (USD per 1M tokens)
+        PRICES = {
+            "claude-3-5-sonnet": {"in": 3.0, "out": 15.0},
+            "claude-3-5-haiku": {"in": 0.25, "out": 1.25},
+            "gpt-4o": {"in": 5.0, "out": 15.0},
+            "default": {"in": 3.0, "out": 15.0}
+        }
+        
+        rate_key = "default"
+        for key in PRICES:
+            if key in self.model_id.lower():
+                rate_key = key
+                break
+        
+        input_rate = PRICES[rate_key]["in"] / 1_000_000
+        output_rate = PRICES[rate_key]["out"] / 1_000_000
+        
         self.cost_usd = (self.input_tokens * input_rate) + (self.output_tokens * output_rate)
         return self.cost_usd
 

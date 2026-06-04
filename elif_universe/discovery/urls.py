@@ -14,8 +14,11 @@ urlpatterns = [
     path('inquiry/<pk>/reset/', views.reset_inquiry, name='reset'),
     path('inquiry/<pk>/delete/', views.delete_inquiry, name='delete'),
     path('inquiry/<pk>/telemetry/', views.engine_telemetry, name='telemetry'),
+    path('inquiry/<pk>/events/', views.engine_events, name='engine_events'),
     path('settings/', views.system_settings_view, name='settings'),
+    path('settings/clear-lock/', views.clear_engine_lock, name='clear_lock'),
     path('spend/', views.spend_history, name='spend_history'),
     path('documentation/', views.documentation_view, name='documentation'),
     path('topic/<str:topic_name>/', views.topic_detail, name='topic_detail'),
+    path('task/<str:task_id>/status/', views.task_status_view, name='task_status'),
 ]

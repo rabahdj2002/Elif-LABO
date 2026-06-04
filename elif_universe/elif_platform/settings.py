@@ -98,6 +98,27 @@ DATABASES = {
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
+
+# Celery Settings
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/1')
+# EMERGENCY FALLBACK: If Redis is not detected, use Synchronous Execution
+# This prevents the UI from "looking active" when tasks are actually stuck in limbo
+CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'True') == 'True'
+CELERY_TASK_EAGER_PROPAGATES = True
+# --- PRODUCTION SCALABILITY & PROTECTION ---
+CELERY_WORKER_CONCURRENCY = 4      # Limit parallel engine steps
+CELERY_TASK_ACKS_LATE = True       # Re-run tasks if worker dies
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1 # Fair distribution for long tasks
+CELERY_TASK_SOFT_TIME_LIMIT = 500  # 8.3 mins per step
+CELERY_TASK_TIME_LIMIT = 600       # 10 mins hard limit
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
 LOGOUT_REDIRECT_URL = '/'
 
 # Password validation
@@ -137,3 +158,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+
+# Media Files
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

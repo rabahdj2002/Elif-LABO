@@ -58,9 +58,14 @@
                         </td>
                         <td class="px-6 py-4">
                             {% if record.inquiry %}
-                                <a href="{% url 'discovery:room_view' record.inquiry.pk 'DISCOVERY' %}" class="text-xs text-gray-300 hover:text-blue-400 transition-colors">
-                                    <i class="fa-solid fa-link text-[10px] mr-1 opacity-50"></i>{{ record.inquiry.case_id|slice:":16" }}...
-                                </a>
+                                <div class="flex flex-col">
+                                    <a href="{% url 'discovery:room_view' record.inquiry.pk 'DISCOVERY' %}" class="text-xs text-gray-300 hover:text-blue-400 transition-colors font-bold">
+                                        <i class="fa-solid fa-link text-[10px] mr-1 opacity-50"></i>{{ record.inquiry.case_id|slice:":16" }}...
+                                    </a>
+                                    <span class="text-[9px] text-gray-500 truncate max-w-[150px]" title="{{ record.inquiry.core_question }}">
+                                        {{ record.inquiry.core_question|truncatechars:30 }}
+                                    </span>
+                                </div>
                             {% else %}
                                 <span class="text-xs text-gray-600 italic">Global/Orphan</span>
                             {% endif %}
@@ -69,7 +74,9 @@
                             <span class="text-gray-300">{{ record.input_tokens }}</span> / <span class="text-gray-300">{{ record.output_tokens }}</span>
                         </td>
                         <td class="px-8 py-4 text-right text-sm font-bold text-emerald-400 font-mono">
-                            ${{ record.cost_usd|stringformat:".6f" }}
+                            <span title="In: ${{ record.input_tokens }} x Rate | Out: ${{ record.output_tokens }} x Rate">
+                                ${{ record.cost_usd|stringformat:".6f" }}
+                            </span>
                         </td>
                     </tr>
                     {% empty %}

@@ -1,15 +1,44 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.urls import reverse
 from django.db.models import Sum
 from .models import Inquiry, Planet, RoomState, EngineRun, SystemSettings, SpendRecord
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from engine_bridge.services import EngineService
+from .tasks import run_engine_task
+from celery.result import AsyncResult
 import io
 import json
 import re
+import time
+import threading
 from contextlib import redirect_stdout
+from django.db import connection
+from .utils import run_threaded_task
+
+def _is_engine_busy(request):
+    """
+    Helper to check if the session lock is valid.
+    Self-heals if the inquiry in the session is actually finished.
+    """
+    active_pk = request.session.get('active_engine_pk')
+    if not active_pk:
+        return False
+        
+    try:
+        active_inq = Inquiry.objects.get(pk=active_pk)
+        if active_inq.status in ['COMPLETED', 'FAILED', 'REFUSED']:
+            # Stale lock - inquiry finished but session not updated
+            del request.session['active_engine_pk']
+            request.session.modified = True
+            return False
+        return True # Still busy
+    except Inquiry.DoesNotExist:
+        # Record gone - clear lock
+        del request.session['active_engine_pk']
+        request.session.modified = True
+        return False
 
 @login_required
 def system_settings_view(request):
@@ -29,15 +58,104 @@ def system_settings_view(request):
     return render(request, "discovery/settings.html", {"settings": settings})
 
 @login_required
+def clear_engine_lock(request):
+    """Admin-level override to clear the session lock."""
+    if 'active_engine_pk' in request.session:
+        del request.session['active_engine_pk']
+        request.session.modified = True
+        messages.success(request, "Engine lock cleared successfully.")
+    else:
+        messages.info(request, "No active engine lock found.")
+    
+    return redirect(request.META.get('HTTP_REFERER', 'discovery:system_map'))
+
+@login_required
 def documentation_view(request):
     """Protocol Documentation and Tutorials."""
     return render(request, "discovery/documentation.html")
 
+def engine_events(request, pk):
+    """
+    Server-Sent Events (SSE) stream for engine progress.
+    Provides real-time updates of Inquiry and Planet states.
+    """
+    inquiry = get_object_or_404(Inquiry, pk=pk)
+
+    def event_stream():
+        last_state = ""
+        while True:
+            # Re-fetch from DB to get latest state
+            try:
+                inquiry.refresh_from_db()
+            except Exception:
+                break # Model deleted or connection lost
+                
+            planets = inquiry.planets.all().order_by('order')
+            
+            # Construct a minimal representation of the whole pipeline state
+            state_obj = {
+                "inquiry_id": str(inquiry.id),
+                "status": inquiry.status,
+                "message": inquiry.current_status_msg,
+                "steps": [
+                    {
+                        "order": p.order,
+                        "name": p.name,
+                        "status": p.status,
+                    } for p in planets
+                ]
+            }
+            
+            current_state_json = json.dumps(state_obj)
+            
+            # Only send if state has changed (to save bandwidth)
+            if current_state_json != last_state:
+                yield f"data: {current_state_json}\n\n"
+                last_state = current_state_json
+            
+            # Safety break if inquiry reached a terminal state
+            if inquiry.status in ['COMPLETED', 'FAILED', 'REFUSED']:
+                # Clear session tracker for this inquiry
+                if request.session.get('active_engine_pk') == str(inquiry.pk):
+                    del request.session['active_engine_pk']
+                    request.session.modified = True
+                
+                # Send one last update then close
+                yield f"data: {current_state_json}\n\n"
+                break
+                
+            time.sleep(1) # Poll DB every 1s
+
+    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    return response
+
 @login_required
 def engine_telemetry(request, pk):
-    """Returns the current engine status for an inquiry."""
+    """Returns a full JSON status of the engine for polling fallback."""
     inquiry = get_object_or_404(Inquiry, pk=pk)
-    return HttpResponse(inquiry.current_status_msg)
+    planets = inquiry.planets.all().order_by('order')
+    
+    # If terminal state or stale, clear from session
+    if inquiry.status in ['COMPLETED', 'FAILED', 'REFUSED']:
+        if request.session.get('active_engine_pk') == str(pk):
+            del request.session['active_engine_pk']
+            request.session.modified = True
+            print(f"DEBUG: Cleared session lock for Inquiry {pk} (Terminal State)")
+
+    data = {
+        "inquiry_id": str(inquiry.id),
+        "status": inquiry.status,
+        "message": inquiry.current_status_msg,
+        "steps": [
+            {
+                "order": p.order,
+                "name": p.name,
+                "status": p.status,
+            } for p in planets
+        ]
+    }
+    return JsonResponse(data)
 
 @login_required
 def system_map(request):
@@ -120,6 +238,18 @@ def topic_detail(request, topic_name):
 @login_required
 def initialize_inquiry(request):
     """POST view to start a new inquiry."""
+    # Emergency Lock Override: If user adds ?force=1, we clear the busy state
+    if request.GET.get('force') == '1':
+        if 'active_engine_pk' in request.session:
+            del request.session['active_engine_pk']
+            request.session.modified = True
+            messages.info(request, "Engine lock manually cleared.")
+
+    # Block concurrent engine runs for the same account
+    if _is_engine_busy(request):
+        messages.error(request, "Engine Busy: A cognitive process is already active. Please wait for completion.")
+        return redirect("discovery:system_map")
+
     if request.method == "POST":
         question = request.POST.get("question")
         topic_input = request.POST.get("topic")
@@ -135,40 +265,52 @@ def initialize_inquiry(request):
             current_question_state=question
         )
         
-        # Layer 1: Setup hidden engine steps
-        steps = [
-            ("Step 1: Frame Validation", "fa-vial", 1),
-            ("Step 2: Object Decomposition", "fa-dna", 2),
-            ("Step 3: Normalization Layer", "fa-balance-scale", 3),
-            ("Step 4: Hypothesis Construction", "fa-flask", 4),
-            ("Step 5: Falsification Design", "fa-shield-virus", 5),
-            ("Step 6: Multi-Scale Propagation", "fa-tower-broadcast", 6),
-            ("Step 7: Outside-Frame Generation", "fa-expand", 7),
-            ("Step 8: Stage-Gated Roadmap", "fa-route", 8),
-            ("Step 9: Constraint Synthesis", "fa-link", 9),
-            ("Step 10: Verdict Engine", "fa-gavel", 10),
-            ("Step 11: Audit / Drift Layer", "fa-clipboard-check", 11),
-        ]
-        
-        for i, (name, icon, order) in enumerate(steps):
-            Planet.objects.create(
-                inquiry=inquiry,
-                name=name,
-                icon_class=icon,
-                order=order,
-                status="NOT_STARTED"
-            )
-        
-        # Trigger the engine run automatically on creation
+        # Trigger the engine run asynchronously via the new Distributed Workflow
+        # The worker will handle pre-populating planets (Step 1-11)
         try:
-            EngineService.run_full_procedure(inquiry)
-            _process_inquiry_sync_results(inquiry, request)
+            from .workflow_tasks import start_engine_workflow
+            
+            # Use CELERY_TASK_ALWAYS_EAGER check to provide immediate fallback if broker is dead
+            from django.conf import settings as django_settings
+            
+            # Dispatch task
+            if getattr(django_settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+                # If we are in Eager mode (likely local dev without Redis),
+                # we MUST use a thread to prevent the UI from freezing.
+                run_threaded_task(start_engine_workflow.delay, str(inquiry.id))
+            else:
+                # Standard Celery dispatch (non-blocking if Redis is running)
+                start_engine_workflow.delay(str(inquiry.id))
+            
+            # Persist the active task state in session for UI persistence
+            request.session['active_engine_pk'] = str(inquiry.pk)
+            request.session.modified = True
+            
+            messages.info(request, f"Engine sequence {inquiry.case_id} initiated.")
         except Exception as e:
-            print(f"Initial Engine Run Failed: {e}")
+            import traceback
+            error_msg = f"Failed to dispatch workflow: {str(e)}"
+            print(f"ERROR: {error_msg}")
+            print(traceback.format_exc())
+            messages.error(request, error_msg)
             
         return redirect("discovery:inquiry_detail", pk=inquiry.pk)
     
     return render(request, "discovery/initialize.html")
+
+@login_required
+def task_status_view(request, task_id):
+    """Endpoint to check the status of a Celery task."""
+    result = AsyncResult(task_id)
+    response_data = {
+        "task_id": task_id,
+        "status": result.status,
+        "ready": result.ready(),
+    }
+    if result.ready():
+        response_data["result"] = result.result if not isinstance(result.result, Exception) else str(result.result)
+    
+    return JsonResponse(response_data)
 
 @login_required
 def inquiry_detail(request, pk):
@@ -191,6 +333,9 @@ def room_view(request, pk, room_type):
     inquiry = get_object_or_404(Inquiry, pk=pk)
     room_state, _ = RoomState.objects.get_or_create(inquiry=inquiry, room_type=room_type.upper())
     
+    # Auto-sync projection if out of date or running
+    room_state.sync_from_planets()
+
     # Map types to templates
     template_map = {
         "DISCOVERY": "discovery/rooms/discovery.html",
@@ -205,12 +350,19 @@ def room_view(request, pk, room_type):
     
     context = {
         "inquiry": inquiry,
+        "planets": inquiry.planets.all().order_by('order'),
         "room_type": room_type.upper(),
         "room_data": room_state.room_data,
         "nav_rooms": RoomState.ROOM_CHOICES
     }
     
-    return render(request, template_map.get(room_type.upper(), "discovery/rooms/discovery.html"), context)
+    response = render(request, template_map.get(room_type.upper(), "discovery/rooms/discovery.html"), context)
+    # Force no-cache for live rooms
+    if inquiry.status in ['RUNNING', 'PENDING']:
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+    return response
 
 def _process_inquiry_sync_results(inquiry, request, snapshot=None):
     """
@@ -288,10 +440,11 @@ def _process_inquiry_sync_results(inquiry, request, snapshot=None):
         recovery_bonus += 20 
 
     # 6. TEMPORAL STABILITY (Similarity to previous run)
-    prev_confidence = inquiry.confidence_evolution[-1] if inquiry.confidence_evolution else base_ai_confidence
+    prev_confidence = 25
+    if inquiry.confidence_evolution and len(inquiry.confidence_evolution) > 0:
+        prev_confidence = inquiry.confidence_evolution[-1]
     
     # CALCULATE COMPOSITE STABILITY (The "Truth Separator" logic)
-    # Stability = (Structural * 0.4) + (Reasoning * 0.6) - Penalties + Rewards
     stability_val = (drift_score * 0.4) + (base_ai_confidence * 0.6)
     stability_val -= uncertainty_penalty
     stability_val -= divergence_penalty
@@ -327,53 +480,36 @@ def spawn_branch_view(request, pk):
         parent.history_log.append({
             "timestamp": str(parent.updated_at),
             "event": "Branching Initiated",
-            "description": f"Diverged toward Trajectory: {title}",
+            "description": f"Diverged toward Trajectory: {title} (Coupled to avoid drift)",
             "child_id": str(child.id)
         })
         parent.save()
         
-        messages.success(request, f"DIVERGENCE INITIATED: Spawning branch for '{title}'...")
+        messages.success(request, f"DIVERGENCE INITIATED: Spawning branch for '{title}' (Coupled to parent)...")
         
         # 3. Trigger immediate run for the child
-        from django.http import HttpResponse
-        
-        # Pre-initialize logic
-        if not child.planets.exists():
-            from .models import Planet
-            steps = [
-                ("Step 1: Frame Validation", "fa-microscope", 1),
-                ("Step 2: Object Decomposition", "fa-cubes", 2),
-                ("Step 3: Normalization Layer", "fa-layer-group", 3),
-                ("Step 4: Hypothesis Construction", "fa-vial", 4),
-                ("Step 5: Falsification Design", "fa-shield-virus", 5),
-                ("Step 6: Multi-Scale Propagation", "fa-tower-broadcast", 6),
-                ("Step 7: Outside-Frame Generation", "fa-expand", 7),
-                ("Step 8: Stage-Gated Roadmap", "fa-route", 8),
-                ("Step 9: Constraint Synthesis", "fa-link", 9),
-                ("Step 10: Verdict Engine", "fa-gavel", 10),
-                ("Step 11: Audit / Drift Layer", "fa-clipboard-check", 11),
-            ]
-            for p_name, icon, order in steps:
-                Planet.objects.get_or_create(
-                    inquiry=child, name=p_name,
-                    defaults={"icon_class": icon, "order": order, "status": "NOT_STARTED"}
-                )
-
-            ROOM_TYPES = ['DISCOVERY', 'FRAME', 'OBJECT', 'UNCERTAINTY', 'PROPAGATION', 'OUTSIDE', 'DECISION', 'AUDIT']
-            for rt in ROOM_TYPES:
-                RoomState.objects.get_or_create(inquiry=child, room_type=rt)
-
-        # Trigger the engine run immediately
         try:
-            EngineService.run_full_procedure(child)
-            # Sync metadata (Confidence, History) for the CHILD
-            _process_inquiry_sync_results(child, request, snapshot=None)
-        except:
-            pass
+            from .workflow_tasks import start_engine_workflow
+            from django.conf import settings as django_settings
+            
+            if getattr(django_settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+                run_threaded_task(start_engine_workflow.delay, str(child.id))
+            else:
+                start_engine_workflow.delay(str(child.id))
+            
+            # Persist tracking
+            request.session['active_engine_pk'] = str(child.pk)
+            request.session.modified = True
+        except Exception as e:
+            logger.error(f"Failed to trigger branch workflow: {e}")
+            messages.error(request, f"Engine failed to start for branch: {e}")
 
-        response = HttpResponse()
-        response['HX-Redirect'] = reverse("discovery:room_view", kwargs={"pk": child.id, "room_type": "DISCOVERY"})
-        return response
+        if request.headers.get('HX-Request'):
+            response = HttpResponse()
+            response['HX-Redirect'] = reverse("discovery:room_view", kwargs={"pk": child.id, "room_type": "DISCOVERY"})
+            return response
+        else:
+            return redirect("discovery:room_view", pk=child.id, room_type="DISCOVERY")
     
     return redirect("discovery:room_view", pk=pk, room_type="DECISION")
 
@@ -382,54 +518,32 @@ def sync_engine_pulse(request, pk):
     """
     Invokes Layer 1, Updates Layer 2, Refreshes Layer 3.
     """
+    # Block concurrent engine runs for the same account
+    if _is_engine_busy(request):
+        if request.headers.get('HX-Request'):
+            return HttpResponse('<div class="text-red-400 text-[10px] font-bold uppercase p-2 bg-red-500/10 rounded">Engine Busy</div>')
+        messages.error(request, "Engine Busy: A cognitive process is already active.")
+        return redirect("discovery:room_view", pk=pk, room_type="DISCOVERY")
+
     inquiry = get_object_or_404(Inquiry, pk=pk)
     
-    # Initialize planets if they don't exist
-    if not inquiry.planets.exists():
-        from .models import Planet
-        steps = [
-            ("Step 1: Frame Validation", "fa-microscope", 1),
-            ("Step 2: Object Decomposition", "fa-cubes", 2),
-            ("Step 3: Normalization Layer", "fa-layer-group", 3),
-            ("Step 4: Hypothesis Construction", "fa-vial", 4),
-            ("Step 5: Falsification Design", "fa-shield-virus", 5),
-            ("Step 6: Multi-Scale Propagation", "fa-tower-broadcast", 6),
-            ("Step 7: Outside-Frame Generation", "fa-expand", 7),
-            ("Step 8: Stage-Gated Roadmap", "fa-route", 8),
-            ("Step 9: Constraint Synthesis", "fa-link", 9),
-            ("Step 10: Verdict Engine", "fa-gavel", 10),
-            ("Step 11: Audit / Drift Layer", "fa-clipboard-check", 11),
-        ]
-        for name, icon, order in steps:
-            Planet.objects.create(
-                inquiry=inquiry,
-                name=name,
-                icon_class=icon,
-                order=order,
-                status="NOT_STARTED"
-            )
-
-    inquiry.planets.all().update(status="IN_PROGRESS")
-    
-    # Capture Epistemic Snapshot for contraction calculation
-    snapshot = {
-        "unresolved_count": len(inquiry.unresolved_zones or []),
-        "divergence_count": len(inquiry.divergences or []),
-    }
-    
-    f = io.StringIO()
+    # Trigger the engine run asynchronously via Distributed Workflow
     try:
-        with redirect_stdout(f):
-            from engine_bridge.services import EngineService
-            EngineService.run_full_procedure(inquiry)
-        messages.success(request, "Engine propagation successful. All rooms updated.")
+        from .workflow_tasks import start_engine_workflow
+        from django.conf import settings as django_settings
+        
+        if getattr(django_settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+            run_threaded_task(start_engine_workflow.delay, str(inquiry.id))
+        else:
+            start_engine_workflow.delay(str(inquiry.id))
+        
+        # Persist the active task state in session for UI persistence
+        request.session['active_engine_pk'] = str(inquiry.pk)
+        request.session.modified = True
+
+        messages.info(request, "Engine Pulse Synchronized. Procedure Re-started.")
     except Exception as e:
-        messages.error(request, f"Engine Failure: {str(e)}")
-        import traceback
-        print(traceback.format_exc())
-    
-    # Process metadata (Confidence, History)
-    _process_inquiry_sync_results(inquiry, request, snapshot=snapshot)
+        messages.error(request, f"Failed to dispatch workflow: {str(e)}")
     
     if request.headers.get('HX-Request'):
         response = HttpResponse()
@@ -443,6 +557,11 @@ def refine_inquiry(request, pk):
     """
     Takes user feedback, evolves the question using LLM, and re-runs the engine.
     """
+    # Block concurrent engine runs for the same account
+    if _is_engine_busy(request):
+        messages.error(request, "Engine Busy: Please wait for the current process to finish.")
+        return redirect("discovery:room_view", pk=pk, room_type="DISCOVERY")
+
     inquiry = get_object_or_404(Inquiry, pk=pk)
     directive = request.POST.get("directive", "")
     
@@ -453,19 +572,22 @@ def refine_inquiry(request, pk):
 
     try:
         from engine_bridge.services import EngineService
+        from .workflow_tasks import start_engine_workflow
         
-        # Capture snapshot for epistemic contraction
-        snapshot = {
-            "unresolved_count": len(inquiry.unresolved_zones or []),
-            "divergence_count": len(inquiry.divergences or []),
-        }
+        # 1. Update the question model
+        EngineService.refine_question(inquiry, directive)
         
-        EngineService.refine_and_run(inquiry, directive)
+        # 2. Trigger asynchronous workflow
+        from django.conf import settings as django_settings
+        if getattr(django_settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+            run_threaded_task(start_engine_workflow.delay, str(inquiry.id))
+        else:
+            start_engine_workflow.delay(str(inquiry.id))
         
-        # Process results with snapshot
-        _process_inquiry_sync_results(inquiry, request, snapshot=snapshot)
+        request.session['active_engine_pk'] = str(inquiry.pk)
+        request.session.modified = True
         
-        messages.success(request, "Inquiry evolved successfully. New roadmap generated.")
+        messages.success(request, "Inquiry evolved. Re-mapping cognitive substrate in background...")
     except Exception as e:
         messages.error(request, f"Refinement Failed: {str(e)}")
         
@@ -527,35 +649,31 @@ def branch_out_planet(request, pk):
         "divergence_count": len(inquiry.divergences or []),
     }
     
-    f = io.StringIO()
     try:
         from engine_bridge.services import EngineService
+        from .workflow_tasks import start_engine_workflow
+        
         original_q = inquiry.core_question
         inquiry.core_question = f"USER CHOICE: {family_desc}\n\n[ORIGINAL QUESTION]: {original_q}"
-        
-        with redirect_stdout(f):
-            EngineService.run_full_procedure(inquiry)
-        
-        # Process Results
-        _process_inquiry_sync_results(inquiry, request, snapshot=snapshot)
-        
-        # Refresh to get engine output
-        planet.refresh_from_db()
-        
-        # Re-attach the divergence history but DON'T delete the new axes 
-        # returned by the engine (if any)
+        inquiry.save()
+
+        # Update planet state
         planet.data["branch_active"] = True 
         planet.data["divergence_point"] = f"Current Thread: {family_id}"
         planet.save()
 
-        inquiry.core_question = original_q
-        inquiry.save()
+        # Trigger Workflow
+        from django.conf import settings as django_settings
+        if getattr(django_settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+            run_threaded_task(start_engine_workflow.delay, str(inquiry.id))
+        else:
+            start_engine_workflow.delay(str(inquiry.id))
         
-        execution_logs = f.getvalue()
-        combined_log = f"DIVERGENCE TRIGGERED: Path [{family_id}] resolved.\n\n{execution_logs}"
-        
+        request.session['active_engine_pk'] = str(inquiry.pk)
+        request.session.modified = True
+
         return render(request, "discovery/partials/telemetry_entry.html", {
-            "log": combined_log,
+            "log": f"DIVERGENCE TRIGGERED: Path [{family_id}] resolved. Engine restarted in background.",
             "planet": planet, 
             "inquiry": inquiry, 
             "oob_swap": True
@@ -608,6 +726,12 @@ def reset_inquiry(request, pk):
 def delete_inquiry(request, pk):
     inquiry = get_object_or_404(Inquiry, pk=pk)
     case_id = inquiry.case_id
+    
+    # Clear session lock if this was the active engine
+    if request.session.get('active_engine_pk') == str(pk):
+        del request.session['active_engine_pk']
+        request.session.modified = True
+
     inquiry.delete()
     messages.success(request, f"Inquiry '{case_id}' has been purged from the universe.")
     return redirect("discovery:system_map")
