@@ -165,15 +165,34 @@ def execute_engine_step_task(self, prev_result, inquiry_id, step_id):
             density_bonus = min(40.0, len([v for v in payload.values() if v]) * 5.0) if isinstance(payload, dict) else 0
             current_mark = int(max(10, min(95, progress_base + density_bonus)))
             inquiry.confidence_evolution.append(current_mark)
-            inquiry.save(update_fields=['confidence_evolution'])
+            
+            # Map step number to investigation status
+            if step_num <= 3:
+                inquiry.investigation_status = "Emerging"
+            elif step_num <= 7:
+                inquiry.investigation_status = "In-Depth"
+            elif step_num <= 10:
+                inquiry.investigation_status = "Synthesizing"
+            else:
+                inquiry.investigation_status = "Validated"
+                
+            inquiry.save(update_fields=['confidence_evolution', 'investigation_status'])
 
             for room_state in inquiry.room_states.all():
                 room_state.sync_from_planets()
 
             if step_id == "step_1" and payload.get("verdict") == "invalid":
                 inquiry.status = 'REFUSED'
+                inquiry.investigation_status = "Refused"
                 inquiry.current_status_msg = "Frame Invalid. Halting."
-                inquiry.save(update_fields=['status', 'current_status_msg'])
+                inquiry.save(update_fields=['status', 'investigation_status', 'current_status_msg'])
+                return "skipped"
+
+            if step_id == "step_9" and payload.get("verdict") == "refuse":
+                inquiry.status = 'REFUSED'
+                inquiry.investigation_status = "Refused"
+                inquiry.current_status_msg = "Governance Refusal. Halting."
+                inquiry.save(update_fields=['status', 'investigation_status', 'current_status_msg'])
                 return "skipped"
 
         return "success"

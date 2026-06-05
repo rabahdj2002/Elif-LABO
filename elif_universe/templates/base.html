@@ -429,27 +429,6 @@
     <div id="global-notifications" class="fixed top-32 right-6 z-[100] flex flex-col space-y-4 pointer-events-none">
         <!-- Persistence area for JS triggered notifications (Non-Engine) -->
         <div id="js-notifications" class="flex flex-col space-y-4"></div>
-
-        {% if messages %}
-            {% for message in messages %}
-            <div class="pointer-events-auto glass border-l-4 {% if message.tags == 'success' %}border-emerald-500 bg-emerald-500/10{% elif message.tags == 'error' %}border-red-500 bg-red-500/10{% else %}border-blue-500 bg-blue-500/10{% endif %} p-4 rounded-xl shadow-2xl animate-in fade-in slide-in-from-right-8 duration-500 max-w-xs md:max-w-sm">
-                <div class="flex items-start space-x-3">
-                    <div class="shrink-0 pt-1">
-                        {% if message.tags == 'success' %}<i class="fa-solid fa-check-circle text-emerald-400"></i>
-                        {% elif message.tags == 'error' %}<i class="fa-solid fa-triangle-exclamation text-red-400"></i>
-                        {% else %}<i class="fa-solid fa-info-circle text-blue-400"></i>{% endif %}
-                    </div>
-                    <div>
-                        <p class="text-[10px] md:text-xs text-white font-medium mb-1 uppercase tracking-widest">System Message</p>
-                        <p class="text-[11px] md:text-sm text-gray-300 italic">"{{ message }}"</p>
-                    </div>
-                    <button onclick="this.parentElement.parentElement.remove()" class="text-gray-500 hover:text-white transition-colors">
-                        <i class="fa-solid fa-xmark text-xs"></i>
-                    </button>
-                </div>
-            </div>
-            {% endfor %}
-        {% endif %}
     </div>
 
     <!-- Mobile Top Bar -->
@@ -529,15 +508,15 @@
     <!-- Main Viewport -->
     <main id="main-viewport" class="{% if user.is_authenticated %}ml-0 lg:ml-20{% else %}ml-0 w-full{% endif %} p-4 md:p-8 flex-1 flex flex-col min-h-0 overflow-y-auto custom-horizontal-scroll">
         {% if messages %}
-        <div class="fixed top-8 right-8 z-[200] space-y-4 max-w-sm w-full">
+        <div class="fixed top-8 right-8 z-[200] space-y-4 w-[24rem] md:w-[32rem]">
             {% for message in messages %}
-            <div class="glass p-4 rounded-2xl border {% if message.tags == 'error' %}border-red-500/30 text-red-400{% else %}border-blue-500/30 text-blue-400{% endif %} flex items-start space-x-3 shadow-2xl animate-in slide-in-from-right duration-300">
-                <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-check{% endif %} mt-1"></i>
-                <div class="flex-1">
-                    <p class="text-[11px] font-bold uppercase tracking-wider mb-1">{{ message.tags|default:"Notice" }}</p>
-                    <p class="text-xs text-white/80 leading-relaxed">{{ message }}</p>
+            <div class="glass p-5 rounded-[1.5rem] border {% if message.tags == 'error' %}border-red-500/30 text-red-400{% else %}border-blue-500/30 text-blue-400{% endif %} flex items-start space-x-4 shadow-2xl animate-in slide-in-from-right duration-300">
+                <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-check{% endif %} mt-1 text-base shrink-0"></i>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1.5 opacity-60">{{ message.tags|default:"Notice" }} SYSTEM</p>
+                    <p class="text-[11px] md:text-sm text-white/90 leading-relaxed break-words italic">"{{ message }}"</p>
                 </div>
-                <button onclick="this.parentElement.remove()" class="text-white/20 hover:text-white transition-colors">
+                <button onclick="this.parentElement.remove()" class="text-white/20 hover:text-white transition-colors shrink-0 ml-2">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
             </div>

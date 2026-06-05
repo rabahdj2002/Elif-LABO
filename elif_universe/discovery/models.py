@@ -29,6 +29,7 @@ class Inquiry(models.Model):
     unresolved_zones = models.JSONField(default=list, help_text="Residual Darkness / Regulatory uncertainty (The One).")
     constraints = models.JSONField(default=list)
     history_log = models.JSONField(default=list, help_text="Traceable audit of all cognitive mutations.")
+    investigation_status = models.CharField(max_length=50, default="Emerging", help_text="The qualitative status of the inquiry (e.g., Emerging, Validated).")
     confidence_evolution = models.JSONField(default=list)
     stability_evolution = models.JSONField(default=list)
     current_status_msg = models.CharField(max_length=255, default="Initializing Engine...", blank=True)
@@ -59,6 +60,21 @@ class Inquiry(models.Model):
     def total_spend(self):
         """Aggregate USD cost from all associated SpendRecords."""
         return sum(f.cost_usd for f in self.spend_records.all())
+
+    @property
+    def refusal_reason(self):
+        """Extract reasoning from Step 1 or Step 9 if the inquiry was refused."""
+        if self.status == 'REFUSED':
+            # Check Step 1 (Frame)
+            step1 = self.planets.filter(order=1).first()
+            if step1 and step1.data and step1.data.get('verdict') == 'invalid':
+                return step1.data.get('reasoning') or "Article II: Frame failed structural scrutiny."
+            
+            # Check Step 9 (Governance)
+            step9 = self.planets.filter(order=9).first()
+            if step9 and step9.data and step9.data.get('verdict') == 'refuse':
+                return step9.data.get('verdict_detail') or "Article V: Governance refused to authorize the roadmap."
+        return None
 
     def __str__(self):
         return f"{self.case_id}: {self.core_question[:50]}..."

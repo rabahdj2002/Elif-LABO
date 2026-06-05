@@ -4,7 +4,7 @@
 <div class="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <header class="text-center">
         <h2 class="text-2xl md:text-3xl font-bold text-white mb-2 uppercase tracking-tighter">Evidence Room</h2>
-        <p class="text-[10px] md:text-sm text-blue-400/80 font-light italic">"Truth is not a single point; it is a cluster of high-confidence signals."</p>
+        <p class="text-[10px] md:text-sm text-blue-400/80 font-light italic">"Truth is not a single point; it is a cluster of high-fidelity signals."</p>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
@@ -94,9 +94,7 @@
                         <div class="p-3 rounded-xl bg-white/[0.02] border border-white/5 mt-4">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-[8px] text-gray-600 uppercase font-bold tracking-widest">Unresolved Density</span>
-                                {% with count=inquiry.unresolved_zones|length %}
-                                <span class="text-[9px] font-mono text-red-500 font-black">{{ count|add:15 }}%</span>
-                                {% endwith %}
+                                <span class="text-[9px] font-mono text-red-500 font-black">High Entropy Area</span>
                             </div>
                             <div class="h-1 bg-gray-950 rounded-full overflow-hidden">
                                 <div class="h-full bg-red-600/40 w-[30%]"></div>

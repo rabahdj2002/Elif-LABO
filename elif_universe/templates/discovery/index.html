@@ -82,15 +82,10 @@
                                     {{ topic.inquiries|length }} Realities
                                 </span>
                             </div>
-                            <div class="flex -space-x-2">
-                                {% for inq in topic.inquiries|slice:":5" %}
-                                <div class="w-6 h-6 rounded-full bg-gray-900 border border-white/10 flex items-center justify-center text-[8px] font-black {% if inq.confidence_evolution|last > 75 %}text-green-500{% else %}text-blue-400{% endif %}">
-                                    {{ inq.confidence_evolution|last|default:0 }}
-                                </div>
-                                {% endfor %}
-                                {% if topic.inquiries|length > 5 %}
-                                <div class="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[8px] text-white font-black">+</div>
-                                {% endif %}
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[9px] font-black {% if topic.inquiries.0.status == 'COMPLETED' %}text-green-500{% elif topic.inquiries.0.status == 'FAILED' or topic.inquiries.0.status == 'REFUSED' %}text-red-500{% else %}text-blue-400{% endif %} font-mono">
+                                    {{ topic.inquiries.0.investigation_status|default:"Emerging" }}
+                                </span>
                             </div>
                         </div>
                     </div>

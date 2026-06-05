@@ -20,19 +20,6 @@
      hx-request='{"no-indicator": true}'
      {% endif %}>
     
-    <!-- SYSTEM MESSAGES (Flash) -->
-    {% if messages %}
-    <div class="fixed top-6 right-6 z-[100] space-y-3 pointer-events-none">
-        {% for message in messages %}
-        <div class="glass p-5 rounded-2xl border-white/10 flex items-center space-x-4 shadow-2xl animate-in fade-in slide-in-from-right-10 duration-500 pointer-events-auto
-                    {% if message.tags == 'error' %}border-red-500/30 bg-red-500/5 text-red-400{% else %}border-blue-500/30 bg-blue-500/5 text-blue-400{% endif %}">
-            <i class="fa-solid {% if message.tags == 'error' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
-            <span class="text-[11px] font-bold uppercase tracking-widest">{{ message }}</span>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
     <!-- 1. NAVIGATION HEADER -->
     <header class="flex flex-col items-center py-6 border-b border-white/5 shrink-0">
         <div class="w-full flex flex-col lg:flex-row items-center justify-between gap-6">
@@ -68,8 +55,12 @@
                         <span class="text-[8px] text-blue-500/60 font-mono uppercase font-black tracking-widest">
                             {% if inquiry.status == 'RUNNING' %}
                                 {{ inquiry.current_status_msg|truncatechars:35 }}
+                            {% elif inquiry.status == 'REFUSED' %}
+                                <a href="{% url 'discovery:inquiry_detail' inquiry.id %}" class="text-red-500 hover:text-red-400 underline decoration-red-500/30">
+                                    Verdict: {{ inquiry.status }} (Scrutiny Failed)
+                                </a>
                             {% else %}
-                                State: {{ inquiry.status }}
+                                Investigation Status: {{ inquiry.investigation_status }}
                             {% endif %}
                         </span>
                     </div>
@@ -98,19 +89,12 @@
             <!-- Side: Engine Orchestration (Left) -->
             <aside class="lg:col-span-3 h-full flex flex-col gap-8 overflow-hidden">
                 <!-- Status Cards -->
-                <div class="grid grid-cols-2 gap-4 shrink-0">
+                <div class="grid grid-cols-1 gap-4 shrink-0">
                     <div class="glass p-5 rounded-3xl border-white/5 bg-white/[0.01]">
-                        <div class="text-[8px] uppercase tracking-widest text-gray-500 font-bold mb-2">Confidence</div>
-                        <div class="text-xl font-mono text-blue-400 font-black">{{ inquiry.current_confidence }}%</div>
+                        <div class="text-[8px] uppercase tracking-widest text-gray-400 font-bold mb-2">Investigation Status</div>
+                        <div class="text-xl font-mono text-blue-400 font-black">{{ inquiry.investigation_status|default:"Emerging" }}</div>
                         <div class="w-full h-1 bg-gray-900 rounded-full mt-3 overflow-hidden">
-                            <div class="h-full bg-blue-500/40" style="width: {{ inquiry.current_confidence }}%"></div>
-                        </div>
-                    </div>
-                    <div class="glass p-5 rounded-3xl border-white/5 bg-white/[0.01]">
-                        <div class="text-[8px] uppercase tracking-widest text-gray-500 font-bold mb-2">Stability</div>
-                        <div class="text-xl font-mono text-green-400 font-black">92%</div>
-                        <div class="w-full h-1 bg-gray-900 rounded-full mt-3 overflow-hidden">
-                            <div class="h-full bg-green-500/40" style="width: 92%"></div>
+                            <div class="h-full bg-blue-500/40" style="width: {{ inquiry.confidence_evolution|last|default:15 }}%"></div>
                         </div>
                     </div>
                 </div>
@@ -185,6 +169,37 @@
             </main>
         </div>
     </div>
+
+    <!-- 3. REFUSAL MODAL (Conditional) -->
+    {% if inquiry.status == 'REFUSED' %}
+    <div id="refusal-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div class="glass max-w-lg w-full p-8 md:p-10 rounded-[3rem] border-red-500/30 bg-red-950/20 shadow-[0_0_50px_-12px_rgba(239,68,68,0.5)] border relative overflow-hidden flex flex-col items-center text-center">
+            <!-- Background Glow -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-red-500/10 blur-[80px] rounded-full"></div>
+            
+            <div class="w-20 h-20 rounded-3xl bg-red-500/20 border border-red-500/30 flex items-center justify-center mb-8 shrink-0">
+                <i class="fa-solid fa-ban text-4xl text-red-500"></i>
+            </div>
+            
+            <h2 class="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter mb-4">Inquiry Refused</h2>
+            <p class="text-[11px] md:text-sm text-gray-300 leading-relaxed font-light italic mb-10">
+                "{{ inquiry.refusal_reason|default:"The inquiry context is insufficient for clinical reasoning. Please provide more observable data." }}"
+            </p>
+            
+            <form action="{% url 'discovery:delete' inquiry.pk %}" method="get" class="w-full">
+                <button type="submit" 
+                        class="w-full py-4 rounded-2xl bg-red-600 hover:bg-red-500 text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-lg shadow-red-900/40 transition-all active:scale-[0.98]">
+                    Okay
+                </button>
+            </form>
+            
+            <p class="mt-6 text-[8px] uppercase tracking-widest text-gray-600 font-bold">
+                <i class="fa-solid fa-triangle-exclamation mr-1 opacity-50"></i> 
+                Article II: Structural Scrutiny Failed
+            </p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <script>

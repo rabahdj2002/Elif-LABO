@@ -109,7 +109,7 @@ CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:63
 
 # --- SERVERLESS / DISTRIBUTED CONFIG ---
 # If False, tasks are sent to Redis and handled by separate elastically scaling workers.
-CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'False') == 'True'
+CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 # ----------------------------------------
 

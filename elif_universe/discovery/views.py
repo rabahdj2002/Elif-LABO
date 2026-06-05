@@ -7,6 +7,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from engine_bridge.services import EngineService
 from .tasks import run_engine_task
+import logging
+
+logger = logging.getLogger(__name__)
+
 from celery.result import AsyncResult
 import io
 import json
@@ -286,7 +290,6 @@ def initialize_inquiry(request):
             request.session['active_engine_pk'] = str(inquiry.pk)
             request.session.modified = True
             
-            messages.info(request, f"Engine sequence {inquiry.case_id} initiated.")
         except Exception as e:
             import traceback
             error_msg = f"Failed to dispatch workflow: {str(e)}"
@@ -485,8 +488,6 @@ def spawn_branch_view(request, pk):
         })
         parent.save()
         
-        messages.success(request, f"DIVERGENCE INITIATED: Spawning branch for '{title}' (Coupled to parent)...")
-        
         # 3. Trigger immediate run for the child
         try:
             from .workflow_tasks import start_engine_workflow
@@ -541,7 +542,6 @@ def sync_engine_pulse(request, pk):
         request.session['active_engine_pk'] = str(inquiry.pk)
         request.session.modified = True
 
-        messages.info(request, "Engine Pulse Synchronized. Procedure Re-started.")
     except Exception as e:
         messages.error(request, f"Failed to dispatch workflow: {str(e)}")
     
@@ -587,7 +587,6 @@ def refine_inquiry(request, pk):
         request.session['active_engine_pk'] = str(inquiry.pk)
         request.session.modified = True
         
-        messages.success(request, "Inquiry evolved. Re-mapping cognitive substrate in background...")
     except Exception as e:
         messages.error(request, f"Refinement Failed: {str(e)}")
         
