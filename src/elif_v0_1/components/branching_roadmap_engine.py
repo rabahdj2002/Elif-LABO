@@ -46,6 +46,19 @@ _CASE_TOKEN_RE = re.compile(r"(case_\d+)")
 # Mode B (`deeper-frame-rejection`) is owned by FrameValidator (§8.10 split).
 _MODE_A_TAG = "outside-original-frame"
 
+# Divergence Output Purpose: Candidates and Exploratory Paths.
+# These are internal analytical branches, not competing truths.
+_DIVERGENCE_CANDIDATE_GUIDELINES = (
+    "1. PURPOSE: Divergences are suggestions or exploratory paths. They serve "
+    "to map the safe space around the parent inquiry.\n"
+    "2. PERMISSIVENESS: Do not self-censor based on abstract 'drift'. If a path "
+    "is physically possible and follows explicit parent rules, it is a valid candidate.\n"
+    "3. HARD CONSTRAINTS ONLY: Only reject a potential trajectory if it is "
+    "physically impossible for this domain or violates explicit user-provided rules.\n"
+    "4. STATUS: Mark these as 'candidate' or 'branch' in your internal reasoning. "
+    "They are designed to explore, not to replace the core frame."
+)
+
 # Article V/VI/VII framing reused across both methods. Closed-set discipline:
 # the trajectory tag and stage vocabulary live in the schemas; we cite them
 # here so the model never invents synonyms.
@@ -182,15 +195,13 @@ def _build_step7_modeA_prompt(
     """Build the Step 7 mode A (outside-frame trajectories) prompt."""
     return (
         f"{_SYSTEM_PREFACE}\n\n"
-        "TASK: Step 7 mode A — Outside-original-frame trajectories.\n"
-        "Emit trajectories that step OUTSIDE the original frame as posed: "
-        "reframings of the question itself, structural decompositions that "
-        "refuse the bundle, comparison-case reframings, actor-mix "
-        "considerations, or any move that the original frame did not "
-        "anticipate. Each trajectory MUST be tagged "
+        "TASK: Step 7 mode A — Generate Candidate Divergence Paths.\n"
+        "Emit trajectories that step OUTSIDE the original frame as posed. "
+        "Each trajectory MUST be tagged "
         f"'{_MODE_A_TAG}' (closed-set; mode B trajectories are owned by "
-        "the Frame Validator and must not appear here). Emit AT LEAST ONE "
-        "trajectory with a one-line `reason`.\n\n"
+        "the Frame Validator and must not appear here).\n\n"
+        "DIVERGENCE GUIDELINES (Exploration Gate):\n"
+        f"{_DIVERGENCE_CANDIDATE_GUIDELINES}\n\n"
         "STEP 4 HYPOTHESES (in-frame candidates already enumerated):\n"
         f"{_summarize_hypotheses(hypotheses)}\n\n"
         "STEP 5 FAILURE CONDITIONS (per-hypothesis falsification triggers):\n"

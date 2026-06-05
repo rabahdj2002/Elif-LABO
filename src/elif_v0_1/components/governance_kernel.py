@@ -64,6 +64,20 @@ _CASE_TOKEN_RE = re.compile(r"(case_\d+)")
 # synonyms.
 _VERDICT_VOCAB = ("constrain", "refuse", "explicitly_abstain")
 
+# Governance Role: Ranking and Validation for Divergence Branches.
+# Governance evaluates if a divergence stays within parent constraints.
+_GOVERNANCE_DECISION_PROTOCOL = (
+    "1. VALID_IN_FRAME: A branch is 'constrain' (approved) if it stays within "
+    "parent constraints and respects physical laws. Expansion/speculation "
+    "alone is NOT a reason for rejection.\n"
+    "2. NEEDS_REFINEMENT: If a path is directionally sound but missing data or "
+    "suffering from slight bundling, use 'explicitly_abstain' and explain why.\n"
+    "3. REJECTED (REFUSE): Use 'refuse' ONLY for hard contradictions with "
+    "explicit user rules or proven physical impossibility (e.g. retroactive causation).\n"
+    "4. NO LONG EXPLANATIONS: Unless you are using 'refuse' (hard_invalid), keep "
+    "the verdict_detail brief. Focus on ranking and filtering, not refusing."
+)
+
 
 def _extract_case_token(case_id: str) -> str:
     """Pull the canonical `case_NN` token from a RunContext.case_id string.
@@ -221,15 +235,19 @@ def _build_step9_prompt(
     return (
         "You are operating as the ELIF v0.1 Governance Kernel at Step 9 "
         "(verdict with confidence and unresolved uncertainty).\n\n"
+        "GOVERNANCE DECISION PROTOCOL (Ranking and Validation):\n"
+        f"{_GOVERNANCE_DECISION_PROTOCOL}\n\n"
         "Article V tie (refusal-capability): the verdict you emit MUST be "
         f"drawn from the closed set {list(_VERDICT_VOCAB)}. Do not invent "
         "synonyms.\n"
-        "  * 'constrain' — proceed only under explicit constraints; the "
-        "constraints must be readable in `verdict_detail`.\n"
-        "  * 'refuse' — refuse to authorize the proposed action; the "
-        "refusal reason must be readable in `verdict_detail`.\n"
-        "  * 'explicitly_abstain' — refuse to issue a verdict at all "
-        "(distinct from refusal); the abstention rationale must be "
+        "  * 'constrain' — (APPROVED BRANCH) proceed only under explicit constraints; the "
+        "constraints must be readable in `verdict_detail`. Be permissive of "
+        "exploration.\n"
+        "  * 'refuse' — (REJECTED) refuse to authorize the proposed action ONLY "
+        "for hard physical/logic contradictions. The refusal reason must be "
+        "readable in `verdict_detail`.\n"
+        "  * 'explicitly_abstain' — (NEEDS REFINEMENT) refuse to issue a verdict at all "
+        "(distinct from refusal) if data is missing. The rationale must be "
         "readable in `verdict_detail`.\n\n"
         "Article VI tie (coherent convergence): the `confidence` qualifier "
         "MUST be tied to at least one named entry in "

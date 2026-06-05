@@ -45,6 +45,19 @@ _SYSTEM_PREFACE = (
     "retain state between calls (decision package §8.9)."
 )
 
+# Canonical Structural Scrutiny criteria for Article II validation.
+# DIVERGENCE PROTOCOL: When validating a branch, be permissive of expansion.
+# Only reject for hard contradictions or bundle-failures.
+_STRUCTURAL_SCRUTINY_CRITERIA = (
+    "1. CAUSAL COHERENCE: Does the frame respect physical laws (no retroactive "
+    "causation in physical domains)?\n"
+    "2. HARD CONSTRAINTS: Does it violate explicit user rules? (If it's a branch, "
+    "speculative expansion is PERMITTED unless it causes a hard contradiction).\n"
+    "3. DECIDABILITY: Does the frame bundle too many issues? (needs_decomposition).\n"
+    "4. NO SOFT REJECTION: Do not reject branches for 'drift' or 'expansion'. "
+    "Divergences are exploratory by design."
+)
+
 
 def _case_suffix(run_context: Optional[RunContext]) -> str:
     """Derive the fixture case suffix (e.g. 'case_01') from the run context.
@@ -231,16 +244,29 @@ class FrameValidator:
         )
 
     def _build_step1_prompt(self, input_frame: InputFrame) -> str:
+        is_branch = "_branch_" in (self._run_context.case_id if self._run_context else "")
+        branch_context = (
+            "\n[DIVERGENCE BRANCH]: This inquiry is an exploratory divergence branch. "
+            "Be PERMISSIVE of ontological expansion and speculative framing. "
+            "Only reject if there is a HARD contradiction or physical impossibility.\n"
+        ) if is_branch else ""
+
         return (
             f"{_SYSTEM_PREFACE}\n\n"
             "TASK: Step 1 — Frame validation.\n"
+            f"{branch_context}"
             "Emit a verdict from the closed set: "
             "{valid, invalid, needs_decomposition}.\n"
             "  * 'valid' — the frame is well-posed and reasoning may proceed.\n"
             "  * 'invalid' — the frame fails Article II; reasoning must halt.\n"
             "  * 'needs_decomposition' — the frame bundles distinct decisions "
-            "and must be reformulated before reasoning proceeds.\n"
-            "If verdict is not 'valid', you MUST emit a `reformulated_frame` "
+            "and must be reformulated before reasoning proceeds.\n\n"
+            "STRUCTURAL SCRUTINY CRITERIA:\n"
+            f"{_STRUCTURAL_SCRUTINY_CRITERIA}\n\n"
+            "If verdict is not 'valid', you MUST provide a CONCISE `reasoning` "
+            "explaining the specific hard contradiction. Do not generate long narratives "
+            "or philosophical objections. If it's a branch, only reject for explicit "
+            "physical/logic impossibility. You MUST also emit a `reformulated_frame` "
             "rewriting the frame so it is decidable.\n\n"
             f"INPUT FRAME (id={input_frame.id}, "
             f"scope_tag={input_frame.doctrinal_scope_tag}):\n"
