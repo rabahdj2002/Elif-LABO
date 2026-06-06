@@ -1,0 +1,200 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6">
+    <header class="flex flex-col md:flex-row justify-between items-center md:items-end border-b border-white/5 pb-8 space-y-6 md:space-y-0 text-center md:text-left">
+        <div class="w-full md:w-auto">
+            <h1 class="text-3xl md:text-4xl font-black tracking-tighter text-white mb-2 planet-nav uppercase">Cognitive Analytics</h1>
+            <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">Deep insights into inquiry behavior, spend efficiency, and model patterns.</p>
+        </div>
+        <div class="w-full md:w-auto flex space-x-12">
+            <div>
+                <div class="text-2xl md:text-3xl font-bold text-emerald-400 font-mono tracking-tighter">${{ total_spend|stringformat:".4f" }}</div>
+                <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total Network Expenditure</div>
+            </div>
+            <div>
+                <div class="text-2xl md:text-3xl font-bold text-white font-mono tracking-tighter">{{ total_inquiries }}</div>
+                <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total Inquiries</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Top Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="glass p-6 rounded-3xl border-white/5 bg-white/[0.02]">
+            <div class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">Completion Rate</div>
+            <div class="text-2xl font-bold text-white font-mono">
+                {% if total_inquiries > 0 %}
+                    {% widthratio completed_inquiries total_inquiries 100 %}%
+                {% else %}
+                    0%
+                {% endif %}
+            </div>
+            <div class="text-[9px] text-gray-600 mt-1 uppercase">Sovereign Resolution Rate</div>
+        </div>
+        <div class="glass p-6 rounded-3xl border-white/5 bg-white/[0.02]">
+            <div class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">Avg Session Cost</div>
+            <div class="text-2xl font-bold text-emerald-400 font-mono">${{ avg_cost|floatformat:4 }}</div>
+            <div class="text-[9px] text-gray-600 mt-1 uppercase">Per Reasoning Event</div>
+        </div>
+        <div class="glass p-6 rounded-3xl border-white/5 bg-white/[0.02]">
+            <div class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">Active Nodes</div>
+            <div class="text-2xl font-bold text-blue-400 font-mono">{{ status_distribution|length }}</div>
+            <div class="text-[9px] text-gray-600 mt-1 uppercase">Workflow State Variance</div>
+        </div>
+        <div class="glass p-6 rounded-3xl border-white/5 bg-white/[0.02]">
+            <div class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">Model Diversity</div>
+            <div class="text-2xl font-bold text-purple-400 font-mono">{{ model_spend|length }}</div>
+            <div class="text-[9px] text-gray-600 mt-1 uppercase">Involved Architectures</div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Inquiry Volume Over Time -->
+        <div class="glass p-8 rounded-[2rem] border-white/5 bg-black/40 overflow-hidden">
+            <h5 class="text-sm font-bold text-gray-300 uppercase tracking-[0.2em] mb-8"><i class="fa-solid fa-chart-line mr-3 text-blue-500"></i>Inquiry Trajectories (Last 30 Days)</h5>
+            <div class="h-64">
+                <canvas id="usageChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Spend by Model -->
+        <div class="glass p-8 rounded-[2rem] border-white/5 bg-black/40 overflow-hidden">
+            <h5 class="text-sm font-bold text-gray-300 uppercase tracking-[0.2em] mb-8"><i class="fa-solid fa-chart-pie mr-3 text-emerald-500"></i>Expenditure by Architecture</h5>
+            <div class="h-64 flex justify-center">
+                <canvas id="modelSpendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Status Distribution -->
+        <div class="glass p-8 rounded-[2rem] border-white/5 bg-black/40 overflow-hidden lg:col-span-2">
+            <h5 class="text-sm font-bold text-gray-300 uppercase tracking-[0.2em] mb-8"><i class="fa-solid fa-chart-bar mr-3 text-purple-500"></i>Workflow Status Distribution</h5>
+            <div class="h-64">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Topics -->
+        <div class="glass p-8 rounded-[2rem] border-white/5 bg-black/40 overflow-hidden">
+            <h5 class="text-sm font-bold text-gray-300 uppercase tracking-[0.2em] mb-8"><i class="fa-solid fa-tags mr-3 text-yellow-500"></i>Top Core Topics</h5>
+            <div class="space-y-4">
+                {% for topic in topic_distribution %}
+                <div class="flex justify-between items-center group">
+                    <span class="text-xs text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">{{ topic.topic|default:"UNCLASSIFIED" }}</span>
+                    <span class="text-xs font-mono text-gray-600 group-hover:text-blue-400">{{ topic.count }}</span>
+                </div>
+                <!-- Mini Progress Bar -->
+                <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                    <div class="bg-blue-500/40 h-full" style="width: {% if total_inquiries > 0 %}{% widthratio topic.count total_inquiries 100 %}{% else %}0{% endif %}%"></div>
+                </div>
+                {% empty %}
+                <p class="text-[10px] text-gray-600 uppercase tracking-widest text-center py-12">No topic data available</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Efficiency & Token Density -->
+    <div class="glass rounded-[2rem] border-white/5 bg-black/40 overflow-hidden">
+        <div class="px-8 py-6 border-b border-white/5 bg-white/[0.02]">
+            <h5 class="text-sm font-bold text-gray-300 uppercase tracking-[0.2em]"><i class="fa-solid fa-microchip mr-3 text-red-500"></i>Cognitive Density Matrix</h5>
+        </div>
+        <div class="p-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for eff in efficiency %}
+                <div class="border border-white/5 p-6 rounded-2xl bg-white/[0.01] hover:bg-white/[0.03] transition-all">
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">{{ eff.model_id }}</div>
+                    <div class="text-xl font-bold text-white font-mono">{{ eff.avg_tokens|floatformat:0 }} <span class="text-[10px] text-gray-600 ml-1">AVG TOKENS</span></div>
+                </div>
+                {% empty %}
+                <p class="text-[10px] text-gray-600 uppercase tracking-widest text-center py-4">Awaiting performance data...</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    Chart.defaults.color = '#6b7280';
+    Chart.defaults.font.family = 'JetBrains Mono, monospace';
+    Chart.defaults.font.size = 10;
+    const usageCtx = document.getElementById('usageChart').getContext('2d');
+    new Chart(usageCtx, {
+        type: 'line',
+        data: {
+            labels: {{ usage_labels|safe }},
+            datasets: [{
+                label: 'Inquiry Volume',
+                data: {{ usage_data|safe }},
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                pointBackgroundColor: '#3b82f6',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+    const modelSpendCtx = document.getElementById('modelSpendChart').getContext('2d');
+    new Chart(modelSpendCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for m in model_spend %}"{{ m.model_id }}",{% endfor %}],
+            datasets: [{
+                data: [{% for m in model_spend %}{{ m.total|floatformat:4 }},{% endfor %}],
+                backgroundColor: ['rgba(59, 130, 246, 0.6)', 'rgba(16, 185, 129, 0.6)', 'rgba(139, 92, 246, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(239, 68, 68, 0.6)'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 10, padding: 15 } }
+            }
+        }
+    });
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for s in status_distribution %}"{{ s.status }}",{% endfor %}],
+            datasets: [{
+                label: 'Inquiries',
+                data: [{% for s in status_distribution %}{{ s.count }},{% endfor %}],
+                backgroundColor: 'rgba(139, 92, 246, 0.4)',
+                borderColor: '#8b5cf6',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+<style>
+    canvas { width: 100% !important; }
+</style>
+{% endblock %}

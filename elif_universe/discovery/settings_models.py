@@ -5,12 +5,15 @@ class SystemSettings(models.Model):
     Control layer for the ELIF Engine and UX parameters.
     """
     engine_model_choices = [
-        ('sonnet', 'Claude 3.5 Sonnet (Canonical)'),
+        ('deepseek-chat', 'DeepSeek Chat (Standard)'),
+        ('deepseek-reasoner', 'DeepSeek Reasoner (R1)'),
+        ('sonnet', 'Claude 4.5 Sonnet (Canonical)'),
     ]
 
     # Engine Config
-    active_model = models.CharField(max_length=50, choices=engine_model_choices, default='sonnet')
+    active_model = models.CharField(max_length=50, choices=engine_model_choices, default='deepseek-chat')
     anthropic_api_key = models.CharField(max_length=255, blank=True, null=True, help_text="API Key for Claude models")
+    deepseek_api_key = models.CharField(max_length=255, blank=True, null=True, help_text="API Key for DeepSeek models")
     # Gemini and OpenAI removed per operator directive 2026-06-03
     offline_mode = models.BooleanField(default=False, help_text="Simulate reasoning without API calls")
     reasoning_depth = models.IntegerField(default=7, help_text="Depth of Step 6 propagation")

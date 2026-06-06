@@ -15,7 +15,7 @@
             <form method="POST" class="flex items-center space-x-3 glass px-4 py-2 rounded-xl border-blue-500/20">
                 {% csrf_token %}
                 <input type="hidden" name="toggle_spending" value="1">
-                <span class="text-[10px] text-blue-400 font-black uppercase tracking-widest">User Spending Overview</span>
+                <span class="text-[10px] text-blue-400 font-black uppercase tracking-widest">User Spending</span>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" name="show_spending_overview" {% if system_settings.show_spending_overview %}checked{% endif %} 
                            class="sr-only peer" onchange="this.form.submit()">
@@ -23,6 +23,15 @@
                 </label>
             </form>
             {% endif %}
+
+            <!-- Engine Reset Button -->
+            <a href="{% url 'discovery:admin_heal' %}" 
+               onclick="return confirm('Sovereign Alert: This will terminate all engine processes older than 10 minutes. Proceed?')"
+               class="flex items-center space-x-2 glass px-4 py-2 rounded-xl border-red-500/30 hover:bg-red-500/10 text-red-500 transition-all group">
+                <i class="fa-solid fa-bolt-lightning text-[10px] group-hover:animate-pulse"></i>
+                <span class="text-[10px] font-black uppercase tracking-widest">Heal Stuck Engine</span>
+            </a>
+
             <div class="glass px-4 py-2 rounded-xl border-purple-500/20 text-purple-400 text-xs font-mono">
                 Admin Mode Active
             </div>

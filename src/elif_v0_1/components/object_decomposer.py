@@ -36,6 +36,7 @@ from typing import Any, Dict, Mapping
 
 from ..base import (
     ELIFError,
+    get_language_prompt,
     InputFrame,
     SchemaValidationError,
 )
@@ -107,7 +108,10 @@ def _require_step2_decomposition(value: Any) -> Dict[str, Any]:
 
 
 # ---- Prompt builders -------------------------------------------------------
-def _build_step2_prompt(input_frame: InputFrame) -> str:
+def _build_step2_prompt(
+    input_frame: InputFrame,
+    run_context: RunContext | None = None,
+) -> str:
     """Build the Step 2 family-axis decomposition prompt.
 
     The prompt instructs the LLM to enumerate >= 1 axis and >= 2 families
@@ -123,6 +127,7 @@ def _build_step2_prompt(input_frame: InputFrame) -> str:
         "Surface the load-bearing axes along which the input frame "
         "decomposes into distinct families, and emit them as a structured "
         "tree.\n\n"
+        f"{get_language_prompt(run_context)}"
         f"INPUT FRAME (locked at {input_frame.locked_at_iso}, "
         f"doctrinal_scope_tag={input_frame.doctrinal_scope_tag!r}, "
         f"companion_case={input_frame.companion_case!r}):\n"
@@ -139,7 +144,10 @@ def _build_step2_prompt(input_frame: InputFrame) -> str:
     )
 
 
-def _build_step6_prompt(decomposition: Mapping[str, Any]) -> str:
+def _build_step6_prompt(
+    decomposition: Mapping[str, Any],
+    run_context: RunContext | None = None,
+) -> str:
     """Build the Step 6 multi-scale-axis prompt.
 
     Reads the Step 2 decomposition and asks for >= 2 distinct scales and
@@ -171,6 +179,7 @@ def _build_step6_prompt(decomposition: Mapping[str, Any]) -> str:
         "operate, then identify load-bearing cross-scale relations "
         "(how does the behavior at one scale constrain, enable, or "
         "obscure the behavior at another?).\n\n"
+        f"{get_language_prompt(run_context)}"
         "STEP 2 DECOMPOSITION (axes already surfaced):\n"
         f"{axes_summary}\n\n"
         "Output requirements:\n"
@@ -178,10 +187,12 @@ def _build_step6_prompt(decomposition: Mapping[str, Any]) -> str:
         "organism, field, farm-economic, research-system, "
         "public-funding, civilizational).\n"
         "  * `cross_scale_relations`: at least 1 statement of the form "
-        "'X at scale A does not aggregate to Y at scale B' or "
         "'A operates on a slower timescale than B'.\n"
-        "Engage the scale-axis only if the content genuinely spans "
-        "multiple scales; do not invent scales the frame does not touch.\n"
+        "  * `synthesis`: A deep, exhaustive synthesis of how these scales "
+        "interact to produce the emergent behavior described in the frame. "
+        "This MUST be highly detailed and provide the core 'Pulse' of the problem.\n"
+        "Engage the scale-axis only if the content genuinely spans multiple scales; "
+        "do not invent scales the frame does not touch.\n"
         "Emit nothing outside the structured tool output."
     )
 
@@ -216,7 +227,7 @@ class ObjectDecomposer:
         frame = _require_input_frame(input_frame)
         ctx = _require_run_context(run_context)
 
-        prompt = _build_step2_prompt(frame)
+        prompt = _build_step2_prompt(frame, ctx)
         fixture_id = (
             f"step_02__{_extract_case_token(ctx.case_id)}"
             if ctx.offline_mode
@@ -254,7 +265,7 @@ class ObjectDecomposer:
         decomp = _require_step2_decomposition(decomposition)
         ctx = _require_run_context(run_context)
 
-        prompt = _build_step6_prompt(decomp)
+        prompt = _build_step6_prompt(decomp, ctx)
         fixture_id = (
             f"step_06__{_extract_case_token(ctx.case_id)}"
             if ctx.offline_mode

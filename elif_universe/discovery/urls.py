@@ -1,4 +1,4 @@
-from django.urls import path
+﻿from django.urls import path
 from . import views
 
 app_name = 'discovery'
@@ -19,7 +19,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('sovereign/settings/', views.system_settings_view, name='settings'),
     path('settings/clear-lock/', views.clear_engine_lock, name='clear_lock'),
-    path('spend/', views.spend_history, name='spend_history'),
+    path('spend/', views.spend_history, name='spend_history'), path('analytics/', views.analytics_dashboard, name='analytics'),
     path('subscription/', views.subscription_view, name='subscription'),
     path('documentation/', views.documentation_view, name='documentation'),
     path('tester-survey/', views.tester_survey, name='tester_survey'),
@@ -37,6 +37,7 @@ urlpatterns = [
     path('admin-dashboard/users/<int:user_id>/', views.user_detail, name='user_detail'),
     path('admin-dashboard/users/<int:user_id>/toggle/', views.toggle_user_status, name='toggle_user'),
     path('admin-dashboard/users/<int:user_id>/reset-usage/', views.manual_reset_usage, name='reset_usage'),
+    path('admin-dashboard/heal/', views.admin_heal_engine, name='admin_heal'),
     path('admin-dashboard/inquiry/<pk>/status/', views.update_inquiry_status, name='update_inquiry_status'),
     path('report-issue/', views.report_issue, name='report_issue'),
     path('my-issues/', views.user_issues, name='user_issues'),
@@ -51,3 +52,4 @@ urlpatterns = [
     path('notifications/<int:pk>/read/', views.mark_notification_read, name='mark_read'),
     path('walkthrough/complete/', views.complete_walkthrough, name='complete_walkthrough'),
 ]
+

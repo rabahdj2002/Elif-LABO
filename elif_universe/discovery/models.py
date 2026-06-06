@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from django.contrib.auth.models import User
 import uuid
 import re
@@ -56,28 +56,14 @@ class Inquiry(models.Model):
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
-        old_tier = None
-        if not is_new:
-            try:
-                old_instance = UserSubscription.objects.get(pk=self.pk)
-                old_tier = old_instance.tier
-            except UserSubscription.DoesNotExist:
-                pass
-
         super().save(*args, **kwargs)
         
         # If this is a new inquiry and has a user, increment their usage metrics
-        # ... (Inquiry logic removed from here as it was added to Inquiry.save)
-        
-        # Tier change notification
-        if old_tier and old_tier != self.tier:
-            Notification.objects.create(
-                user=self.user,
-                title="Tier Evolution",
-                message=f"Your cognitive capacity has been updated to [{self.tier.name}]. Higher processing limits now active.",
-                category='TIER_CHANGE',
-                link='/discovery/subscription/'
-            )
+        if is_new and self.user and hasattr(self.user, 'subscription'):
+            sub = self.user.subscription
+            sub.total_inquiries_consumed += 1
+            sub.monthly_inquiries_consumed += 1
+            sub.save(update_fields=['total_inquiries_consumed', 'monthly_inquiries_consumed'])
 
     @property
     def current_confidence(self):
@@ -204,9 +190,16 @@ class RoomState(models.Model):
                         "objects": [fam.get("description", "")]
                     } for fam in axis.get("families", [])])
 
+            # Ensure we don't show "None" for reformulation if the engine returns null or "none"
+            reformulation = None
+            if step1:
+                reformulation = step1.data.get("reformulated_frame")
+                if isinstance(reformulation, str) and reformulation.lower().strip() in ["none", ""]:
+                    reformulation = None
+            
             self.room_data = {
                 "verdict": step1.data.get("verdict", "PENDING") if step1 else "PENDING",
-                "reformulation": step1.data.get("reformulated_frame", self.inquiry.core_question) if step1 else self.inquiry.core_question,
+                "reformulation": reformulation if reformulation else self.inquiry.core_question,
                 "objects": families
             }
             
@@ -285,7 +278,7 @@ class RoomState(models.Model):
 
             self.room_data = {
                 "projections": projections,
-                "summary": "Multi-scale propagation complete." if step6 else "Awaiting Step 6 Scenario Synthesis."
+                "summary": step6.data.get("synthesis", "Multi-scale propagation complete.") if step6 else "Awaiting Step 6 Scenario Synthesis."
             }
             
         elif self.room_type == 'GOVERNANCE':
@@ -404,6 +397,28 @@ class UserSubscription(models.Model):
     # Custom permissions for 'Limited Admin' stored as JSON blob of allowed route names or categories
     admin_permissions = models.JSONField(default=dict, blank=True, help_text="Configured by Superuser for 'Limited Admin' type.")
     
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        old_tier = None
+        if not is_new:
+            try:
+                old_instance = UserSubscription.objects.get(pk=self.pk)
+                old_tier = old_instance.tier
+            except UserSubscription.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
+        
+        # Tier change notification
+        if old_tier and old_tier != self.tier:
+            Notification.objects.create(
+                user=self.user,
+                title="Tier Evolution",
+                message=f"Your cognitive capacity has been updated to [{self.tier.name}]. Higher processing limits now active.",
+                category='TIER_CHANGE',
+                link='/discovery/subscription/'
+            )
+
     @property
     def inquiry_usage(self):
         """Current usage based on monthly consumption, resetting automatically."""
@@ -558,7 +573,7 @@ class SpendRecord(models.Model):
     def calculate_cost(self):
         # Pricing Table (USD per 1M tokens)
         PRICES = {
-            "claude-3-5-sonnet": {"in": 3.0, "out": 15.0},
+            "claude-3-5-sonnet": {"in": 3.0, "out": 15.0}, "deepseek-reasoner": {"in": 0.55, "out": 2.19}, "deepseek-chat": {"in": 0.14, "out": 0.28},
             "claude-3-5-haiku": {"in": 0.25, "out": 1.25},
             "gpt-4o": {"in": 5.0, "out": 15.0},
             "default": {"in": 3.0, "out": 15.0}
@@ -596,5 +611,7 @@ class IssueReport(models.Model):
 
     def __str__(self):
         return f"Issue by {self.user.username} - {self.status}"
+
+
 
 

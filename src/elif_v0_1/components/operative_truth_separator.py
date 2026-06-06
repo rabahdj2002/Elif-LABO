@@ -34,6 +34,7 @@ from typing import Any, Dict, Mapping
 
 from ..base import (
     ELIFError,
+    get_language_prompt,
     SchemaValidationError,
 )
 from ..llm_adapter import complete_structured, validate_against_schema
@@ -94,7 +95,10 @@ def _summarize_prior_steps(prior: Mapping[str, Any]) -> str:
     return "\n".join(lines) if lines else "  (none)"
 
 
-def _build_step10_prompt(prior_steps: Mapping[str, Any]) -> str:
+def _build_step10_prompt(
+    prior_steps: Mapping[str, Any],
+    run_context: RunContext | None = None,
+) -> str:
     """Build the Step 10 operative-vs-theoretical separation prompt."""
     return (
         "You are operating as the ELIF v0.1 Operative Truth Separator at "
@@ -106,14 +110,17 @@ def _build_step10_prompt(prior_steps: Mapping[str, Any]) -> str:
         "strand is genuinely empty for this case, populate `absence_log` "
         "naming the reason; do not pad either list to avoid logging "
         "absence.\n\n"
+        f"{get_language_prompt(run_context)}"
         "PRIOR PROCEDURE OUTPUTS (load-bearing markers):\n"
         f"{_summarize_prior_steps(prior_steps)}\n\n"
         "Output requirements:\n"
         "  * `operative`: list of strings; each entry is one operationally "
-        "actionable instruction the governance verdict authorizes.\n"
+        "actionable instruction the governance verdict authorizes. "
+        "Each instruction must be highly detailed and non-trivial.\n"
         "  * `theoretical`: list of strings; each entry is one substantive "
         "scientific or structural question that, if resolved, would "
-        "materially update the verdict.\n"
+        "materially update the verdict. Provide deep architectural and "
+        "logic insights.\n"
         "  * `absence_log`: short string explaining why one strand is empty, "
         "OR a non-empty confirmation when both strands are populated.\n"
         "Emit nothing outside the structured tool output."
@@ -217,7 +224,7 @@ class OperativeTruthSeparator:
         prior = _require_prior_steps(prior_steps)
         ctx = _require_run_context(run_context)
 
-        prompt = _build_step10_prompt(prior)
+        prompt = _build_step10_prompt(prior, ctx)
         fixture_id = (
             f"step_10__{_extract_case_token(ctx.case_id)}"
             if ctx.offline_mode

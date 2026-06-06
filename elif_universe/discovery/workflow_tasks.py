@@ -29,7 +29,7 @@ STEP_NAMES = {
     "step_11": "Audit / Drift Layer",
 }
 
-@shared_task(name='discovery.start_engine_workflow')
+@shared_task(name='discovery.start_engine_workflow', time_limit=600, soft_time_limit=540)
 def start_engine_workflow(inquiry_id):
     """
     Kicks off a distributed Celery chain for the ELIF engine.
@@ -93,7 +93,7 @@ def start_engine_workflow(inquiry_id):
         except: pass
         return {"status": "error", "message": str(e)}
 
-@shared_task(bind=True, name='discovery.execute_engine_step_task', max_retries=1)
+@shared_task(bind=True, name='discovery.execute_engine_step_task', max_retries=1, time_limit=300, soft_time_limit=270)
 def execute_engine_step_task(self, prev_result, inquiry_id, step_id):
     """
     Independent Celery task for a single procedure step.
@@ -207,6 +207,22 @@ def execute_engine_step_task(self, prev_result, inquiry_id, step_id):
         return "success"
     except Exception as e:
         logger.exception(f"Step {step_id} failed: {str(e)}")
+        
+        # REFUND LOGIC: If step fails, decrement the subscription total/monthly usage
+        try:
+            inquiry = Inquiry.objects.get(pk=inquiry_id)
+            sub = getattr(inquiry.user, 'subscription', None)
+            if sub:
+                with transaction.atomic():
+                    if sub.total_inquiry_usage > 0:
+                        sub.total_inquiry_usage -= 1
+                    if sub.monthly_inquiry_usage > 0:
+                        sub.monthly_inquiry_usage -= 1
+                    sub.save(update_fields=['total_inquiry_usage', 'monthly_inquiry_usage'])
+                    logger.info(f"Refunded credit for failed inquiry {inquiry_id} (User: {inquiry.user.username})")
+        except:
+            logger.error(f"Failed to refund credit for inquiry {inquiry_id}")
+
         if self and self.request.retries < self.max_retries:
             raise self.retry(exc=e, countdown=5)
         Inquiry.objects.filter(pk=inquiry_id).update(status='FAILED', current_status_msg=f"Failed at {step_id}: {str(e)}")
@@ -259,15 +275,25 @@ def finalize_engine_workflow_task(prev_result, inquiry_id):
         
         with transaction.atomic():
             if 9 in planets: inquiry.final_verdict = planets[9].get("verdict", "N/A")
-            if 1 in planets: inquiry.current_question_state = planets[1].get("reformulated_frame", inquiry.core_question)
+            
+            # Map Step 1 (Frame) to the Inquiry State
+            if 1 in planets:
+                # If reformulated_frame is None, empty, or "none", preserve the original core_question
+                new_frame = planets[1].get("reformulated_frame")
+                if isinstance(new_frame, str) and new_frame.lower().strip() in ["none", ""]:
+                    new_frame = None
+                
+                inquiry.current_question_state = new_frame if new_frame else inquiry.core_question
+                
             if 3 in planets: inquiry.assumptions = planets[3].get("assumptions", [])
             
             # UNRESOLVED SEMANTIC ZONES (Step 11 Core)
             # Prioritize Step 11 "entries" or Step 9 "unresolved_uncertainty_sources"
             if 11 in planets:
-                inquiry.unresolved_zones = planets[11].get("unresolved_zones", []) or planets[11].get("entries", [])
+                # Step 11 payload now uses 'entries' to store the final audit trail of uncertainty
+                inquiry.unresolved_zones = planets[11].get("entries") or planets[11].get("unresolved_zones", [])
             elif 9 in planets:
-                # Step 9 is the primary source of uncertainty if Step 11 is not present
+                # Fallback for older runs or if Step 11 is skipped
                 inquiry.unresolved_zones = planets[9].get("unresolved_uncertainty_sources", [])
             
             if 7 in planets:
@@ -288,7 +314,6 @@ def finalize_engine_workflow_task(prev_result, inquiry_id):
 
             inquiry.status = 'COMPLETED'
             inquiry.current_status_msg = "Workflow Complete."
-            inquiry.completion_date = datetime.now()
             inquiry.save()
 
             for room_state in inquiry.room_states.all():

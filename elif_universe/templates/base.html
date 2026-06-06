@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELIF Universe | Decision Navigation</title>
     <!-- ELIF favicon using Emoji as fallback if no asset exists -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧬</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>ðŸ§¬</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -302,12 +302,12 @@
 
             if (!inquiryId) return;
 
-            const eventSource = new EventSource(\`/discovery/inquiry/\${inquiryId}/events/\`);
+            const eventSource = new EventSource(`/discovery/inquiry/${inquiryId}/events/`);
             
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 const msgEl = document.getElementById('engine-message');
-                if (msgEl) msgEl.innerText = \`"\${data.message}"\`;
+                if (msgEl) msgEl.innerText = `"${data.message}"`;
 
                 const timeline = document.getElementById('engine-timeline');
                 if (timeline && data.steps) {
@@ -326,24 +326,24 @@
                             statusColor = 'text-red-400';
                             icon = 'fa-circle-xmark';
                         }
-                        return \`
+                        return `
                             <div class="flex items-center space-x-2 text-[10px]">
-                                <i class="fa-solid \${icon} \${statusColor} w-3"></i>
-                                <span class="\${step.status === 'NOT_STARTED' ? 'text-gray-500' : 'text-gray-300'} font-medium">\${step.name}</span>
+                                <i class="fa-solid ${icon} ${statusColor} w-3"></i>
+                                <span class="${step.status === 'NOT_STARTED' ? 'text-gray-500' : 'text-gray-300'} font-medium">${step.name}</span>
                             </div>
-                        \`;
+                        `;
                     }).join('');
 
                     const progressPercent = Math.round((completedCount / data.steps.length) * 100);
                     const pBar = document.getElementById('toast-progress');
                     const pVal = document.getElementById('progress-val');
-                    if (pBar) pBar.style.width = \`\${progressPercent}%\`;
-                    if (pVal) pVal.innerText = \`\${progressPercent}%\`;
+                    if (pBar) pBar.style.width = `${progressPercent}%`;
+                    if (pVal) pVal.innerText = `${progressPercent}%`;
 
                     // Update main page telemetry log if present
                     const telemetryLog = document.getElementById('telemetry-log');
                     if (telemetryLog && data.steps) {
-                        telemetryLog.innerHTML = \`<div class="space-y-2">\` + data.steps.map(step => {
+                        telemetryLog.innerHTML = `<div class="space-y-2">` + data.steps.map(step => {
                             let statusColor = 'text-gray-600';
                             let icon = 'fa-circle-dot';
                             let bg = 'bg-white/5';
@@ -360,17 +360,17 @@
                                 icon = 'fa-circle-xmark';
                                 bg = 'bg-red-500/10 border border-red-500/20';
                             }
-                            return \`
-                                <div class="flex items-center justify-between p-3 rounded-xl \${bg} transition-all duration-500">
+                            return `
+                                <div class="flex items-center justify-between p-3 rounded-xl ${bg} transition-all duration-500">
                                     <div class="flex items-center space-x-3">
-                                        <span class="text-[9px] font-mono text-gray-500 w-4">0\${step.order}</span>
-                                        <i class="fa-solid \${icon} \${statusColor} text-[10px]"></i>
-                                        <span class="text-xs \${step.status === 'NOT_STARTED' ? 'text-gray-600' : 'text-gray-300'} font-medium">\${step.name}</span>
+                                        <span class="text-[9px] font-mono text-gray-500 w-4">0${step.order}</span>
+                                        <i class="fa-solid ${icon} ${statusColor} text-[10px]"></i>
+                                        <span class="text-xs ${step.status === 'NOT_STARTED' ? 'text-gray-600' : 'text-gray-300'} font-medium">${step.name}</span>
                                     </div>
-                                    <span class="text-[8px] uppercase tracking-widest \${statusColor} font-black font-mono">\${step.status}</span>
+                                    <span class="text-[8px] uppercase tracking-widest ${statusColor} font-black font-mono">${step.status}</span>
                                 </div>
-                            \`;
-                        }).join('') + \`</div>\`;
+                            `;
+                        }).join('') + `</div>`;
                     }
                 }
 
@@ -586,7 +586,7 @@
                 </div>
             </a>
             
-            <!-- Desktop Notifications (Right of logo in sidebar) -->
+            <!-- Desktop Notifications -->
             <div class="hidden lg:block">
                 <div hx-get="{% url 'discovery:get_notifications' %}" 
                      hx-trigger="load, every 8s" 
@@ -618,6 +618,13 @@
                         <span class="text-sm font-bold tracking-tight hidden lg:block">New Inquiry</span>
                         <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">New</span>
                     </a>
+                    <a href="{% url 'discovery:analytics' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-chart-simple text-lg text-blue-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Analytics</span>
+                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Stats</span>
+                    </a>
                     {% if user.subscription.user_type == 'TESTER' %}
                     <a href="{% url 'discovery:tester_feedback_center' %}" class="flex items-center gap-4 p-3 rounded-xl {% if request.resolver_match.url_name == 'tester_feedback_center' %}bg-blue-500/10 text-blue-400 border border-blue-500/20{% else %}hover:bg-white/5 text-gray-400 hover:text-white{% endif %} transition-all group relative">
                         <div class="w-8 h-8 flex items-center justify-center">
@@ -643,6 +650,14 @@
                             <i class="fa-solid fa-tower-observation text-lg text-purple-400"></i>
                         </div>
                         <span class="text-sm font-bold tracking-tight hidden lg:block">Admin Dashboard</span>
+                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Dash</span>
+                    </a>
+                    <a href="{% url 'discovery:analytics' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-chart-pie text-lg text-purple-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Network Analytics</span>
+                        <span class="absolute left-16 top-3 bg-purple-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Network</span>
                     </a>
                     
                     {% if user.is_superuser or user.subscription.admin_permissions.can_view_spend %}
@@ -671,24 +686,6 @@
                         <span class="text-sm font-bold tracking-tight hidden lg:block">User Management</span>
                     </a>
                     {% endif %}
-                    
-                    {% if user.is_superuser or user.subscription.admin_permissions.can_manage_issues %}
-                    <a href="{% url 'discovery:admin_issue_center' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i class="fa-solid fa-bug text-lg text-red-400"></i>
-                        </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block">Issue Center</span>
-                    </a>
-                    {% endif %}
-
-                    {% if user.is_superuser or user.subscription.user_type == 'ADMIN' %}
-                    <a href="{% url 'discovery:admin_intelligence_hub' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i class="fa-solid fa-brain text-lg text-emerald-400"></i>
-                        </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block">Intelligence Hub</span>
-                    </a>
-                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -699,15 +696,6 @@
                     <span class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Resources</span>
                 </div>
                 <div class="space-y-1">
-                    {% if not user.is_superuser and user.subscription.user_type != 'ADMIN' %}
-                    <a href="{% url 'discovery:user_issues' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i class="fa-solid fa-headset text-lg text-blue-400"></i>
-                        </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block">My Reports</span>
-                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Reports</span>
-                    </a>
-                    {% endif %}
                     <a href="{% url 'discovery:documentation' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
                         <div class="w-8 h-8 flex items-center justify-center">
                             <i class="fa-solid fa-book-open text-lg"></i>
@@ -794,159 +782,28 @@
     <!-- Offline Mode Notification Modal -->
     <div id="offline-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm hidden animate-in fade-in duration-300">
         <div class="glass max-w-md w-full p-8 rounded-[2.5rem] border-yellow-500/20 shadow-2xl shadow-yellow-900/10 text-center space-y-6">
-            <div class="w-16 h-16 bg-yellow-500/10 border border-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fa-solid fa-cloud-slash text-2xl text-yellow-500"></i>
+            <div class="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto border border-yellow-500/30 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
+                <i class="fa-solid fa-signal-slash text-yellow-500 text-3xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-white uppercase tracking-widest">Token Saver Active</h3>
-            <p class="text-gray-400 text-sm leading-relaxed">
-                The engine is currently in <span class="text-yellow-500 font-bold">Offline Simulation Mode</span>. 
-                Live reasoning and API tokens are restricted. Verification will proceed using stored fixtures.
-            </p>
-            <div class="pt-4">
-                <button onclick="hideOfflineNotice()" class="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 px-8 py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] font-bold transition-all">
-                    Proceed with Simulation
-                </button>
-                <a href="{% if user.is_superuser %}{% url 'discovery:settings' %}{% else %}{% url 'discovery:profile' %}{% endif %}" class="block mt-4 text-[10px] text-gray-500 hover:text-white uppercase tracking-widest font-bold transition-all">
-                    Disable in {% if user.is_superuser %}System Control{% else %}Profile{% endif %}
-                </a>
+            <div>
+                <h3 class="text-xl font-bold text-white uppercase tracking-wider mb-2">Protocol Decoupled</h3>
+                <p class="text-sm text-gray-400 leading-relaxed">System has entered <span class="text-yellow-500 font-bold uppercase tracking-widest text-xs">Offline Substrate</span>. Network operations are cached until reconnection.</p>
             </div>
+            <button onclick="document.getElementById('offline-modal').classList.add('hidden')" class="w-full py-4 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 font-black uppercase tracking-widest rounded-2xl border border-yellow-500/30 transition-all">
+                Acknowledge Cache
+            </button>
         </div>
     </div>
 
     <script>
-        function showOfflineNotice() {
+        // Detection Logic
+        window.addEventListener('offline', () => {
             document.getElementById('offline-modal').classList.remove('hidden');
-        }
-        function hideOfflineNotice() {
-            document.getElementById('offline-modal').classList.add('hidden');
-            // Check if we were supposed to trigger a sync
-            if (window.pendingSyncUrl) {
-                const url = window.pendingSyncUrl;
-                window.pendingSyncUrl = null;
-                // Actually trigger it after the modal is acknowledged
-                htmx.ajax('POST', url, {
-                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
-                    indicator: '#sync-spinner'
-                });
-            }
-        }
-    </script>
-
-    {% block extra_js %}
-    <script>
-        document.body.addEventListener('htmx:afterOnLoad', function(evt) {
-            const telemetryLog = document.getElementById('telemetry-log');
-            if (telemetryLog) {
-                telemetryLog.scrollTop = telemetryLog.scrollHeight;
-            }
+        });
+        window.addEventListener('online', () => {
+             // Subtle toast instead of modal on reconnect
+             showNotifToast("System re-coupled to network.");
         });
     </script>
-    {% endblock %}
-
-    {% if user.is_authenticated %}
-    <!-- Issue Reporting Floating Button -->
-    <button onclick="openIssueModal()" class="fixed bottom-6 right-6 w-12 h-12 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 rounded-full flex items-center justify-center text-blue-400 hover:text-white shadow-2xl backdrop-blur-md transition-all z-[150] group" title="Report an Issue">
-        <i class="fa-solid fa-bug text-lg"></i>
-    </button>
-
-    <!-- Issue Modal -->
-    <div id="issue-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm hidden animate-in fade-in duration-300">
-        <div class="glass max-w-lg w-full p-8 rounded-[2rem] border-blue-500/20 shadow-2xl space-y-6">
-            <h3 class="text-xl font-bold text-white uppercase tracking-widest flex items-center gap-3">
-                <i class="fa-solid fa-headset text-blue-500"></i>
-                Report System Anomaly
-            </h3>
-            <div class="space-y-4">
-                <div id="screenshot-preview" class="w-full aspect-video bg-black/40 rounded-xl border border-white/5 overflow-hidden hidden flex items-center justify-center">
-                    <img id="issue-screenshot-img" src="" class="max-w-full max-h-full object-contain">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">What's the anomaly?</label>
-                    <textarea id="issue-description" rows="4" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-all" placeholder="Describe what happened..."></textarea>
-                </div>
-            </div>
-            <div class="flex gap-4">
-                <button onclick="closeIssueModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-white/60 px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all">
-                    Cancel
-                </button>
-                <button id="submit-issue-btn" onclick="submitIssue()" class="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all">
-                    Submit Report
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script>
-        let issueScreenshot = "";
-
-        async function openIssueModal() {
-            document.getElementById('issue-modal').classList.remove('hidden');
-            const preview = document.getElementById('screenshot-preview');
-            const img = document.getElementById('issue-screenshot-img');
-            
-            // Auto capture screenshot
-            try {
-                const canvas = await html2canvas(document.body, {
-                    scale: 0.5,
-                    logging: false,
-                    useCORS: true,
-                    ignoreElements: (el) => el.id === 'issue-modal' || el.classList.contains('fa-bug')
-                });
-                issueScreenshot = canvas.toDataURL("image/jpeg", 0.7);
-                img.src = issueScreenshot;
-                preview.classList.remove('hidden');
-            } catch (e) {
-                console.error("Screenshot failed", e);
-            }
-        }
-
-        function closeIssueModal() {
-            document.getElementById('issue-modal').classList.add('hidden');
-            document.getElementById('issue-description').value = "";
-            issueScreenshot = "";
-        }
-
-        async function submitIssue() {
-            const description = document.getElementById('issue-description').value;
-            const btn = document.getElementById('submit-issue-btn');
-            
-            if (!description) {
-                alert("Please describe the issue.");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "Sending...";
-
-            const response = await fetch("{% url 'discovery:report_issue' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": "{{ csrf_token }}"
-                },
-                body: new URLSearchParams({
-                    "description": description,
-                    "screenshot": issueScreenshot,
-                    "url": window.location.href
-                })
-            });
-
-            if (response.ok) {
-                closeIssueModal();
-                // Show success toast manually
-                const toast = document.createElement('div');
-                toast.className = "fixed bottom-24 right-6 glass p-4 rounded-xl border border-blue-500/30 text-blue-400 shadow-2xl animate-in fade-in slide-in-from-bottom duration-300 z-[200]";
-                toast.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i> Issue reported. The system admins have been notified.';
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 5000);
-            } else {
-                alert("Failed to send report. Please try again.");
-            }
-            btn.disabled = false;
-            btn.innerText = "Submit Report";
-        }
-    </script>
-    {% endif %}
 </body>
 </html>

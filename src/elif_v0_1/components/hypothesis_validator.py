@@ -49,6 +49,7 @@ from typing import Any, Dict, Mapping
 
 from ..base import (
     ELIFError,
+    get_language_prompt,
     SchemaValidationError,
 )
 from ..llm_adapter import complete_structured, validate_against_schema
@@ -128,7 +129,10 @@ def _require_step4_hypotheses(value: Any) -> Dict[str, Any]:
 
 
 # ---- Prompt builders -------------------------------------------------------
-def _build_step4_prompt(decomposition: Mapping[str, Any]) -> str:
+def _build_step4_prompt(
+    decomposition: Mapping[str, Any],
+    run_context: RunContext | None = None,
+) -> str:
     """Build the Step 4 hypotheses-with-distinguishing-predictions prompt.
 
     The prompt instructs the LLM to enumerate >= 1 hypothesis and to attach
@@ -156,6 +160,7 @@ def _build_step4_prompt(decomposition: Mapping[str, Any]) -> str:
     return (
         "You are operating as the ELIF v0.1 Hypothesis Validator at Step 4 "
         "(hypotheses with distinguishing predictions).\n\n"
+        f"{get_language_prompt(run_context)}"
         "Article I tie: refuse to emit 'concerns' masquerading as "
         "hypotheses. Each emitted hypothesis MUST carry a "
         "`distinguishing_prediction` — an observable outcome that "
@@ -178,7 +183,10 @@ def _build_step4_prompt(decomposition: Mapping[str, Any]) -> str:
     )
 
 
-def _build_step5_prompt(hypotheses_payload: Mapping[str, Any]) -> str:
+def _build_step5_prompt(
+    hypotheses_payload: Mapping[str, Any],
+    run_context: RunContext | None = None,
+) -> str:
     """Build the Step 5 failure-conditions-per-hypothesis prompt.
 
     The prompt instructs the LLM to attach one explicit `fails_if` to every
@@ -200,6 +208,7 @@ def _build_step5_prompt(hypotheses_payload: Mapping[str, Any]) -> str:
     return (
         "You are operating as the ELIF v0.1 Hypothesis Validator at Step 5 "
         "(failure conditions per hypothesis).\n\n"
+        f"{get_language_prompt(run_context)}"
         "Article I tie: every hypothesis MUST be falsifiable. Emit exactly "
         "one `fails_if` per hypothesis — an observable condition that, if "
         "met, would falsify that hypothesis. The `fails_if` statement must "
@@ -247,7 +256,7 @@ class HypothesisValidator:
         decomp = _require_step2_decomposition(decomposition)
         ctx = _require_run_context(run_context)
 
-        prompt = _build_step4_prompt(decomp)
+        prompt = _build_step4_prompt(decomp, ctx)
         fixture_id = (
             f"step_04__{_extract_case_token(ctx.case_id)}"
             if ctx.offline_mode
@@ -287,7 +296,7 @@ class HypothesisValidator:
         hyp_payload = _require_step4_hypotheses(hypotheses)
         ctx = _require_run_context(run_context)
 
-        prompt = _build_step5_prompt(hyp_payload)
+        prompt = _build_step5_prompt(hyp_payload, ctx)
         fixture_id = (
             f"step_05__{_extract_case_token(ctx.case_id)}"
             if ctx.offline_mode

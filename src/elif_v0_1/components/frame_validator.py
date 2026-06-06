@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from ..base import ELIFError, InputFrame
+from ..base import ELIFError, InputFrame, get_language_prompt
 from ..llm_adapter import complete_structured
 from ..run_context import RunContext
 from ..schemas import schema_for
@@ -254,6 +254,7 @@ class FrameValidator:
         return (
             f"{_SYSTEM_PREFACE}\n\n"
             "TASK: Step 1 — Frame validation.\n"
+            f"{get_language_prompt(input_frame)}"
             f"{branch_context}"
             "Emit a verdict from the closed set: "
             "{valid, invalid, needs_decomposition}.\n"
@@ -267,7 +268,8 @@ class FrameValidator:
             "explaining the specific hard contradiction. Do not generate long narratives "
             "or philosophical objections. If it's a branch, only reject for explicit "
             "physical/logic impossibility. You MUST also emit a `reformulated_frame` "
-            "rewriting the frame so it is decidable.\n\n"
+            "rewriting the frame so it is decidable. If the verdict is 'valid', "
+            "leave `reformulated_frame` null; do not return the string 'none'.\n\n"
             f"INPUT FRAME (id={input_frame.id}, "
             f"scope_tag={input_frame.doctrinal_scope_tag}):\n"
             f"{input_frame.text}\n"
@@ -277,6 +279,7 @@ class FrameValidator:
         return (
             f"{_SYSTEM_PREFACE}\n\n"
             "TASK: Step 3 — Surface the hidden assumptions in the frame.\n"
+            f"{get_language_prompt(input_frame)}"
             "Emit AT LEAST TWO assumptions. Each assumption MUST be a "
             "declarative statement (no question marks). Do not restate the "
             "frame; surface what the frame takes for granted.\n\n"
@@ -288,6 +291,7 @@ class FrameValidator:
         return (
             f"{_SYSTEM_PREFACE}\n\n"
             "TASK: Step 7 mode B — Deeper-frame-rejection trajectories.\n"
+            f"{get_language_prompt(input_frame)}"
             "Emit trajectories that REJECT the deeper frame (the implicit "
             "assumption that the proposed framing is itself the right one). "
             "Each trajectory must include a one-line `reason`. Use the tag "

@@ -25,7 +25,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, Mapping, Optional
 
-from ..base import ELIFError, SchemaValidationError
+from ..base import ELIFError, get_language_prompt, SchemaValidationError
 from ..llm_adapter import complete_structured, validate_against_schema
 from ..run_context import RunContext
 from ..schemas import (
@@ -191,10 +191,12 @@ def _summarize_trajectories(trajectories: Mapping[str, Any]) -> str:
 def _build_step7_modeA_prompt(
     hypotheses: Mapping[str, Any],
     failures: Mapping[str, Any],
+    run_context: Optional[RunContext] = None,
 ) -> str:
     """Build the Step 7 mode A (outside-frame trajectories) prompt."""
     return (
         f"{_SYSTEM_PREFACE}\n\n"
+        f"{get_language_prompt(run_context)}"
         "TASK: Step 7 mode A — Generate Candidate Divergence Paths.\n"
         "Emit trajectories that step OUTSIDE the original frame as posed. "
         "Each trajectory MUST be tagged "
@@ -210,10 +212,14 @@ def _build_step7_modeA_prompt(
     )
 
 
-def _build_step8_prompt(trajectories: Mapping[str, Any]) -> str:
+def _build_step8_prompt(
+    trajectories: Mapping[str, Any],
+    run_context: Optional[RunContext] = None,
+) -> str:
     """Build the Step 8 stage-gated roadmap prompt."""
     return (
         f"{_SYSTEM_PREFACE}\n\n"
+        f"{get_language_prompt(run_context)}"
         "TASK: Step 8 — Stage-gated roadmap.\n"
         "Read the Step 7-modeA outside-frame trajectories and synthesize "
         "them into a stage-gated roadmap. Each stage MUST declare:\n"
@@ -232,6 +238,8 @@ def _build_step8_prompt(trajectories: Mapping[str, Any]) -> str:
 
 
 # ---- Component -------------------------------------------------------------
+
+
 class BranchingRoadmapEngine:
     """Owner of Step 7 mode A (outside-frame trajectories that feed Step 8)
     and Step 8 (stage-gated roadmap).
@@ -281,7 +289,7 @@ class BranchingRoadmapEngine:
         hyps = _require_step4_hypotheses(hypotheses)
         fails = _require_step5_failures(failures)
 
-        prompt = _build_step7_modeA_prompt(hyps, fails)
+        prompt = _build_step7_modeA_prompt(hyps, fails, self._run_context)
         payload = self._call_llm(
             prompt=prompt,
             schema=STEP_7_OUTPUT_SCHEMA,
@@ -312,7 +320,7 @@ class BranchingRoadmapEngine:
         """
         trajs = _require_step7_trajectories(trajectories)
 
-        prompt = _build_step8_prompt(trajs)
+        prompt = _build_step8_prompt(trajs, self._run_context)
         payload = self._call_llm(
             prompt=prompt,
             schema=STEP_8_OUTPUT_SCHEMA,

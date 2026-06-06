@@ -22,8 +22,15 @@
                     <div>
                         <label class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2 block">Intelligence Model</label>
                         <select name="active_model" class="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-gray-300 focus:border-blue-500 outline-none w-full appearance-none">
-                            <option value="sonnet" class="bg-[#0a0a0a] text-white" {% if settings.active_model == 'sonnet' %}selected{% endif %}>Claude 3.5 Sonnet (Canonical)</option>
+                            <option value="deepseek-chat" class="bg-[#0a0a0a] text-white" {% if settings.active_model == 'deepseek-chat' %}selected{% endif %}>DeepSeek Chat (Standard)</option>
+                            <option value="deepseek-reasoner" class="bg-[#0a0a0a] text-white" {% if settings.active_model == 'deepseek-reasoner' %}selected{% endif %}>DeepSeek Reasoner (R1)</option>
+                            <option value="sonnet" class="bg-[#0a0a0a] text-white" {% if settings.active_model == 'sonnet' %}selected{% endif %}>Claude 4.5 Sonnet (Canonical)</option>
                         </select>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2 block">DeepSeek API Key</label>
+                        <input type="password" name="deepseek_api_key" value="{{ settings.deepseek_api_key|default:'' }}" class="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-gray-300 focus:border-blue-500 outline-none w-full" placeholder="sk-...">
                     </div>
 
                     <div>

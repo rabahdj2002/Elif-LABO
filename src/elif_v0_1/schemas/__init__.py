@@ -211,7 +211,7 @@ STEP_1_OUTPUT_SCHEMA: Dict[str, Any] = {
             "enum": ["valid", "invalid", "needs_decomposition"],
         },
         "reasoning": {"type": "string", "minLength": 1},
-        "reformulated_frame": {"type": "string"},
+        "reformulated_frame": {"type": ["string", "null"]},
     },
     "additionalProperties": False,
 }
@@ -318,7 +318,7 @@ STEP_6_OUTPUT_SCHEMA: Dict[str, Any] = {
     "$schema": JSON_SCHEMA_DIALECT,
     "title": "Step6MultiScaleMapping",
     "type": "object",
-    "required": ["scales", "cross_scale_relations"],
+    "required": ["scales", "cross_scale_relations", "synthesis"],
     "properties": {
         "scales": {
             "type": "array",
@@ -329,6 +329,10 @@ STEP_6_OUTPUT_SCHEMA: Dict[str, Any] = {
             "type": "array",
             "minItems": 1,
             "items": {"type": "string"},
+        },
+        "synthesis": {
+            "type": "string",
+            "minLength": 20,
         },
     },
     "additionalProperties": True,

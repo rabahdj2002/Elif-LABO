@@ -25,15 +25,14 @@ Behavioral contract:
         - still consumes one call slot from the per-process counter so that
           cap-exhaustion tests work identically online and offline
     * offline_mode=False
-        - issues an Anthropic tool-use call with `output_schema` as
-          `input_schema` of a single declared tool, forces the tool, and
-          returns the parsed tool input as a dict
-        - requires `ELIF_ANTHROPIC_API_KEY` in the environment
+        - issues an API call to DeepSeek (OpenAI-compatible) with `response_format`
+          enforced for JSON mode.
+        - requires `ELIF_DEEPSEEK_API_KEY` in the environment
         - raises `LLMAdapterError` on any transport / parsing failure
     * Both modes raise `LLMCallCapError` BEFORE attempting the call if
       `_call_counter() + 1 > max_calls`.
 
-This module ships with NO Anthropic SDK hard dependency. The SDK is imported
+This module ships with NO DeepSeek/OpenAI SDK hard dependency. The SDK is imported
 lazily inside the live branch so that offline mode works on any machine.
 """
 
@@ -53,8 +52,8 @@ from .base import (
 from .model_registry import MODEL_REGISTRY, resolve_model_id
 
 # ---- Model + paths ---------------------------------------------------------
-# Operator-approved per Step 8 §8.1.
-DEFAULT_MODEL_ID: str = MODEL_REGISTRY["sonnet"]
+# Operator-approved switch to DeepSeek 2026-06-06.
+DEFAULT_MODEL_ID: str = MODEL_REGISTRY["deepseek-reasoner"]
 
 # Tool name used in tool-use forcing. Single tool; deterministic.
 _STRUCTURED_TOOL_NAME: str = "emit_structured_output"
@@ -163,82 +162,151 @@ def _load_offline_fixture(fixture_id: str) -> Dict[str, Any]:
     return payload
 
 
-# ---- Live (Anthropic) branch ----------------------------------------------
-def _call_anthropic_tool_use(
+def _call_anthropic(
     prompt: str,
     output_schema: Dict[str, Any],
     *,
     model_id: str,
 ) -> Dict[str, Any]:
-    """Issue a tool-use call and return the parsed tool input.
-
-    The schema is supplied as `input_schema` of a single forced tool;
-    Anthropic guarantees the model emits a tool_use block whose `input`
-    matches the schema. We parse that input and return it as a dict.
-    """
-    # ELIF reads its own dedicated env var so its credentials are isolated
-    # from the OpenStudyGo supervisor's `OPENSTUDYGO_LLM_API_KEY_ANTHROPIC`
-    # pool. Operator directive 2026-05-30.
+    """Issue an Anthropic API call and return the parsed JSON output."""
     api_key = os.environ.get("ELIF_ANTHROPIC_API_KEY")
     if not api_key:
         raise LLMAdapterError(
             "offline_mode=False requires ELIF_ANTHROPIC_API_KEY in environment"
         )
     try:
-        # Lazy import: SDK must not be required in offline mode.
-        import anthropic  # type: ignore
+        import anthropic
     except ImportError as exc:
         raise LLMAdapterError(
-            "anthropic SDK not installed; either `pip install anthropic` "
-            "or use offline_mode=True"
+            "anthropic SDK not installed; pip install anthropic"
         ) from exc
 
     client = anthropic.Anthropic(api_key=api_key)
-    tool = {
-        "name": _STRUCTURED_TOOL_NAME,
-        "description": (
-            "Emit the structured output for this ELIF v0.1 procedure step. "
-            "Populate every required field. Do not include keys not in the schema."
-        ),
-        "input_schema": output_schema,
-    }
+    
+    # We include the schema in the system prompt
+    system_prompt = (
+        "You are a specialized ELIF cognitive component tasked with high-fidelity, extreme-depth reasoning. "
+        "ELIF demands unparalleled architectural complexity and semantic density. "
+        "Your response MUST be a single valid JSON object strictly matching this schema:\n"
+        f"{json.dumps(output_schema)}\n"
+        "### DOCTRINAL DEPTH REQUIREMENTS:\n"
+        "1. EXHAUSTIVE ANALYSIS: In every free-text field, provide multi-layered, highly detailed reasoning. Avoid brevity.\n"
+        "2. SEMANTIC DENSITY: Use precise, high-information terminology. Do not summarize or simplify.\n"
+        "3. REASONING TRACE: Fully expose the logic behind every decision or object created.\n"
+        "4. JSON FORMAT: Return ONLY the JSON object. Do not include markdown blocks or preamble."
+    )
+
     try:
-        message = client.messages.create(  # type: ignore[attr-defined]
+        # Sonnet 3.5/4.5 is very good at JSON if you pre-fill the opening brace
+        # but for simplicity we'll just use the standard call here.
+        response = client.messages.create(
             model=model_id,
-            max_tokens=4096,
-            tools=[tool],
-            tool_choice={"type": "tool", "name": _STRUCTURED_TOOL_NAME},
-            messages=[{"role": "user", "content": prompt}],
+            max_tokens=8192,
+            system=system_prompt,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.1
         )
     except Exception as exc:
-        raise LLMAdapterError(f"anthropic API call failed: {exc}") from exc
+        raise LLMAdapterError(f"Anthropic API call failed: {exc}") from exc
 
-    # Spend Calculation Logic (Article II Financial Tracking)
-    input_tokens = getattr(message.usage, "input_tokens", 0)
-    output_tokens = getattr(message.usage, "output_tokens", 0)
-    # Store in metadata for caller (engine_bridge) to persist
-    _last_usage = {
+    # Usage tracking
+    input_tokens = response.usage.input_tokens
+    output_tokens = response.usage.output_tokens
+    complete_structured.last_usage = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "model_id": model_id
     }
-    complete_structured.last_usage = _last_usage
 
-    # Find the tool_use block; pull its `input`.
-    content_blocks = getattr(message, "content", None) or []
-    for block in content_blocks:
-        block_type = getattr(block, "type", None)
-        if block_type == "tool_use":
-            payload = getattr(block, "input", None)
-            if not isinstance(payload, dict):
-                raise LLMAdapterError(
-                    "tool_use block did not contain a dict input"
-                )
-            return payload
-    raise LLMAdapterError(
-        "model response contained no tool_use block; refusing to guess shape"
+    raw_content = response.content[0].text
+    try:
+        # Some versions of Claude might include markdown blocks, let's strip if present
+        if raw_content.strip().startswith("```json"):
+            raw_content = raw_content.strip().replace("```json", "").replace("```", "").strip()
+        
+        payload = json.loads(raw_content)
+        if not isinstance(payload, dict):
+            raise LLMAdapterError("Anthropic returned valid JSON but it is not an object")
+        return payload
+    except json.JSONDecodeError as exc:
+        raise LLMAdapterError(f"Anthropic response was not valid JSON: {raw_content[:200]}...") from exc
+
+
+# ---- Live (DeepSeek) branch ----------------------------------------------
+def _call_deepseek_json_mode(
+    prompt: str,
+    output_schema: Dict[str, Any],
+    *,
+    model_id: str,
+) -> Dict[str, Any]:
+    """Issue a DeepSeek API call and return the parsed JSON output.
+
+    Uses DeepSeek's OpenAI-compatible endpoint with json_mode enabled.
+    """
+    api_key = os.environ.get("ELIF_DEEPSEEK_API_KEY")
+    if not api_key:
+        raise LLMAdapterError(
+            "offline_mode=False requires ELIF_DEEPSEEK_API_KEY in environment"
+        )
+    try:
+        import openai
+    except ImportError as exc:
+        raise LLMAdapterError(
+            "openai SDK not installed; either `pip install openai` "
+            "or use offline_mode=True"
+        ) from exc
+
+    client = openai.OpenAI(
+        api_key=api_key,
+        base_url="https://api.deepseek.com"
     )
 
+    # Wrap the prompt to ensure it understands the JSON requirement
+    system_prompt = (
+        "You are a specialized ELIF cognitive component tasked with high-fidelity, extreme-depth reasoning. "
+        "ELIF demands unparalleled architectural complexity and semantic density. "
+        "Your response MUST be a single valid JSON object strictly matching this schema:\n"
+        f"{json.dumps(output_schema)}\n"
+        "### DOCTRINAL DEPTH REQUIREMENTS:\n"
+        "1. EXHAUSTIVE ANALYSIS: In every free-text field, provide multi-layered, highly detailed reasoning. Avoid brevity.\n"
+        "2. SEMANTIC DENSITY: Use precise, high-information terminology. Do not summarize or simplify.\n"
+        "3. REASONING TRACE: Fully expose the logic behind every decision or object created.\n"
+        "4. JSON FORMAT: Return ONLY the JSON object. Do not include markdown blocks (```json) or preamble."
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model=model_id,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            max_tokens=8192,
+            temperature=0.6 # Increased for deeper reasoning exploration in R1
+        )
+    except Exception as exc:
+        raise LLMAdapterError(f"DeepSeek API call failed: {exc}") from exc
+
+    # Usage tracking
+    input_tokens = getattr(response.usage, "prompt_tokens", 0)
+    output_tokens = getattr(response.usage, "completion_tokens", 0)
+    complete_structured.last_usage = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "model_id": model_id
+    }
+
+    raw_content = response.choices[0].message.content or ""
+    try:
+        payload = json.loads(raw_content)
+        if not isinstance(payload, dict):
+            raise LLMAdapterError("DeepSeek returned valid JSON but it is not an object")
+        return payload
+    except json.JSONDecodeError as exc:
+        raise LLMAdapterError(f"DeepSeek response was not valid JSON: {raw_content[:200]}...") from exc
 
 # ---- Public surface --------------------------------------------------------
 def complete_structured(
@@ -277,11 +345,20 @@ def complete_structured(
         payload = _load_offline_fixture(offline_fixture_id)
     else:
         active_id = resolve_model_id(model_id or DEFAULT_MODEL_ID)
-        payload = _call_anthropic_tool_use(
-            prompt,
-            output_schema,
-            model_id=active_id,
-        )
+        
+        # Branch based on model prefix
+        if "claude" in active_id:
+            payload = _call_anthropic(
+                prompt,
+                output_schema,
+                model_id=active_id,
+            )
+        else:
+            payload = _call_deepseek_json_mode(
+                prompt,
+                output_schema,
+                model_id=active_id,
+            )
 
     validate_against_schema(payload, output_schema)
     return payload

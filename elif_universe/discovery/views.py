@@ -1,7 +1,7 @@
-from django.shortcuts import render, get_object_or_404, redirect
+﻿from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.urls import reverse
-from django.db.models import Sum
+from django.db.models import Sum, Count, Avg
 from .models import Inquiry, Planet, RoomState, EngineRun, SystemSettings, SpendRecord, Tier, UserSubscription, IssueReport
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
@@ -33,7 +33,7 @@ def _check_auth(request, inquiry):
 def _is_engine_busy(request):
     """
     Helper to check if the session lock is valid.
-    Self-heals if the inquiry in the session is actually finished.
+    Self-heals if the inquiry in the session is actually finished, deleted, or stale.
     """
     active_pk = request.session.get('active_engine_pk')
     if not active_pk:
@@ -41,11 +41,24 @@ def _is_engine_busy(request):
         
     try:
         active_inq = Inquiry.objects.get(pk=active_pk)
-        if active_inq.status in ['COMPLETED', 'FAILED', 'REFUSED']:
+        
+        # 1. Check for finished statuses
+        if active_inq.status in ['COMPLETED', 'FAILED', 'REFUSED', 'DELETED']:
             # Stale lock - inquiry finished but session not updated
             del request.session['active_engine_pk']
             request.session.modified = True
             return False
+            
+        # 2. Check for staleness (e.g., if it's been running/pending for > 15 minutes)
+        # Since we have timeouts on tasks (10m), 15m is a safe buffer.
+        from django.utils import timezone
+        from datetime import timedelta
+        if active_inq.updated_at < timezone.now() - timedelta(minutes=15):
+            # Force clear stale lock
+            del request.session['active_engine_pk']
+            request.session.modified = True
+            return False
+            
         return True # Still busy
     except Inquiry.DoesNotExist:
         # Record gone - clear lock
@@ -157,6 +170,7 @@ def system_settings_view(request):
     if request.method == "POST":
         settings.active_model = request.POST.get("active_model")
         settings.anthropic_api_key = request.POST.get("anthropic_api_key")
+        settings.deepseek_api_key = request.POST.get("deepseek_api_key")
         settings.offline_mode = request.POST.get("offline_mode") == "on"
         settings.reasoning_depth = int(request.POST.get("reasoning_depth", 7))
         settings.auto_refresh_ms = int(request.POST.get("auto_refresh_ms", 5000))
@@ -227,7 +241,7 @@ Where the final operative truth is separated from speculative noise, providing t
 
 ## 04. System Management
 Administrators can calibrate the system via the **System Control** panel:
-*   **Intelligence Model**: Canonical selection (e.g., Claude 3.5 Sonnet).
+*   **Intelligence Model**: Canonical selection (e.g., Claude 4.5 Sonnet).
 *   **Reasoning Depth**: Fine-tuning the depth of the logic engine (3-15 levels).
 *   **Budgeting**: Real-time spending overview and API quota management.
 
@@ -455,7 +469,7 @@ def initialize_inquiry(request):
 
     # Block concurrent engine runs for the same account
     if _is_engine_busy(request):
-        messages.error(request, "Engine Busy: A cognitive process is already active. Please wait for completion.")
+        messages.error(request, "Engine Busy: A cognitive process is already active. Please wait for completion or clear your lock in Profile settings.")
         return redirect("discovery:system_map")
 
     # Inquiry & Spend Limit Check
@@ -504,7 +518,7 @@ def initialize_inquiry(request):
             user=request.user,
             specialization=spec_input
         )
-        
+
         # The worker will handle pre-populating planets (Step 1-11)
         try:
             from .workflow_tasks import start_engine_workflow
@@ -563,6 +577,12 @@ def inquiry_detail(request, pk):
         messages.error(request, "Sovereign Denial: You do not have authorization to access this reality.")
         return redirect("discovery:system_map")
 
+    rooms_to_create = [r[0] for r in RoomState.ROOM_CHOICES]
+    for r_type in rooms_to_create:
+        RoomState.objects.get_or_create(inquiry=inquiry, room_type=r_type)
+
+    return redirect("discovery:room_view", pk=pk, room_type="DISCOVERY")
+
 @login_required
 def complete_walkthrough(request):
     """AJAX endpoint to mark the onboarding tour as completed."""
@@ -573,12 +593,6 @@ def complete_walkthrough(request):
             sub.save()
             return JsonResponse({"status": "success"})
     return JsonResponse({"status": "error"}, status=400)
-
-    rooms_to_create = [r[0] for r in RoomState.ROOM_CHOICES]
-    for r_type in rooms_to_create:
-        RoomState.objects.get_or_create(inquiry=inquiry, room_type=r_type)
-
-    return redirect("discovery:room_view", pk=pk, room_type="DISCOVERY")
 
 @login_required
 def room_view(request, pk, room_type):
@@ -1069,6 +1083,41 @@ def spend_history(request):
     }
     return render(request, "discovery/spend_history.html", context)
 
+
+@login_required
+def analytics_dashboard(request):
+    is_admin = request.user.is_superuser
+    if is_admin:
+        base_inquiries = Inquiry.objects.filter(is_visible_to_user=True)
+        base_spend = SpendRecord.objects.all()
+    else:
+        base_inquiries = Inquiry.objects.filter(user=request.user, is_visible_to_user=True)
+        base_spend = SpendRecord.objects.filter(user=request.user)
+    total_inquiries = base_inquiries.count()
+    completed_inquiries = base_inquiries.filter(status="COMPLETED").count()
+    total_spend = base_spend.aggregate(Sum("cost_usd"))["cost_usd__sum"] or 0.0
+    avg_cost = base_spend.aggregate(Avg("cost_usd"))["cost_usd__avg"] or 0.0
+    model_spend = base_spend.values("model_id").annotate(total=Sum("cost_usd")).order_by("-total")
+    from django.utils import timezone
+    from datetime import timedelta
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    usage_over_time = base_inquiries.filter(created_at__gte=thirty_days_ago).extra(select={"day": "date(created_at)"}).values("day").annotate(count=Count("id")).order_by("day")
+    status_distribution = base_inquiries.values("status").annotate(count=Count("id"))
+    efficiency = base_spend.values("model_id").annotate(avg_tokens=Avg("input_tokens") + Avg("output_tokens")).order_by("-avg_tokens")
+    usage_labels = []
+    usage_data = []
+    for u in usage_over_time:
+        label = u["day"].strftime("%d %b") if hasattr(u["day"], "strftime") else str(u["day"])
+        usage_labels.append(label)
+        usage_data.append(u["count"])
+    context = {
+        "is_admin": is_admin, "total_inquiries": total_inquiries, "completed_inquiries": completed_inquiries,
+        "total_spend": total_spend, "avg_cost": avg_cost, "model_spend": list(model_spend),
+        "usage_labels": usage_labels, "usage_data": usage_data, "status_distribution": list(status_distribution),
+        "efficiency": list(efficiency), "topic_distribution": list(base_inquiries.values("topic").annotate(count=Count("id")).order_by("-count")[:5])
+    }
+    return render(request, "discovery/cognitive_analytics.html", context)
+
 @login_required
 def tester_survey(request):
     """
@@ -1215,6 +1264,34 @@ def admin_dashboard(request):
         'system_settings': settings
     })
 
+@admin_access_required()
+def admin_heal_engine(request):
+    """
+    Emergency admin action to clear stuck engine processes.
+    Marks inquiries in transitionary states that haven't been updated for 10m as FAILED.
+    """
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    threshold = timezone.now() - timedelta(minutes=10)
+    stuck_inqs = Inquiry.objects.filter(
+        status__in=['RUNNING', 'PENDING'],
+        updated_at__lt=threshold
+    )
+    
+    count = stuck_inqs.count()
+    if count > 0:
+        for inq in stuck_inqs:
+            inq.status = 'FAILED'
+            inq.current_status_msg = "Force terminated by administrative override."
+            inq.save()
+        
+        messages.success(request, f"Engine Recovery Complete: {count} stuck process(es) terminated.")
+    else:
+        messages.info(request, "No stuck processes identified (Threshold: 10 minutes).")
+        
+    return redirect("discovery:admin_dashboard")
+
 @admin_access_required('can_manage_inquiries')
 def update_inquiry_status(request, pk):
     """Update inquiry status. Supports HTMX or redirect."""
@@ -1240,6 +1317,10 @@ def admin_limits_config(request):
     settings = SystemSettings.get_settings()
     
     if request.method == "POST":
+        settings.active_model = request.POST.get("active_model", "deepseek-chat")
+        settings.deepseek_api_key = request.POST.get("deepseek_api_key")
+        settings.anthropic_api_key = request.POST.get("anthropic_api_key")
+        settings.offline_mode = request.POST.get("offline_mode") == "on"
         settings.tester_free_inquiry_limit = request.POST.get("tester_free_inquiry_limit", 10)
         settings.tester_free_spend_limit = request.POST.get("tester_free_spend_limit", 50.00)
         settings.reasoning_depth = request.POST.get("reasoning_depth", 7)
@@ -1735,4 +1816,5 @@ def export_inquiry(request, pk, format):
     data = collect_inquiry_report_data(inquiry)
     # Providing a Print-Ready HTML page as a fallback that behaves like a professional report.
     return render(request, 'discovery/reports/inquiry_report_pdf.html', data)
+
 

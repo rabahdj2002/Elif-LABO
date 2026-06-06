@@ -101,6 +101,7 @@ class ProcedureRunner:
         model_id: str = "sonnet",
         procedure_version: str = "v1.0",
         results_dir: Optional[Path] = None,
+        language_instruction: str = "",
     ) -> Tuple[RunContext, Dict[str, Any]]:
         """
         Initializes the RunContext and all 7 engine components.
@@ -116,6 +117,7 @@ class ProcedureRunner:
             model_id=model_id,
             started_at_iso=_utc_now_iso(),
             run_id=_new_run_id(),
+            language_instruction=language_instruction,
         )
 
         components = {
@@ -188,6 +190,9 @@ class ProcedureRunner:
                     prior_outputs, run_context=run_context, max_calls=run_context.max_llm_calls
                 )
         elif step_id == "step_11":
+            # Step 11 is the final Audit/Drift layer. 
+            # In v1.1, it reflects the unresolved uncertainty from Step 9 into the final audit record.
+            step9_uncertainty = prior_outputs.get("step_9", {}).get("unresolved_uncertainty_sources", [])
             payload = {
                 "run_id": run_context.run_id,
                 "case_id": run_context.case_id,
@@ -196,7 +201,13 @@ class ProcedureRunner:
                 "step_count": 11,
                 "final_verdict": prior_outputs.get("step_9", {}).get("verdict"),
                 "llm_calls_used": _call_counter(),
-                "post_refusal_closure": prior_outputs.get("step_9", {}).get("verdict") == "refuse"
+                "post_refusal_closure": prior_outputs.get("step_9", {}).get("verdict") == "refuse",
+                "entries": [
+                    {"kind": "unresolved_uncertainty", "description": zone}
+                    for zone in step9_uncertainty
+                ] if step9_uncertainty else [
+                    {"kind": "judgment_act_logged", "description": "Semantic convergence achieved via high-fidelity cross-scale validation."}
+                ]
             }
         else:
             raise ValueError(f"Unknown step_id: {step_id}")

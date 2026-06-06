@@ -45,6 +45,7 @@ from typing import Any, Dict, Mapping
 
 from ..base import (
     ELIFError,
+    get_language_prompt,
     SchemaValidationError,
 )
 from ..llm_adapter import complete_structured, validate_against_schema
@@ -224,6 +225,7 @@ def _one_line_marker(step_id: str, payload: Any) -> str:
 def _build_step9_prompt(
     roadmap: Mapping[str, Any],
     prior_steps: Mapping[str, Any],
+    run_context: RunContext | None = None,
 ) -> str:
     """Build the Step 9 governance adjudication prompt.
 
@@ -235,6 +237,7 @@ def _build_step9_prompt(
     return (
         "You are operating as the ELIF v0.1 Governance Kernel at Step 9 "
         "(verdict with confidence and unresolved uncertainty).\n\n"
+        f"{get_language_prompt(run_context)}"
         "GOVERNANCE DECISION PROTOCOL (Ranking and Validation):\n"
         f"{_GOVERNANCE_DECISION_PROTOCOL}\n\n"
         "Article V tie (refusal-capability): the verdict you emit MUST be "
@@ -263,8 +266,10 @@ def _build_step9_prompt(
         "Output requirements:\n"
         "  * `verdict`: one of "
         f"{list(_VERDICT_VOCAB)}.\n"
-        "  * `verdict_detail` (optional but recommended): one paragraph "
-        "naming the constraints / refusal reason / abstention rationale.\n"
+        "  * `verdict_detail` (REQUIRED): Provide an EXHAUSTIVE, "
+        "multi-paragraph rationale naming the constraints / refusal reason / "
+        "abstention rationale. This is the Core Protocol Adjudication; "
+        "be rigourous and avoid high-level summaries.\n"
         "  * `confidence`: a short qualifier (e.g. 'High on refusal of "
         "bundle-as-structured; medium on track-boundary definitions').\n"
         "  * `unresolved_uncertainty_sources`: at least 1 entry; each entry "
@@ -322,7 +327,7 @@ class GovernanceKernel:
         prior = _require_prior_steps(prior_steps)
         ctx = _require_run_context(run_context)
 
-        prompt = _build_step9_prompt(rm, prior)
+        prompt = _build_step9_prompt(rm, prior, ctx)
         fixture_id = (
             f"step_09__{_extract_case_token(ctx.case_id)}"
             if ctx.offline_mode

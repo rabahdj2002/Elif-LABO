@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6">
@@ -188,13 +188,24 @@
                     </div>
                 </div>
                 
-                <div class="h-64 flex items-end gap-2 px-2">
-                    <!-- Simple visualization of activity -->
-                    {% for i in "1234567890123456" %}
-                    <div class="flex-1 bg-blue-600/20 rounded-t-lg transition-all hover:bg-blue-500/40" style="height: {{ forloop.counter|add:10 }}%"></div>
+                <div class="h-64 flex items-end gap-1 px-2 border-b border-white/5 pb-2">
+                    {% for day in daily_activity %}
+                    <div class="flex-1 group relative">
+                        <div class="bg-blue-600/20 group-hover:bg-blue-500/50 rounded-t-sm transition-all duration-500 w-full" 
+                             style="height: {{ day.height|default:2 }}%;">
+                            <!-- Tooltip -->
+                            <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-black text-[9px] font-black px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                {{ day.count }} Inquiries ({{ day.label }})
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
-                <div class="mt-4 text-center text-[10px] text-gray-500 font-black uppercase tracking-widest">30-Day Intelligence Convergence</div>
+                <div class="mt-4 flex justify-between text-[8px] text-gray-500 font-black uppercase tracking-widest px-2">
+                    <span>{{ daily_activity.0.label }}</span>
+                    <span>Intelligence Convergence (30-Day Window)</span>
+                    <span>{{ daily_activity|last.label }}</span>
+                </div>
             </div>
 
             <!-- Recent Inquiries Table -->
@@ -238,3 +249,5 @@
     </div>
 </div>
 {% endblock %}
+
+

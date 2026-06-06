@@ -51,6 +51,7 @@ class RunContext:
         model_id           — e.g. "claude-3-5-sonnet-20240620" (Override default model)
         started_at_iso     — ISO 8601 start timestamp (UTC recommended)
         run_id             — unique per-run identifier
+        language_instruction — Optional language hint for output.
     """
 
     case_id: str
@@ -61,6 +62,7 @@ class RunContext:
     model_id: str
     started_at_iso: str
     run_id: str
+    language_instruction: str = ""
 
     def __post_init__(self) -> None:
         _ensure_str_nonempty("case_id", self.case_id)

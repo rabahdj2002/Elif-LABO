@@ -144,11 +144,6 @@ class EngineService:
             }]
         )
 
-        # Increment persistent inquiry usage
-        if child.user and hasattr(child.user, 'subscription'):
-            child.user.subscription.total_inquiries_consumed += 1
-            child.user.subscription.save()
-        
         # 2. Re-initialize planets for the child (clean slate for the branch)
         steps = [
             ("Step 1: Frame Validation", "fa-vial", 1),
@@ -204,6 +199,8 @@ class EngineService:
         # Inject API keys into environment for the engine
         if sys_settings.anthropic_api_key:
             os.environ["ELIF_ANTHROPIC_API_KEY"] = sys_settings.anthropic_api_key
+        if sys_settings.deepseek_api_key:
+            os.environ["ELIF_DEEPSEEK_API_KEY"] = sys_settings.deepseek_api_key
 
         runner = ProcedureRunner()
         

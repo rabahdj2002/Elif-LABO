@@ -111,6 +111,15 @@ class InputFrame:
     locked_at_iso: str
     doctrinal_scope_tag: str
     companion_case: str
+    language_instruction: str = ""
+
+
+def get_language_prompt(target_obj: any) -> str:
+    """Return language instruction snippet if present on target (InputFrame or RunContext)."""
+    instruct = getattr(target_obj, "language_instruction", "")
+    if instruct:
+        return f"\n\n### CRITICAL LANGUAGE REQUIREMENT\n{instruct}\n"
+    return ""
 
 
 @dataclass(frozen=True)

@@ -40,7 +40,8 @@ def handle_step_request(event: Dict[str, Any]) -> Dict[str, Any]:
         text=frame_data.get("text"),
         locked_at_iso=frame_data.get("locked_at_iso"),
         doctrinal_scope_tag=frame_data.get("doctrinal_scope_tag"),
-        companion_case=frame_data.get("companion_case")
+        companion_case=frame_data.get("companion_case"),
+        language_instruction=frame_data.get("language_instruction", "")
     )
 
     # 2. Rehydrate RunContext (the "memory" of the run)
@@ -53,7 +54,8 @@ def handle_step_request(event: Dict[str, Any]) -> Dict[str, Any]:
         max_llm_calls=ctx_data.get("max_llm_calls", 22),
         model_id=event.get("model_id", "sonnet"),
         started_at_iso=ctx_data.get("started_at_iso"),
-        run_id=ctx_data.get("run_id")
+        run_id=ctx_data.get("run_id"),
+        language_instruction=ctx_data.get("language_instruction", "")
     )
 
     # 3. Instantiate Runner (Pure-Stateless)
@@ -67,7 +69,8 @@ def handle_step_request(event: Dict[str, Any]) -> Dict[str, Any]:
         input_frame=input_frame,
         offline_mode=run_context.offline_mode,
         max_llm_calls=run_context.max_llm_calls,
-        model_id=run_context.model_id
+        model_id=run_context.model_id,
+        language_instruction=run_context.language_instruction
     )
 
     # 5. Execute the specific step
