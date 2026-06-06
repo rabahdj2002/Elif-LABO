@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto w-full space-y-12 py-12 px-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-6">
+            <a href="{% url 'discovery:tier_list' %}" class="w-12 h-12 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            <div>
+                <h1 class="text-4xl font-black text-white tracking-tighter mb-2 planet-nav">Governance Protocols</h1>
+                <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">Global resource limits and engine behavior.</p>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="mb-8 space-y-4">
+        {% for message in messages %}
+        <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-3 animate-slide-in">
+            <i class="fa-solid fa-check-circle"></i>
+            <span class="text-sm font-bold">{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" class="space-y-8">
+        {% csrf_token %}
+        
+        <!-- Resource Quotas -->
+        <div class="glass p-8 rounded-[2.5rem] border-white/5">
+            <h3 class="text-xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
+                <i class="fa-solid fa-chart-pie text-blue-400"></i> Resource & Access Quotas
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Tester Inquiry Cap</label>
+                    <input type="number" name="tester_free_inquiry_limit" value="{{ settings.tester_free_inquiry_limit }}" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all">
+                    <p class="mt-2 text-[9px] text-gray-500 font-medium uppercase tracking-wider px-1">Threshold before testers are forced into the feedback survey.</p>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Tester Spend Cap ($)</label>
+                    <input type="number" step="0.01" name="tester_free_spend_limit" value="{{ settings.tester_free_spend_limit }}" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all">
+                    <p class="mt-2 text-[9px] text-gray-500 font-medium uppercase tracking-wider px-1">Maximum financial resource accumulation allowed for Beta Testers.</p>
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Reasoning Depth (Step 6)</label>
+                    <input type="number" name="reasoning_depth" value="{{ settings.reasoning_depth }}" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-purple-500/50 transition-all">
+                    <p class="mt-2 text-[9px] text-gray-500 font-medium uppercase tracking-wider px-1">Complexity multiplier for ontological expansion phases.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Governance -->
+        <div class="glass p-8 rounded-[2.5rem] border-white/5">
+            <h3 class="text-xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
+                <i class="fa-solid fa-shield-halved text-emerald-400"></i> System Governance
+            </h3>
+            
+            <div class="space-y-4">
+                <label class="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-lock text-emerald-400"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-black text-white uppercase tracking-widest mb-1">Strict Governance Mode</div>
+                            <div class="text-[10px] text-gray-500 font-medium max-w-xs">If enabled, the engine will bypass Step 10 if Step 9 validation fails.</div>
+                        </div>
+                    </div>
+                    <input type="checkbox" name="strict_governance" {% if settings.strict_governance %}checked{% endif %} class="w-6 h-6 accent-emerald-500">
+                </label>
+
+                <label class="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-eye text-blue-400"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-black text-white uppercase tracking-widest mb-1">Expose Financial Metrics</div>
+                            <div class="text-[10px] text-gray-500 font-medium max-w-xs">Toggle visibility of USD accumulation metrics for normal users.</div>
+                        </div>
+                    </div>
+                    <input type="checkbox" name="show_spending_overview" {% if settings.show_spending_overview %}checked{% endif %} class="w-6 h-6 accent-blue-500">
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" class="w-full py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-[2rem] text-sm font-black uppercase tracking-[0.3em] transition-all shadow-2xl shadow-blue-600/30">
+            Apply Governance Calibration
+        </button>
+    </form>
+</div>
+{% endblock %}

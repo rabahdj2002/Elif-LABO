@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 import sys
 from pathlib import Path
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,8 +40,8 @@ if ELIF_ANTHROPIC_API_KEY:
     os.environ["ELIF_ANTHROPIC_API_KEY"] = ELIF_ANTHROPIC_API_KEY
 
 # Serverless Engine Configuration
-# Set to None for local execution, or URL of deployed Cloud Function
-ELIF_ENGINE_URL = os.getenv('ELIF_ENGINE_URL', 'http://127.0.0.1:8080')
+# Set to None/Empty for local execution, or URL of deployed Cloud Function
+ELIF_ENGINE_URL = os.getenv('ELIF_ENGINE_URL', '')
 
 
 # Application definition
@@ -123,6 +124,14 @@ CELERY_TASK_TIME_LIMIT = 600       # 10 mins hard limit
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+# Celery Beat Schedule
+CELERY_BEAT_SCHEDULE = {
+    'reset-usage-every-night': {
+        'task': 'discovery.reset_monthly_usage',
+        'schedule': crontab(hour=0, minute=0),  # Daily at midnight
+    },
+}
 CELERY_TIMEZONE = 'UTC'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
@@ -154,7 +163,9 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
-USE_I18N = True
+USE_I18N = False
+
+USE_L10N = True
 
 USE_TZ = True
 

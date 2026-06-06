@@ -20,62 +20,111 @@
      hx-request='{"no-indicator": true}'
      {% endif %}>
     
+    <script>
+        // ELIF High-Fidelity Scroll Preservation System
+        // Prevents UI jitter and "top-snapping" during autonomous engine updates
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            const scrollables = evt.detail.elt.querySelectorAll('.custom-scrollbar, textarea');
+            scrollables.forEach(el => {
+                if (el.id) {
+                    sessionStorage.setItem('scroll-' + el.id, el.scrollTop);
+                }
+            });
+        });
+
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            const scrollables = document.querySelectorAll('.custom-scrollbar, textarea');
+            scrollables.forEach(el => {
+                if (el.id) {
+                    const saved = sessionStorage.getItem('scroll-' + el.id);
+                    if (saved) {
+                        el.scrollTop = saved;
+                    }
+                }
+            });
+        });
+    </script>
+    
     <!-- 1. NAVIGATION HEADER -->
-    <header class="flex flex-col items-center py-6 border-b border-white/5 shrink-0">
-        <div class="w-full flex flex-col lg:flex-row items-center justify-between gap-6">
-            <!-- Left: Case Identity -->
-            <div class="flex items-center space-x-6 min-w-[250px]">
-                <a href="/" class="text-white/40 hover:text-white transition-colors p-2.5 glass rounded-xl" title="Home">
-                    <i class="fa-solid fa-home text-sm"></i>
+    <header class="w-full border-b border-white/5 py-3 lg:py-3.5 px-6 lg:px-12 shrink-0 bg-black/40 backdrop-blur-xl relative z-[100]">
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
+            
+            <!-- Left: Case Profile (Fixed Width for Balance) -->
+            <div class="flex items-center space-x-6 lg:w-[280px] shrink-0">
+                <a href="/" class="w-10 h-10 flex items-center justify-center bg-white/[0.03] hover:bg-white/10 border border-white/5 rounded-2xl transition-all group shadow-lg" title="Home">
+                    <i class="fa-solid fa-house-user text-[10px] text-white/30 group-hover:text-blue-400 group-hover:scale-110 transition-all"></i>
                 </a>
-                <div class="h-8 w-[1px] bg-white/10"></div>
+                <div class="h-8 w-[1px] bg-white/10 hidden lg:block"></div>
                 <div class="flex flex-col">
-                    <span class="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400 mb-0.5">{{ inquiry.topic }}</span>
-                    <span class="text-[8px] font-mono text-gray-500 uppercase tracking-widest">{{ inquiry.case_id|slice:":16" }}</span>
+                    <span class="text-[10px] font-black uppercase tracking-[0.25em] text-blue-400 leading-none mb-1">{{ inquiry.topic }}</span>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[7.5px] font-mono text-gray-500 uppercase tracking-widest leading-none">{{ inquiry.case_id|slice:":16" }}</span>
+                        <span class="w-1 h-1 rounded-full bg-blue-500/40"></span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Center: Room Navigation -->
-            <nav class="flex items-center justify-center bg-white/[0.02] border border-white/5 p-1 rounded-2xl overflow-x-auto no-scrollbar max-w-full shadow-inner">
-                {% for r_val, r_label in nav_rooms %}
-                <a href="{% url 'discovery:room_view' inquiry.pk r_val|lower %}" 
-                   class="whitespace-nowrap px-6 py-3 rounded-xl text-[9px] uppercase tracking-[0.2em] font-black transition-all
-                          {% if room_type == r_val %}text-blue-400 bg-blue-500/10 border border-blue-500/20 shadow-lg shadow-blue-500/10{% else %}text-gray-500 hover:text-white border border-transparent{% endif %}">
-                    {{ r_label|slice:":-5" }}
-                </a>
-                {% endfor %}
-            </nav>
-            
-            <!-- Right: Context & Actions -->
-            <div class="flex items-center min-w-[250px] justify-end space-x-8">
-                <div class="text-right hidden xl:block">
-                    <p class="text-[10px] text-white/80 font-medium truncate max-w-[250px]" title="{{ inquiry.core_question }}">{{ inquiry.core_question|truncatechars:50 }}</p>
-                    <div class="flex items-center justify-end space-x-2 mt-1">
-                        <span class="w-1.5 h-1.5 rounded-full {% if inquiry.status == 'RUNNING' %}bg-blue-500 animate-pulse glow-blue{% elif inquiry.status == 'COMPLETED' %}bg-green-500{% elif inquiry.status == 'FAILED' or inquiry.status == 'REFUSED' %}bg-red-500{% else %}bg-yellow-500{% endif %}"></span>
-                        <span class="text-[8px] text-blue-500/60 font-mono uppercase font-black tracking-widest">
-                            {% if inquiry.status == 'RUNNING' %}
-                                {{ inquiry.current_status_msg|truncatechars:35 }}
-                            {% elif inquiry.status == 'REFUSED' %}
-                                <a href="{% url 'discovery:inquiry_detail' inquiry.id %}" class="text-red-500 hover:text-red-400 underline decoration-red-500/30">
-                                    Verdict: {{ inquiry.status }} (Scrutiny Failed)
-                                </a>
-                            {% else %}
-                                Investigation Status: {{ inquiry.investigation_status }}
+            <!-- Center: Universal Room Navigation (Stretches to fill space) -->
+            <nav class="flex-1 w-full lg:w-auto">
+                <div class="bg-white/[0.01] border border-white/5 p-1 rounded-2xl shadow-inner shadow-black/40">
+                    <div class="grid grid-cols-4 md:grid-cols-8 gap-1 w-full">
+                        {% for r_val, r_label in nav_rooms %}
+                        <a href="{% url 'discovery:room_view' inquiry.pk r_val|lower %}" 
+                           class="relative py-2.5 lg:py-3 rounded-xl text-[7.5px] lg:text-[9px] uppercase tracking-[0.2em] font-black transition-all flex items-center justify-center text-center group
+                                  {% if room_type == r_val %}
+                                    text-blue-400 bg-blue-500/10 border border-blue-500/20 shadow-lg shadow-blue-500/5
+                                  {% else %}
+                                    text-gray-500 hover:text-white border border-transparent hover:bg-white/5
+                                  {% endif %}">
+                            <span class="z-10">{{ r_label|slice:":-5" }}</span>
+                            {% if room_type == r_val %}
+                            <span class="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-blue-500 rounded-full blur-[1px] animate-pulse"></span>
+                            <div class="absolute inset-0 bg-blue-500/5 rounded-xl blur-sm -z-0"></div>
                             {% endif %}
-                        </span>
+                        </a>
+                        {% endfor %}
                     </div>
                 </div>
+            </nav>
+            
+            <!-- Right: Action Matrix (Fixed Width for Balance) -->
+            <div id="mobile-context-bar" class="flex items-center justify-end space-x-4 lg:w-[280px] shrink-0">
                 <div class="flex items-center space-x-3">
+                    <button onclick="openIssueModal()" 
+                            class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.02] hover:bg-blue-500/10 text-gray-500 hover:text-blue-400 transition-all border border-white/5 hover:border-blue-500/20 group shadow-lg"
+                            title="Report Cognitive Anomaly">
+                        <i class="fa-solid fa-bug text-[11px] group-hover:shake transition-transform"></i>
+                    </button>
                     <a href="{% url 'discovery:spend_history' %}" 
-                       class="w-11 h-11 flex items-center justify-center rounded-xl bg-amber-500/5 hover:bg-amber-500/20 text-amber-500/30 hover:text-amber-500 transition-all border border-amber-500/10 hover:border-amber-500/30 shadow-lg hover:shadow-amber-500/10"
+                       class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.02] hover:bg-amber-500/10 text-gray-500 hover:text-amber-500 transition-all border border-white/5 hover:border-amber-500/20 group shadow-lg"
                        title="Financial Audit">
-                        <i class="fa-solid fa-receipt text-sm"></i>
+                        <i class="fa-solid fa-receipt text-[11px] group-hover:rotate-12 transition-transform"></i>
                     </a>
+                    <div class="h-6 w-[1px] bg-white/10 mx-1"></div>
+
+                    <!-- EXPORT CENTER -->
+                    <div class="relative group/export">
+                        <button class="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-all border border-blue-500/30 group shadow-lg shadow-blue-500/5"
+                                title="Export Research Report">
+                            <i class="fa-solid fa-file-export text-[11px] group-hover/export:translate-y-[-2px] transition-transform"></i>
+                        </button>
+                        
+                        <div class="absolute right-0 mt-2 w-48 bg-[#0a0a0c] border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover/export:opacity-100 group-hover/export:visible transition-all py-2 z-[200] backdrop-blur-2xl">
+                            <div class="px-4 py-2 border-b border-white/5 mb-1">
+                                <span class="text-[8px] font-black uppercase tracking-[0.2em] text-gray-500">Research Report</span>
+                            </div>
+                            <a href="{% url 'discovery:export_inquiry' inquiry.pk 'pdf' %}" target="_blank" class="flex items-center px-4 py-2.5 text-[10px] text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
+                                <i class="fa-solid fa-file-pdf w-5 text-red-500/80"></i>
+                                <span class="font-bold tracking-wide">Professional (PDF)</span>
+                            </a>
+                        </div>
+                    </div>
+
                     <a href="{% url 'discovery:delete' inquiry.pk %}" 
                        onclick="return confirm('Sovereign Override: Permanently delete this inquiry thread?')"
-                       class="w-11 h-11 flex items-center justify-center rounded-xl bg-red-500/5 hover:bg-red-500/20 text-red-500/30 hover:text-red-500 transition-all border border-red-500/10 hover:border-red-500/30 shadow-lg hover:shadow-red-500/10"
+                       class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.02] hover:bg-red-500/10 text-gray-500 hover:text-red-500 transition-all border border-white/5 hover:border-red-500/20 group shadow-lg"
                        title="Delete Inquiry">
-                        <i class="fa-solid fa-trash-can text-sm"></i>
+                        <i class="fa-solid fa-fire-extinguisher text-[11px] group-hover:scale-110 transition-all"></i>
                     </a>
                 </div>
             </div>
@@ -83,31 +132,32 @@
     </header>
 
     <!-- 2. MAIN COGNITIVE GRID -->
-    <div class="flex-1 min-h-0 py-8 flex flex-col">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 h-full">
+    <div class="flex-1 min-h-0 py-4 lg:py-6 flex flex-col lg:overflow-hidden px-4 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 lg:h-full">
             
             <!-- Side: Engine Orchestration (Left) -->
-            <aside class="lg:col-span-3 h-full flex flex-col gap-8 overflow-hidden">
-                <!-- Status Cards -->
-                <div class="grid grid-cols-1 gap-4 shrink-0">
-                    <div class="glass p-5 rounded-3xl border-white/5 bg-white/[0.01]">
-                        <div class="text-[8px] uppercase tracking-widest text-gray-400 font-bold mb-2">Investigation Status</div>
-                        <div class="text-xl font-mono text-blue-400 font-black">{{ inquiry.investigation_status|default:"Emerging" }}</div>
-                        <div class="w-full h-1 bg-gray-900 rounded-full mt-3 overflow-hidden">
-                            <div class="h-full bg-blue-500/40" style="width: {{ inquiry.confidence_evolution|last|default:15 }}%"></div>
-                        </div>
+            <aside class="lg:col-span-3 h-auto lg:h-full flex flex-col gap-6 lg:overflow-hidden order-2 lg:order-1">
+                <!-- Status Cards (Compact on mobile) -->
+                <div class="glass-card p-5 lg:p-6 bg-blue-500/[0.02] rounded-3xl">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="text-[8px] uppercase tracking-[0.2em] text-gray-500 font-bold">Investigation Capacity</div>
+                        <div class="text-[8px] font-mono text-blue-400 font-bold uppercase">{{ inquiry.investigation_status|default:"Emerging" }}</div>
                     </div>
                 </div>
 
-                <!-- Engine Timeline -->
-                <div class="flex-1 glass p-8 rounded-[2.5rem] border-white/5 bg-white/[0.01] flex flex-col min-h-0">
-                    <h4 class="text-[10px] uppercase tracking-[0.4em] text-gray-400 font-black mb-8 flex items-center">
-                        <i class="fa-solid fa-microchip mr-3 text-blue-500/40"></i>
-                        Engine Pipeline
-                    </h4>
+                <!-- Engine Timeline (Collapsible on mobile) -->
+                <div class="flex-1 glass-card p-6 lg:p-8 rounded-[2rem] flex flex-col min-h-0">
+                    <button onclick="document.getElementById('room-engine-pipeline').classList.toggle('hidden'); this.querySelector('i.fa-chevron-down').classList.toggle('rotate-180')" 
+                            class="lg:pointer-events-none w-full flex items-center justify-between text-left mb-6 lg:mb-8 hover:opacity-70 transition-opacity">
+                        <h4 class="text-[9px] lg:text-[10px] uppercase tracking-[0.4em] text-gray-400 font-black flex items-center">
+                            <i class="fa-solid fa-microchip mr-3 text-blue-400/30"></i>
+                            Pipeline Log
+                        </h4>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-gray-600 lg:hidden transition-transform"></i>
+                    </button>
                     
-                    <div id="engine-timeline" class="flex-1 space-y-3.5 overflow-y-auto pr-3 scrollbar-hide">
-                        {% for planet in inquiry.planets.all|dictsort:"order" %}
+                    <div id="room-engine-pipeline" class="hidden lg:block flex-1 space-y-3 overflow-y-auto pr-3 scrollbar-hide">
+                        {% for planet in planets %}
                         <div class="flex items-center justify-between p-4 rounded-2xl border transition-all duration-300
                                     {% if planet.status == 'COMPLETED' %}
                                         bg-green-500/5 border-green-500/10 text-green-400/60
@@ -119,17 +169,14 @@
                             <div class="flex items-center space-x-4">
                                 <span class="text-[10px] font-mono opacity-30">0{{ planet.order }}</span>
                                 <i class="fa-solid {{ planet.icon_class|default:'fa-circle-nodes' }} text-[12px] w-5 text-center"></i>
-                                <span class="text-[12px] font-bold tracking-tight">{{ planet.name|slice:":25" }}</span>
+                                <span class="text-[11px] font-bold tracking-tight">{{ planet.name|slice:":20" }}</span>
                             </div>
                             <div class="flex flex-col items-end">
                                 {% if planet.status == 'COMPLETED' %}
-                                    <span class="text-[7px] uppercase tracking-widest font-black mb-1">COMPLETE</span>
                                     <i class="fa-solid fa-check-double text-[10px]"></i>
                                 {% elif planet.status == 'IN_PROGRESS' %}
-                                    <span class="text-[7px] uppercase tracking-widest font-black mb-1">WORKING</span>
                                     <i class="fa-solid fa-spinner fa-spin text-[10px]"></i>
                                 {% else %}
-                                    <span class="text-[7px] uppercase tracking-widest font-black mb-1 opacity-20">WAITING</span>
                                     <i class="fa-solid fa-clock text-[10px] opacity-20"></i>
                                 {% endif %}
                             </div>
@@ -143,26 +190,26 @@
                          hx-trigger="every 10s"
                          hx-swap="none"
                          hx-request='{"no-indicator": true}'
-                         class="mt-8 pt-8 border-t border-white/5 flex items-center justify-between shrink-0">
+                         class="mt-6 lg:mt-8 pt-6 lg:pt-8 border-t border-white/5 flex items-center justify-between shrink-0">
                         <div class="flex items-center space-x-3">
-                            <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_6px_rgba(59,130,246,0.5)]"></div>
-                            <span class="text-[10px] uppercase tracking-widest text-gray-500 font-black">Engine Pulse: {% now "H:i:s" %}</span>
+                            <div class="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_6px_rgba(59,130,246,0.5)]"></div>
+                            <span class="text-[8px] lg:text-[10px] uppercase tracking-widest text-gray-500 font-black">Sync: {% now "H:i:s" %}</span>
                         </div>
-                        <span class="text-[9px] font-mono text-gray-600 uppercase tracking-tighter">Protocol 1.1</span>
+                        <span class="text-[7px] lg:text-[9px] font-mono text-gray-600 uppercase tracking-tighter">Protocol 1.1</span>
                     </div>
                 </div>
             </aside>
 
             <!-- Main: Room Content (Center) -->
-            <main class="lg:col-span-9 h-full flex flex-col gap-8 overflow-hidden">
-                <div class="flex-1 h-full glass p-8 md:p-12 rounded-[3.5rem] border-white/5 bg-black/[0.1] flex flex-col overflow-hidden relative shadow-2xl">
+            <main class="lg:col-span-9 h-auto lg:h-full flex flex-col gap-8 lg:overflow-hidden order-1 lg:order-2">
+                <div class="flex-1 h-auto lg:h-full glass p-6 md:p-12 rounded-[2.5rem] lg:rounded-[3.5rem] border-white/5 bg-black/[0.1] flex flex-col lg:overflow-hidden relative shadow-2xl">
                     <!-- HTMX Loading Indicator (Only for explicit user-triggered sync or POST) -->
-                    <div id="global-sync-overlay" class="htmx-indicator absolute inset-0 bg-black/60 backdrop-blur-md z-50 rounded-[3.5rem] flex flex-col items-center justify-center transition-all">
-                        <div id="sync-spinner" class="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-6"></div>
-                        <span class="text-[11px] uppercase font-black tracking-[0.4em] text-white">Projecting Reality...</span>
+                    <div id="global-sync-overlay" class="htmx-indicator absolute inset-0 bg-black/60 backdrop-blur-md z-50 rounded-[2.5rem] lg:rounded-[3.5rem] flex flex-col items-center justify-center transition-all">
+                        <div id="sync-spinner" class="w-12 h-12 lg:w-16 lg:h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-6"></div>
+                        <span class="text-[10px] lg:text-[11px] uppercase font-black tracking-[0.4em] text-white">Projecting Reality...</span>
                     </div>
 
-                    <div id="room-scroll-area" class="flex-1 overflow-y-auto custom-scrollbar pr-6">
+                    <div id="room-scroll-area" class="flex-1 lg:overflow-y-auto custom-scrollbar lg:pr-6 h-full">
                         {% block room_projection %}{% endblock %}
                     </div>
                 </div>
@@ -195,10 +242,24 @@
             
             <p class="mt-6 text-[8px] uppercase tracking-widest text-gray-600 font-bold">
                 <i class="fa-solid fa-triangle-exclamation mr-1 opacity-50"></i> 
-                Article II: Structural Scrutiny Failed
+                Safety Policy Violation - Auto-deleting in <span id="refusal-countdown">10</span>s
             </p>
         </div>
     </div>
+    <script>
+        (function() {
+            let timeLeft = 10;
+            const countdownEl = document.getElementById('refusal-countdown');
+            const timer = setInterval(() => {
+                timeLeft--;
+                if (countdownEl) countdownEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.querySelector('#refusal-modal form').submit();
+                }
+            }, 1000);
+        })();
+    </script>
     {% endif %}
 </div>
 
@@ -208,7 +269,7 @@
         // Save scroll positions for all potential scrollable areas
         const scrollArea = document.getElementById('room-scroll-area');
         const viewport = document.getElementById('main-viewport');
-        const timeline = document.getElementById('engine-timeline');
+        const timeline = document.getElementById('room-engine-pipeline');
         
         if (scrollArea) window.lastRoomScrollTop = scrollArea.scrollTop;
         if (viewport) window.lastViewportScrollTop = viewport.scrollTop;
@@ -219,7 +280,7 @@
         // Restore scroll positions
         const scrollArea = document.getElementById('room-scroll-area');
         const viewport = document.getElementById('main-viewport');
-        const timeline = document.getElementById('engine-timeline');
+        const timeline = document.getElementById('room-engine-pipeline');
         
         if (scrollArea && window.lastRoomScrollTop !== undefined) {
             scrollArea.scrollTop = window.lastRoomScrollTop;

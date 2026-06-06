@@ -22,7 +22,7 @@
                     <div>
                         <label class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2 block">Intelligence Model</label>
                         <select name="active_model" class="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-gray-300 focus:border-blue-500 outline-none w-full appearance-none">
-                            <option value="sonnet" {% if settings.active_model == 'sonnet' %}selected{% endif %}>Claude 3.5 Sonnet (Canonical)</option>
+                            <option value="sonnet" class="bg-[#0a0a0a] text-white" {% if settings.active_model == 'sonnet' %}selected{% endif %}>Claude 3.5 Sonnet (Canonical)</option>
                         </select>
                     </div>
 
@@ -54,6 +54,38 @@
                         <input type="number" name="auto_refresh_ms" value="{{ settings.auto_refresh_ms }}" class="bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-blue-400 font-mono w-24 text-right outline-none focus:border-blue-500">
                     </div>
 
+                    <label class="flex items-center justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/5 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-search text-gray-400"></i>
+                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Enable Web Search</span>
+                        </div>
+                        <input type="checkbox" name="enable_web_search" {% if settings.enable_web_search %}checked{% endif %} class="w-4 h-4 accent-blue-500 rounded border-white/10 bg-transparent">
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/5 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-shield-halved text-gray-400"></i>
+                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Strict Governance</span>
+                        </div>
+                        <input type="checkbox" name="strict_governance" {% if settings.strict_governance %}checked{% endif %} class="w-4 h-4 accent-purple-500 rounded border-white/10 bg-transparent">
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/5 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-terminal text-gray-400"></i>
+                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Debug Telemetry</span>
+                        </div>
+                        <input type="checkbox" name="debug_mode" {% if settings.debug_mode %}checked{% endif %} class="w-4 h-4 accent-emerald-500 rounded border-white/10 bg-transparent">
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-eye text-blue-400"></i>
+                            <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Show Spending Overview</span>
+                        </div>
+                        <input type="checkbox" name="show_spending_overview" {% if settings.show_spending_overview %}checked{% endif %} class="w-4 h-4 accent-blue-500 rounded border-white/10 bg-transparent">
+                    </label>
+
                     <label class="flex items-center justify-between p-4 bg-yellow-500/5 rounded-2xl border border-yellow-500/10 hover:border-yellow-500/20 transition-colors cursor-pointer">
                         <div class="flex items-center space-x-3">
                             <i class="fa-solid fa-bolt-slash text-yellow-500/50"></i>
@@ -61,6 +93,18 @@
                         </div>
                         <input type="checkbox" name="offline_mode" {% if settings.offline_mode %}checked{% endif %} class="w-4 h-4 accent-yellow-500 rounded border-yellow-500/20 bg-transparent">
                     </label>
+                </div>
+            </div>
+
+            <!-- Versioning -->
+            <div class="glass p-8 rounded-[2rem] border-white/5 bg-white/[0.01]">
+                <h4 class="text-[9px] uppercase tracking-[0.3em] text-blue-500 font-bold mb-6">Versioning & Branding</h4>
+                <div class="flex items-center justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/5">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-code-branch text-gray-500 text-sm"></i>
+                        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">System Version String</span>
+                    </div>
+                    <input type="text" name="system_version" value="{{ settings.system_version }}" class="bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-blue-400 font-mono w-48 text-right outline-none focus:border-blue-500" placeholder="e.g. V1.0 ALPHA">
                 </div>
             </div>
         </div>

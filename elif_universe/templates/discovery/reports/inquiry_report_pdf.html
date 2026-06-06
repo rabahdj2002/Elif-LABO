@@ -1,0 +1,713 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELIF RESEARCH REPORT - {{ metadata.case_id }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050507;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; padding: 0 !important; }
+            .glass { background: #f9fafb !important; border: 1px solid #ddd !important; box-shadow: none !important; }
+            .section-header h2 { color: black !important; border-bottom: 2px solid #3b82f6 !important; }
+            :root {
+                --bg-color: #ffffff;
+                --text-primary: #000000;
+                --text-secondary: #4b5563;
+                --glass-bg: #ffffff;
+                --glass-border: #e5e7eb;
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .toolbar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .btn {
+            background: var(--accent-blue);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            background: #2563eb;
+        }
+
+        header {
+            margin-bottom: 60px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 30px;
+        }
+
+        .brand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .case-id {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--accent-blue);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .report-title {
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-top: 10px;
+            background: linear-gradient(to right, #fff, #999);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-cols: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .section-header i {
+            font-size: 18px;
+            color: var(--accent-blue);
+        }
+
+        .section-header h2 {
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 700;
+        }
+
+        .section-header .line {
+            flex: 1;
+            height: 1px;
+            background: var(--glass-border);
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .objective-card p {
+            font-size: 18px;
+            font-weight: 500;
+            color: #fff;
+            line-height: 1.5;
+        }
+
+        .artifact-grid {
+            display: grid;
+            grid-template-cols: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .artifact-sub-section h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .artifact-list {
+            list-style: none;
+        }
+
+        .artifact-list li {
+            padding: 12px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .artifact-list li::before {
+            content: '→';
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--glass-border);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -35px;
+            top: 0;
+            width: 11px;
+            height: 11px;
+            background: var(--bg-color);
+            border: 2px solid var(--accent-blue);
+            border-radius: 50%;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .step-number {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        .step-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .step-status {
+            font-size: 9px;
+            padding: 4px 10px;
+            border-radius: 100px;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .step-content {
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.01);
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 2px solid var(--glass-border);
+        }
+
+                .family-grid {
+            display: grid;
+            grid-template-cols: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .family-card {
+            padding: 20px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+        }
+
+        .family-card h4 {
+            font-size: 14px;
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .objective-card p {
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .objective-card p::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 10px;
+            bottom: 30px;
+            width: 3px;
+            background: var(--accent-blue);
+            border-radius: 2px;
+            box-shadow: 0 0 10px var(--accent-blue);
+        }
+
+        footer {
+            margin-top: 100px;
+            padding-top: 40px;
+            border-top: 1px solid var(--glass-border);
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #fff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .footer-text {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+            .divided-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .reasoning-meta {
+            font-size: 11px;
+            color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .hypothesis-item {
+            padding: 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            border-left: 2px solid var(--accent-blue);
+            margin-bottom: 8px;
+        }
+
+        .h-label {
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .prediction {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .uncertainty-box {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(245, 158, 11, 0.05);
+            border: 1px solid rgba(245, 158, 11, 0.1);
+            border-radius: 10px;
+            color: #f59e0b;
+        }
+
+        .uncertainty-box ul {
+            font-size: 11px;
+            margin-top: 5px;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar no-print">
+        <button onclick="window.print()" class="btn">
+            <i class="fa-solid fa-download"></i>
+            Download Report
+        </button>
+        <button onclick="window.close()" class="btn" style="background: rgba(255,255,255,0.1); box-shadow: none;">
+            Close
+        </button>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="brand-header">
+                <div class="case-id">ELIF.V1 // CASE: {{ metadata.case_id|truncatechars:20 }}</div>
+                <div class="case-id" style="color: var(--text-secondary);">CONFIDENTIAL DOCUMENT</div>
+            </div>
+            <h1 class="report-title">Research Protocol Artifact</h1>
+            
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <span class="meta-label">Topic Sector</span>
+                    <span class="meta-value">{{ metadata.topic }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Temporal Stamp</span>
+                    <span class="meta-value">{{ metadata.created_at|slice:":10" }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Current Status</span>
+                    <span class="meta-value" style="color: var(--accent-blue);">{{ metadata.status }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Audit Owner</span>
+                    <span class="meta-value">{{ metadata.user }}</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="section">
+            <div class="section-header">
+                <i class="fa-solid fa-crosshairs"></i>
+                <h2>Intelligence Objective</h2>
+                <div class="line"></div>
+            </div>
+            <div class="glass objective-card" style="font-size: 15px; color: var(--text-primary); line-height: 1.8;">
+                {{ frame.original_question|linebreaks }}
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <i class="fa-solid fa-vector-square"></i>
+                <h2>Formalized Core</h2>
+                <div class="line"></div>
+            </div>
+            <div class="glass">
+                <p style="font-size: 15px; color: var(--text-primary); font-style: italic; border-left: 2px solid var(--accent-blue); padding-left: 20px;">
+                    {% if rooms.DISCOVERY.reformulation %}
+                        "{{ rooms.DISCOVERY.reformulation }}"
+                    {% elif frame.current_state %}
+                        "{{ frame.current_state }}"
+                    {% else %}
+                        "{{ frame.original_question }}"
+                    {% endif %}
+                </p>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--glass-border); font-size: 12px; color: var(--text-secondary);">
+                    V1.0 REFORMULATION GENERATED BY COGNITIVE CHAIN ARCHITECT.
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <i class="fa-solid fa-microscope"></i>
+                <h2>Audit Artifacts</h2>
+                <div class="line"></div>
+            </div>
+            <div class="artifact-grid">
+                <div class="artifact-sub-section">
+                    <h3><i class="fa-solid fa-link"></i> Load-Bearing Assumptions</h3>
+                    <ul class="artifact-list">
+                        {% for a in artifacts.assumptions %}
+                            <li>{{ a }}</li>
+                        {% empty %}
+                            <li>No specific assumptions recorded.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="artifact-sub-section">
+                    <h3><i class="fa-solid fa-moon"></i> Unresolved Zones</h3>
+                    <ul class="artifact-list">
+                        {% for z in artifacts.unresolved_zones %}
+                            <li>{{ z }}</li>
+                        {% empty %}
+                            <li>No residual darkness identified.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        {% if artifacts.solution_families %}
+        <section class="section">
+            <div class="section-header">
+                <i class="fa-solid fa-cubes"></i>
+                <h2>Solution Architectures</h2>
+                <div class="line"></div>
+            </div>
+            <div class="family-grid">
+                {% for family in artifacts.solution_families %}
+                <div class="family-card">
+                    <h4>{{ family.name }}</h4>
+                    <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">{{ family.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+                <section class="section">
+            <div class="section-header">
+                <i class="fa-solid fa-bolt"></i>
+                <h2>11-Step Cognitive Trace</h2>
+                <div class="line"></div>
+            </div>
+                        <div class="timeline">
+                {% for step in reasoning_chain %}
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-header">
+                        <div>
+                            <span class="step-number">STEP {{ step.step }}</span>
+                            <div class="step-name">{{ step.name }}</div>
+                        </div>
+                        <span class="step-status">{{ step.status }}</span>
+                    </div>
+                    <div class="step-content">
+                        {% if step.step == 1 %}
+                            <div class="divided-content">
+                                <strong>Validation Verdict: {{ step.data.verdict|upper|default:"PROCESSED" }}</strong>
+                                <p>{{ step.data.reasoning }}</p>
+                                {% if step.data.reformulated_frame %}
+                                    <div class="reasoning-meta">
+                                        <i class="fa-solid fa-sync"></i> Reformulation: {{ step.data.reformulated_frame }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% elif step.step == 2 %}
+                            <div class="divided-content">
+                                <strong>Object Decomposition ({{ step.data.axes|length }} Axes):</strong>
+                                <div class="artifact-sub-grid">
+                                    {% for axis in step.data.axes %}
+                                        <div class="hypothesis-item">
+                                            <span class="h-label">AXIS: {{ axis.axis_name }}</span>
+                                            <p>{{ axis.rationale }}</p>
+                                            <div class="prediction">
+                                                Families: {% for f in axis.families %}{{ f.family_id }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% elif step.step == 3 %}
+                            <div class="divided-content">
+                                <strong>{{ step.data.assumptions|length }} Load-Bearing Assumptions:</strong>
+                                <ul class="artifact-list">
+                                    {% for a in step.data.assumptions %}<li>{{ a }}</li>{% endfor %}
+                                </ul>
+                            </div>
+                        {% elif step.step == 4 %}
+                            <div class="divided-content">
+                                <strong>{{ step.data.hypotheses|length }} Formal Hypotheses:</strong>
+                                <div class="artifact-sub-grid">
+                                    {% for h in step.data.hypotheses %}
+                                        <div class="hypothesis-item">
+                                            <span class="h-label">{{ h.hypothesis_id }}</span>
+                                            <p>{{ h.statement }}</p>
+                                            <div class="prediction">
+                                                <i class="fa-solid fa-eye"></i> Prediction: {{ h.distinguishing_prediction }}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% elif step.step == 5 %}
+                            <div class="divided-content">
+                                <strong>Failure Conditions:</strong>
+                                <ul class="artifact-list">
+                                    {% for fc in step.data.failure_conditions %}
+                                        <li><strong>{{ fc.hypothesis_id }}:</strong> {{ fc.fails_if }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% elif step.step == 6 %}
+                            <div class="divided-content">
+                                <strong>Multi-Scale Relations:</strong>
+                                <p>Scales: {{ step.data.scales|join:", " }}</p>
+                                <div class="uncertainty-box">
+                                    <ul style="margin: 0;">
+                                        {% for rel in step.data.cross_scale_relations %}<li>{{ rel }}</li>{% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% elif step.step == 7 %}
+                            <div class="divided-content">
+                                <strong>Outside-Frame Trajectories:</strong>
+                                <div class="artifact-sub-grid">
+                                    {% for t in step.data.trajectories %}
+                                        <div class="hypothesis-item" style="border-left-color: var(--accent-purple);">
+                                            <span class="h-label">{{ t.tag }}</span>
+                                            <p>{{ t.reason }}</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% elif step.step == 8 %}
+                            <div class="divided-content">
+                                <strong>Branching Roadmap:</strong>
+                                <div class="artifact-sub-grid">
+                                    {% for stage in step.data.stages %}
+                                        <div class="hypothesis-item" style="border-left-color: var(--text-secondary);">
+                                            <span class="h-label">STAGE {{ forloop.counter }}: {{ stage.stage_id }}</span>
+                                            <p>{{ stage.description }}</p>
+                                            <div class="prediction">Gate: {{ stage.continuation_gate }}</div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% elif step.step == 9 %}
+                            <div class="divided-content">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong>Governance Verdict: {{ step.data.verdict|upper }}</strong>
+                                    <span class="step-status" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-purple);">Confidence: {{ step.data.confidence }}</span>
+                                </div>
+                                <p style="margin-top: 10px;">{{ step.data.verdict_detail }}</p>
+                                <div class="uncertainty-box">
+                                    <strong><i class="fa-solid fa-triangle-exclamation"></i> Unresolved Uncertainty:</strong>
+                                    <ul>
+                                        {% for u in step.data.unresolved_uncertainty_sources %}<li>{{ u }}</li>{% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% elif step.step == 10 %}
+                            <div class="divided-content">
+                                <strong>Truth Separation Matrix:</strong>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div class="artifact-sub-section">
+                                        <h4 style="font-size: 10px; color: var(--accent-blue);">OPERATIVE</h4>
+                                        <ul class="artifact-list">
+                                            {% for o in step.data.operative %}<li>{{ o }}</li>{% endfor %}
+                                        </ul>
+                                    </div>
+                                    <div class="artifact-sub-section">
+                                        <h4 style="font-size: 10px; color: var(--text-secondary);">THEORETICAL</h4>
+                                        <ul class="artifact-list">
+                                            {% for t in step.data.theoretical %}<li>{{ t }}</li>{% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elif step.step == 11 %}
+                            <div class="divided-content">
+                                <strong>Memory Logger ({{ step.data.entries|length }} Events):</strong>
+                                <ul class="artifact-list">
+                                    {% for entry in step.data.entries %}
+                                        <li><strong>{{ entry.kind|upper }}:</strong> {{ entry.description }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% else %}
+                            <div class="step-content">
+                                {{ step.data.summary|default:step.data|truncatechars:200 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-logo">ELIF V1 // LABO</div>
+            <div class="footer-text">GENERATED BY AUTONOMOUS REASONING ARCHITECTURE</div>
+            <div class="footer-text" style="font-size: 8px; margin-top: 10px;">ID: {{ metadata.id }} // SOVEREIGN AUDIT TRAIL</div>
+        </footer>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

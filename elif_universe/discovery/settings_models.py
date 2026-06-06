@@ -19,8 +19,24 @@ class SystemSettings(models.Model):
     
     # UX Config
     linear_ui_mode = models.BooleanField(default=True)
+    show_spending_overview = models.BooleanField(default=True, help_text="Show or hide USD accumulation metrics for users.")
     auto_refresh_ms = models.IntegerField(default=5000)
     debug_mode = models.BooleanField(default=False, help_text="Expose engine telemetry during execution")
+    system_version = models.CharField(max_length=20, default="V1.0 ALPHA", help_text="Version string displayed in sidebar")
+
+    # Documentation
+    documentation_content = models.TextField(
+        default="# ELIF Protocol Documentation\n\nWelcome to the official ELIF documentation. This guide details the cognitive engine architecture, hypothesis validation layers, and operative truth separates protocols.",
+        help_text="Markdown content for the Documentation page."
+    )
+
+    # Tester Protocol
+    tester_free_inquiry_limit = models.IntegerField(default=10, help_text="Inquiries available for Testers before survey/cutoff.")
+    tester_free_spend_limit = models.DecimalField(max_digits=10, decimal_places=2, default=50.00, help_text="USD spend available for Testers before cutoff.")
+    tester_survey_schema = models.JSONField(default=list, help_text="List of questions for the tester survey.")
+    
+    # Commercial Config
+    default_tier = models.ForeignKey('Tier', on_delete=models.SET_NULL, null=True, blank=True, help_text="Automatically assigned to new users.")
     
     updated_at = models.DateTimeField(auto_now=True)
 

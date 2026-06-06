@@ -99,6 +99,7 @@ def execute_engine_step_task(self, prev_result, inquiry_id, step_id):
     Independent Celery task for a single procedure step.
     Supports retries, eager-mode arg shifting, and incremental state updates.
     """
+    # Arg shifting for Eager Mode / Direct calls
     if isinstance(self, (str, type(None))) or not hasattr(self, 'request'):
         step_id_actual = inquiry_id
         inquiry_id_actual = prev_result
@@ -112,7 +113,7 @@ def execute_engine_step_task(self, prev_result, inquiry_id, step_id):
     start_time = time.time()
     try:
         inquiry = Inquiry.objects.get(pk=inquiry_id)
-        if inquiry.status in ['REFUSED', 'FAILED']:
+        if inquiry.status in ['REFUSED', 'FAILED', 'DELETED']:
             return "skipped"
 
         display_name = STEP_NAMES.get(step_id, step_id)
@@ -185,14 +186,22 @@ def execute_engine_step_task(self, prev_result, inquiry_id, step_id):
                 inquiry.status = 'REFUSED'
                 inquiry.investigation_status = "Refused"
                 inquiry.current_status_msg = "Frame Invalid. Halting."
-                inquiry.save(update_fields=['status', 'investigation_status', 'current_status_msg'])
+                inquiry.is_visible_to_user = False
+                inquiry.save(update_fields=['status', 'investigation_status', 'current_status_msg', 'is_visible_to_user'])
+                
+                # SCRUB DIVERSION: Remove this trajectory from parent if it was a branch
+                _scrub_parent_diversion(inquiry)
                 return "skipped"
 
             if step_id == "step_9" and payload.get("verdict") == "refuse":
                 inquiry.status = 'REFUSED'
                 inquiry.investigation_status = "Refused"
                 inquiry.current_status_msg = "Governance Refusal. Halting."
-                inquiry.save(update_fields=['status', 'investigation_status', 'current_status_msg'])
+                inquiry.is_visible_to_user = False
+                inquiry.save(update_fields=['status', 'investigation_status', 'current_status_msg', 'is_visible_to_user'])
+                
+                # SCRUB DIVERSION: Remove this trajectory from parent if it was a branch
+                _scrub_parent_diversion(inquiry)
                 return "skipped"
 
         return "success"
@@ -203,6 +212,38 @@ def execute_engine_step_task(self, prev_result, inquiry_id, step_id):
         Inquiry.objects.filter(pk=inquiry_id).update(status='FAILED', current_status_msg=f"Failed at {step_id}: {str(e)}")
         return "error"
 
+def _scrub_parent_diversion(inquiry):
+    """If this was a branch, remove the matching trajectory from the parent's Decision Room."""
+    if inquiry.parent_inquiry and inquiry.branch_name:
+        parent = inquiry.parent_inquiry
+        
+        # 1. Scrub from persistent JSONField
+        if parent.divergences:
+            original_count = len(parent.divergences)
+            parent.divergences = [
+                d for d in parent.divergences 
+                if (d.get('title') if isinstance(d, dict) else str(d)) != inquiry.branch_name
+            ]
+            if len(parent.divergences) != original_count:
+                parent.save(update_fields=['divergences'])
+                logger.info(f"Scrubbed diversion '{inquiry.branch_name}' from parent {parent.id} JSONField")
+
+        # 2. Scrub from Step 7 Planet data to prevent fallback re-population
+        step7 = parent.planets.filter(order=7).first()
+        if step7 and step7.data and 'trajectories' in step7.data:
+            original_count = len(step7.data['trajectories'])
+            step7.data['trajectories'] = [
+                t for t in step7.data['trajectories']
+                if (t.get('tag', t.get('title', str(t))) if isinstance(t, dict) else str(t)) != inquiry.branch_name
+            ]
+            if len(step7.data['trajectories']) != original_count:
+                step7.save(update_fields=['data'])
+                logger.info(f"Scrubbed diversion '{inquiry.branch_name}' from parent {parent.id} Planet 7")
+
+        # 3. Sync the parent's RoomState so the Decision Room updates immediately
+        for rs in parent.room_states.all():
+            rs.sync_from_planets()
+
 @shared_task(name='discovery.finalize_engine_workflow_task')
 def finalize_engine_workflow_task(prev_result, inquiry_id):
     """
@@ -211,7 +252,7 @@ def finalize_engine_workflow_task(prev_result, inquiry_id):
     logger.info(f"FINALIZING WORKFLOW FOR INQUIRY: {inquiry_id}")
     try:
         inquiry = Inquiry.objects.get(pk=inquiry_id)
-        if inquiry.status in ['REFUSED', 'FAILED']:
+        if inquiry.status in ['REFUSED', 'FAILED', 'DELETED']:
             return "halted"
 
         planets = {p.order: p.data for p in inquiry.planets.filter(status='COMPLETED')}
@@ -220,7 +261,14 @@ def finalize_engine_workflow_task(prev_result, inquiry_id):
             if 9 in planets: inquiry.final_verdict = planets[9].get("verdict", "N/A")
             if 1 in planets: inquiry.current_question_state = planets[1].get("reformulated_frame", inquiry.core_question)
             if 3 in planets: inquiry.assumptions = planets[3].get("assumptions", [])
-            if 11 in planets: inquiry.unresolved_zones = planets[11].get("unresolved_zones", []) or planets[11].get("entries", [])
+            
+            # UNRESOLVED SEMANTIC ZONES (Step 11 Core)
+            # Prioritize Step 11 "entries" or Step 9 "unresolved_uncertainty_sources"
+            if 11 in planets:
+                inquiry.unresolved_zones = planets[11].get("unresolved_zones", []) or planets[11].get("entries", [])
+            elif 9 in planets:
+                # Step 9 is the primary source of uncertainty if Step 11 is not present
+                inquiry.unresolved_zones = planets[9].get("unresolved_uncertainty_sources", [])
             
             if 7 in planets:
                 raw_trajs = planets[7].get("trajectories", [])

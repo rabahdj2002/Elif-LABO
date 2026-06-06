@@ -10,7 +10,7 @@
             </div>
             <div>
                 <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">{{ topic_name }}</h1>
-                <p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-[0.3em] font-mono">Cognitive Sector: {{ topic_prefix }}</p>
+                <p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-[0.3em] font-mono">Topic ID: {{ topic_prefix }}</p>
             </div>
         </div>
         <a href="{% url 'discovery:system_map' %}" class="flex items-center space-x-2 text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition-all bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl border border-white/5">
@@ -34,22 +34,29 @@
                     <div class="absolute top-0 right-0 p-4 md:p-10 flex flex-col items-end z-20">
                         <div class="px-2.5 md:px-5 py-1.5 md:py-3 rounded-lg md:rounded-2xl bg-black/60 border border-white/10 backdrop-blur-xl shadow-2xl">
                             <div class="text-[9px] md:text-xl font-black text-blue-400 font-mono leading-none mb-0.5 md:mb-1">
-                                {{ inq.investigation_status|default:"Emerging" }}
+                                {{ inq.investigation_status|default:"In Progress" }}
                             </div>
-                            <div class="text-[5px] md:text-[7px] text-gray-500 uppercase tracking-widest text-right font-black opacity-80">Investigation Status</div>
+                            <div class="text-[5px] md:text-[7px] text-gray-500 uppercase tracking-widest text-right font-black opacity-80">Status</div>
                         </div>
                     </div>
 
                     <div class="flex flex-col space-y-3 md:space-y-6 max-w-4xl pr-12 md:pr-40 relative z-10">
                         <div class="flex items-center space-x-2 md:space-x-3 overflow-hidden">
                             <span class="text-[7px] md:text-[9px] uppercase tracking-[0.3em] font-black {% if not inq.parent_inquiry %}text-blue-500{% else %}text-purple-400{% endif %} shrink-0">
-                                {% if not inq.parent_inquiry %}Primary{% else %}Divergence{% endif %}
+                                {% if not inq.parent_inquiry %}Main{% else %}Branch{% endif %}
                             </span>
                             {% if inq.is_active %}
                             <span class="text-[7px] font-black text-blue-400 uppercase tracking-widest bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 animate-pulse">Running</span>
                             {% elif inq.status == 'REFUSED' %}
                             <span class="text-[7px] font-black text-red-500 uppercase tracking-widest bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">Refused</span>
                             {% endif %}
+                            
+                            {% if inq.specialization %}
+                            <span class="text-[7px] font-black text-gray-400 uppercase tracking-widest bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                                <i class="fa-solid fa-microchip mr-1"></i> {{ inq.specialization }}
+                            </span>
+                            {% endif %}
+
                             <span class="text-gray-800 shrink-0 text-[10px]">|</span>
                             <span class="text-[7px] font-mono text-gray-600 truncate opacity-50">{{ inq.case_id|slice:":8" }}...</span>
                         </div>

@@ -1,0 +1,82 @@
+<!-- Notification Bell -->
+<button type="button" 
+        onclick="const dd = this.nextElementSibling; dd.classList.toggle('hidden'); window.notifOpen = !dd.classList.contains('hidden');"
+        class="w-10 h-10 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 transition-all relative">
+    <i class="fa-solid fa-bell"></i>
+    {% if unread_count > 0 %}
+        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] font-black text-white flex items-center justify-center rounded-full animate-pulse border-2 border-[#020617]">
+            {{ unread_count }}
+        </span>
+    {% endif %}
+</button>
+
+<!-- Dropdown Panel -->
+<div class="notification-dropdown absolute right-0 lg:right-auto lg:left-0 mt-3 w-72 md:w-80 glass-heavy border border-white/10 rounded-2xl shadow-2xl z-[150] hidden overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div class="p-4 border-b border-white/5 flex items-center justify-between">
+        <span class="text-[10px] font-black text-white uppercase tracking-widest">Cognitive Updates</span>
+        <span class="text-[8px] text-gray-500 uppercase">{{ unread_count }} UNREAD</span>
+    </div>
+
+    <div class="max-h-96 overflow-y-auto custom-scrollbar">
+        {% for notif in notifications %}
+            <div class="p-4 border-b border-white/5 hover:bg-white/5 transition-all relative group/item {% if not notif.is_read %}bg-blue-500/[0.03]{% else %}opacity-60{% endif %}">
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 
+                        {% if not notif.is_read %}
+                            {% if notif.category == 'MISSION_REJECTED' %}bg-orange-500/20 text-orange-400
+                            {% elif notif.category == 'MISSION_COMPLETED' %}bg-green-500/20 text-green-400
+                            {% elif notif.category == 'TIER_CHANGE' %}bg-blue-500/20 text-blue-400
+                            {% elif notif.category == 'USAGE_RESET' %}bg-purple-500/20 text-purple-400
+                            {% else %}bg-gray-500/20 text-gray-400{% endif %}
+                        {% else %}
+                            bg-white/5 text-gray-600
+                        {% endif %}">
+                        <i class="fa-solid 
+                            {% if notif.category == 'MISSION_REJECTED' %}fa-rotate-left
+                            {% elif notif.category == 'MISSION_COMPLETED' %}fa-check-double
+                            {% elif notif.category == 'TIER_CHANGE' %}fa-arrow-up-right-dots
+                            {% elif notif.category == 'USAGE_RESET' %}fa-clock-rotate-left
+                            {% else %}fa-dna{% endif %}"></i>
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-[11px] font-black {% if not notif.is_read %}text-white{% else %}text-gray-500{% endif %} leading-tight uppercase tracking-tighter">{{ notif.title }}</h4>
+                            <span class="text-[8px] text-gray-600 font-mono shrink-0">{{ notif.created_at|timesince }}</span>
+                        </div>
+                        <p class="text-[10px] {% if not notif.is_read %}text-gray-400{% else %}text-gray-600{% endif %} leading-relaxed font-light line-clamp-2 italic">"{{ notif.message }}"</p>
+                        <div class="flex items-center justify-end pt-1">
+                            {% if not notif.is_read %}
+                                <button hx-post="{% url 'discovery:mark_read' notif.pk %}" 
+                                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                        hx-target="closest .notification-wrapper"
+                                        hx-swap="innerHTML"
+                                        class="text-[8px] text-gray-500 hover:text-white uppercase font-black tracking-widest">Acknowledge</button>
+                            {% else %}
+                                <span class="text-[7px] text-gray-700 uppercase font-black tracking-widest">Archived</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% if not notif.is_read %}
+                    <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500"></div>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="p-8 text-center text-gray-600">
+                <i class="fa-solid fa-moon text-2xl mb-3 opacity-20"></i>
+                <p class="text-[10px] uppercase tracking-widest">No Active Updates</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if unread_count > 0 %}
+    <div class="p-3 bg-white/5 text-center">
+        <button hx-post="{% url 'discovery:clear_all_notifications' %}"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-target="closest .notification-wrapper"
+                hx-swap="innerHTML"
+                onclick="window.notifOpen = false;"
+                class="text-[9px] text-gray-400 hover:text-white uppercase font-black tracking-[0.2em] transition-all">Clear All Updates</button>
+    </div>
+    {% endif %}
+</div>

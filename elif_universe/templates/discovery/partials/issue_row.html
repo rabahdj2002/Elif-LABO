@@ -1,0 +1,66 @@
+<tr id="issue-row-{{ issue.id }}" class="hover:bg-white/[0.02] transition-colors group">
+    <td class="px-6 py-4">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[10px] font-black text-blue-400">
+                {{ issue.user.username|slice:":2"|upper }}
+            </div>
+            <div>
+                <p class="text-sm font-bold text-white">{{ issue.user.username }}</p>
+                <p class="text-[10px] text-gray-500 truncate max-w-[150px]">{{ issue.user.email }}</p>
+                <p class="text-[9px] text-blue-500/60 truncate max-w-[150px] mt-0.5">{{ issue.url }}</p>
+            </div>
+        </div>
+    </td>
+    <td class="px-6 py-4">
+        <p class="text-sm text-gray-300 line-clamp-1 group-hover:line-clamp-none transition-all">{{ issue.description }}</p>
+        {% if issue.screenshot %}
+        <button onclick="viewScreenshot('{{ issue.screenshot }}')" class="mt-2 text-[10px] text-blue-400 hover:text-blue-300 uppercase font-black tracking-widest flex items-center gap-1">
+            <i class="fa-solid fa-image"></i> View Screenshot
+        </button>
+        {% endif %}
+    </td>
+    <td class="px-6 py-4">
+        <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest 
+                {% if issue.status == 'OPEN' %}bg-red-500/10 text-red-500 border border-red-500/20
+                {% elif issue.status == 'WORKING' %}bg-yellow-500/10 text-yellow-500 border border-yellow-500/20
+                {% else %}bg-green-500/10 text-green-500 border border-green-500/20{% endif %}">
+                {{ issue.get_status_display }}
+            </span>
+            
+            {% if issue.status != 'FIXED' %}
+            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                {% if issue.status == 'OPEN' %}
+                <button hx-post="{% url 'discovery:update_issue' issue.id %}"
+                        hx-vals='{"status": "WORKING"}'
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-target="#issue-row-{{ issue.id }}"
+                        hx-swap="outerHTML"
+                        class="w-6 h-6 rounded bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 flex items-center justify-center hover:bg-yellow-500/20 transition-all"
+                        title="Start Working">
+                    <i class="fa-solid fa-hammer text-[10px]"></i>
+                </button>
+                {% endif %}
+                <button hx-post="{% url 'discovery:update_issue' issue.id %}"
+                        hx-vals='{"status": "FIXED"}'
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-target="#issue-row-{{ issue.id }}"
+                        hx-swap="outerHTML"
+                        class="w-6 h-6 rounded bg-green-500/10 text-green-500 border border-green-500/20 flex items-center justify-center hover:bg-green-500/20 transition-all"
+                        title="Mark as Fixed">
+                    <i class="fa-solid fa-check text-[10px]"></i>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </td>
+    <td class="px-6 py-4 text-xs text-gray-500 font-medium">
+        {{ issue.created_at|date:"M d, H:i" }}
+    </td>
+    <td class="px-6 py-4 text-right">
+        <button onclick="openManageModal('{{ issue.id }}', '{{ issue.status }}', '{{ issue.admin_note|escapejs }}', '{% url 'discovery:update_issue' issue.id %}')" 
+                class="text-gray-500 hover:text-white transition-colors">
+            <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+    </td>
+</tr>

@@ -3,6 +3,7 @@ from celery import shared_task
 from .models import Inquiry, Planet
 from engine_bridge.services import EngineService
 import re
+from .workflow_tasks import *
 
 logger = logging.getLogger(__name__)
 
@@ -171,3 +172,17 @@ def _process_inquiry_async_results(inquiry):
     })
     
     inquiry.save()
+
+@shared_task(name='discovery.reset_monthly_usage')
+def reset_monthly_usage():
+    """
+    Background worker to check and reset all active subscriptions.
+    Usually runs nightly via Celery Beat.
+    """
+    from discovery.models import UserSubscription
+    subs = UserSubscription.objects.all()
+    reset_count = 0
+    for sub in subs:
+        if sub.check_cycle_reset():
+            reset_count += 1
+    return f"Processed {subs.count()} subscriptions. Reset_count: {reset_count}"

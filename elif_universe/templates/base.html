@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,7 +18,23 @@
             color: #f8fafc;
             font-family: 'Space Grotesk', sans-serif;
             overflow-x: hidden;
+            width: 100%;
         }
+        
+        /* Mobile fixes */
+        @media (max-width: 640px) {
+            h1 { font-size: 1.5rem !important; line-height: 1.2 !important; }
+            .glass { border-radius: 1rem !important; }
+            .p-8 { padding: 1.5rem !important; }
+            .p-6 { padding: 1rem !important; }
+        }
+
+        /* Fix for dark mode dropdowns */
+        option {
+            background-color: #0f172a !important; /* slate-900 */
+            color: #f8fafc !important;
+        }
+
         /* Unified Global Spinner styles */
         .htmx-indicator { 
             display: none !important; 
@@ -54,9 +70,23 @@
             opacity: 0.6;
         }
         .glass {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.01);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(59, 130, 246, 0.2);
+            background: rgba(59, 130, 246, 0.02);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px -15px rgba(59, 130, 246, 0.1);
         }
         .glass-heavy {
             background: rgba(7, 10, 25, 0.98);
@@ -107,26 +137,104 @@
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
         }
+
+        /* Custom Vertical Scrollbar (Techno/Blue) */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px !important;
+            display: block !important;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02) !important;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.4) !important;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.8) !important;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        .custom-scrollbar {
+            scrollbar-width: thin !important;
+            scrollbar-color: rgba(59, 130, 246, 0.4) rgba(255, 255, 255, 0.02) !important;
+        }
         
         @media (max-width: 1024px) {
             .side-nav { 
                 transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                width: 80px !important;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                width: 280px !important; /* Larger width for mobile menu */
+                background: rgba(7, 10, 25, 1.0) !important;
+                backdrop-filter: blur(20px);
             }
             .side-nav.mobile-active {
                 transform: translateX(0);
                 display: flex !important;
+                box-shadow: 20px 0 50px rgba(0,0,0,0.8);
             }
-            main { margin-left: 0 !important; }
+            #main-viewport { margin-left: 0 !important; }
         }
     </style>
     <script>
+        // Global Dropdown Handler
+        let lastUnreadCount = 0;
+        
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.notification-wrapper')) {
+                document.querySelectorAll('.notification-dropdown').forEach(dd => {
+                    dd.classList.add('hidden');
+                });
+                window.notifOpen = false;
+            }
+        });
+
+        // Monitor new notifications
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.classList.contains('notification-wrapper')) {
+                const badge = evt.detail.target.querySelector('.bg-red-500');
+                const newCount = badge ? parseInt(badge.innerText) : 0;
+                
+                if (newCount > lastUnreadCount) {
+                    // New notification arrived! Create a toast
+                    const latestNotif = evt.detail.target.querySelector('.group\\/item:first-child');
+                    if (latestNotif) {
+                        const title = latestNotif.querySelector('h4').innerText;
+                        showNotifToast(title);
+                    }
+                }
+                lastUnreadCount = newCount;
+            }
+        });
+
+        function showNotifToast(title) {
+            const container = document.getElementById('js-notifications');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto glass-heavy border border-blue-500/30 bg-black/60 p-4 rounded-xl shadow-2xl animate-in slide-in-from-right-full duration-500 w-64 flex items-center gap-3 border-l-4 border-l-blue-500';
+            toast.innerHTML = `
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[9px] text-blue-400 font-black uppercase tracking-widest leading-none mb-1">New Update</p>
+                    <p class="text-[11px] text-white font-bold leading-tight line-clamp-1">${title}</p>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('animate-out', 'fade-out', 'slide-out-to-right-full');
+                setTimeout(() => toast.remove(), 500);
+            }, 5000);
+        }
+
         function toggleMobileMenu() {
             const nav = document.querySelector('.side-nav');
             const overlay = document.getElementById('mobile-nav-overlay');
-            nav.classList.toggle('mobile-active');
-            overlay.classList.toggle('hidden');
+            if (nav) nav.classList.toggle('mobile-active');
+            if (overlay) overlay.classList.toggle('hidden');
         }
 
         function showEngineSpinner(telemetryUrl = null) {
@@ -273,8 +381,8 @@
                     if (data.status === 'FAILED') msgEl.classList.add('text-red-400');
                     if (data.status === 'REFUSED') msgEl.classList.add('text-orange-400');
                     
-                    // Auto-hide after 5s if successful
-                    if (data.status === 'COMPLETED') {
+                    // Auto-hide after 5s if successful or refused
+                    if (data.status === 'COMPLETED' || data.status === 'REFUSED') {
                          setTimeout(() => {
                              toast.classList.add('slide-out-to-right-8', 'opacity-0');
                              setTimeout(() => toast.remove(), 500);
@@ -432,14 +540,23 @@
     </div>
 
     <!-- Mobile Top Bar -->
-    <header class="lg:hidden glass border-b border-white/10 p-4 flex items-center justify-between z-[60]">
+    <header class="lg:hidden glass border-b border-white/10 p-4 flex items-center justify-between z-[60] sticky top-0">
         <div class="flex items-center space-x-3">
             <i class="fa-solid fa-dna text-blue-400 text-xl"></i>
             <span class="text-[10px] font-black text-blue-500 tracking-[0.2em] uppercase">ELIF Archive</span>
         </div>
-        <button onclick="toggleMobileMenu()" class="w-10 h-10 border border-white/10 rounded-xl flex items-center justify-center text-gray-400">
-            <i class="fa-solid fa-bars"></i>
-        </button>
+        <div class="flex items-center space-x-2">
+            <!-- Mobile Notifications -->
+            <div hx-get="{% url 'discovery:get_notifications' %}" 
+                 hx-trigger="load, every 8s" 
+                 hx-swap="innerHTML" 
+                 class="relative notification-wrapper"
+                 hx-on::after-swap="if(window.notifOpen) this.querySelector('.notification-dropdown')?.classList.remove('hidden')"></div>
+            
+            <button type="button" onclick="toggleMobileMenu()" class="w-10 h-10 border border-white/10 rounded-xl flex items-center justify-center text-gray-400 hover:bg-white/5 active:scale-95 transition-all cursor-pointer">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
     </header>
 
     <!-- Mobile Navigation Overlay -->
@@ -449,64 +566,211 @@
     <!-- Global Sync Overlay (REMOVED: Moved to background) -->
     <div id="global-sync-overlay" class="hidden"></div>
     
-    {% if user.is_authenticated %}
+{% if user.is_authenticated %}
     <!-- Sidebar Navigation (Star Charts) -->
-    <nav class="fixed left-0 top-0 h-full w-20 flex flex-col items-center py-8 glass border-r border-white/10 z-50 side-nav">
-        <div class="mb-12 flex flex-col items-center">
-            <div class="text-[10px] font-black text-blue-500 mb-2 tracking-[0.2em] opacity-50">ELIF</div>
-            <a href="/" class="w-12 h-12 flex items-center justify-center bg-blue-600/20 rounded-2xl border border-blue-500/30 hover:bg-blue-600/30 transition-all group relative">
-                <i class="fa-solid fa-dna text-blue-400 text-2xl group-hover:rotate-180 transition-transform duration-1000"></i>
-                <span class="absolute left-16 top-3 bg-blue-600 text-[10px] px-2 py-1 rounded hidden group-hover:block whitespace-nowrap z-[200]">Home Archive</span>
-            </a>
-        </div>
-        <div class="mb-8">
-            <a href="{% url 'discovery:spend_history' %}" class="w-12 h-12 flex items-center justify-center bg-emerald-600/20 rounded-2xl border border-emerald-500/30 hover:bg-emerald-600/30 transition-all group relative">
-                <i class="fa-solid fa-wallet text-emerald-400 text-xl group-hover:scale-110 transition-transform"></i>
-                <span class="absolute left-16 top-3 bg-emerald-600 text-[10px] px-2 py-1 rounded hidden group-hover:block whitespace-nowrap z-[200]">Network Wallet</span>
-            </a>
-        </div>
+    <nav class="fixed left-0 border-r top-0 h-full w-20 lg:w-64 flex flex-col py-8 glass border-white/10 z-50 side-nav transition-all duration-300">
+        <!-- Close button for mobile -->
+        <button type="button" onclick="toggleMobileMenu()" class="lg:hidden absolute top-4 right-4 text-gray-400 hover:text-white transition-colors cursor-pointer w-10 h-10 flex items-center justify-center border border-white/5 rounded-full bg-white/5">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
         
-        {% if system_settings.offline_mode %}
-        <div class="mb-6 group relative">
-            <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.8)]"></div>
-            <span class="absolute left-10 top-0 bg-yellow-500 text-[8px] text-black px-2 py-0.5 rounded font-black uppercase hidden group-hover:block whitespace-nowrap">Token Saver Active</span>
+        <!-- Brand/Home Section -->
+        <div class="px-6 mb-12 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-4 group">
+                <div class="w-12 h-12 flex items-center justify-center bg-blue-600/20 rounded-2xl border border-blue-500/30 group-hover:bg-blue-600/30 transition-all">
+                    <i class="fa-solid fa-dna text-blue-400 text-2xl group-hover:rotate-180 transition-transform duration-1000"></i>
+                </div>
+                <div class="hidden lg:block">
+                    <div class="text-[10px] font-black text-blue-500 tracking-[0.2em] uppercase leading-none mb-1">ELIF CORE</div>
+                    <div class="text-white font-black text-lg tracking-tighter leading-none">{{ system_settings.system_version }}</div>
+                </div>
+            </a>
+            
+            <!-- Desktop Notifications (Right of logo in sidebar) -->
+            <div class="hidden lg:block">
+                <div hx-get="{% url 'discovery:get_notifications' %}" 
+                     hx-trigger="load, every 8s" 
+                     hx-swap="innerHTML" 
+                     class="relative notification-wrapper"
+                     hx-on::after-swap="if(window.notifOpen) this.querySelector('.notification-dropdown')?.classList.remove('hidden')"></div>
+            </div>
         </div>
-        {% endif %}
 
-        <div class="flex-1 flex flex-col space-y-8">
-            <a href="{% url 'discovery:system_map' %}" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
-                <i class="fa-solid fa-satellite-dish text-xl"></i>
-                <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Discovery</span>
-            </a>
-            <a href="{% url 'discovery:initialize' %}" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
-                <i class="fa-solid fa-plus-circle text-xl"></i>
-                <span class="absolute left-16 top-3 bg-purple-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">New Mission</span>
-            </a>
-            <a href="{% url 'discovery:documentation' %}" class="p-3 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-all group relative">
-                <i class="fa-solid fa-book-open text-xl"></i>
-                <span class="absolute left-16 top-3 bg-emerald-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Protocol</span>
-            </a>
+        <div class="flex-1 px-4 overflow-y-auto custom-scrollbar space-y-8">
+            <!-- Section: Research -->
+            {% if not user.is_superuser and user.subscription.user_type != 'ADMIN' %}
+            <div>
+                <div class="px-2 mb-4 hidden lg:block">
+                    <span class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Research</span>
+                </div>
+                <div class="space-y-1">
+                    <a href="{% url 'discovery:system_map' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-satellite-dish text-lg"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Topic Map</span>
+                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Map</span>
+                    </a>
+                    <a href="{% url 'discovery:initialize' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-plus-circle text-lg"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">New Inquiry</span>
+                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">New</span>
+                    </a>
+                    {% if user.subscription.user_type == 'TESTER' %}
+                    <a href="{% url 'discovery:tester_feedback_center' %}" class="flex items-center gap-4 p-3 rounded-xl {% if request.resolver_match.url_name == 'tester_feedback_center' %}bg-blue-500/10 text-blue-400 border border-blue-500/20{% else %}hover:bg-white/5 text-gray-400 hover:text-white{% endif %} transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-vial-circle-check text-lg"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Mission Control</span>
+                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Feedback</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.is_superuser or user.subscription.user_type == 'ADMIN' %}
+            <!-- Section: System Control -->
+            <div>
+                <div class="px-2 mb-4 hidden lg:block">
+                    <span class="text-[9px] font-black text-purple-500 uppercase tracking-[0.2em]">Admin Control</span>
+                </div>
+                <div class="space-y-1">
+                    <a href="{% url 'discovery:admin_dashboard' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-tower-observation text-lg text-purple-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Admin Dashboard</span>
+                    </a>
+                    
+                    {% if user.is_superuser or user.subscription.admin_permissions.can_view_spend %}
+                    <a href="{% url 'discovery:spend_history' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-wallet text-lg text-emerald-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Billing & Wallet</span>
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_superuser or user.subscription.admin_permissions.can_manage_tiers %}
+                    <a href="{% url 'discovery:tier_list' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-layer-group text-lg text-blue-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Tier Management</span>
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_superuser or user.subscription.admin_permissions.can_manage_users %}
+                    <a href="{% url 'discovery:users_list' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-users text-lg text-purple-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">User Management</span>
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_superuser or user.subscription.admin_permissions.can_manage_issues %}
+                    <a href="{% url 'discovery:admin_issue_center' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-bug text-lg text-red-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Issue Center</span>
+                    </a>
+                    {% endif %}
+
+                    {% if user.is_superuser or user.subscription.user_type == 'ADMIN' %}
+                    <a href="{% url 'discovery:admin_intelligence_hub' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-brain text-lg text-emerald-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Intelligence Hub</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Section: Documentation -->
+            <div>
+                <div class="px-2 mb-4 hidden lg:block">
+                    <span class="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Resources</span>
+                </div>
+                <div class="space-y-1">
+                    {% if not user.is_superuser and user.subscription.user_type != 'ADMIN' %}
+                    <a href="{% url 'discovery:user_issues' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-headset text-lg text-blue-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">My Reports</span>
+                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Reports</span>
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'discovery:documentation' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-book-open text-lg"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Documentation</span>
+                        <span class="absolute left-16 top-3 bg-emerald-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Docs</span>
+                    </a>
+                    {% if not user.is_superuser %}
+                    <a href="{% url 'discovery:subscription' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-id-card text-lg text-blue-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Subscription</span>
+                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Plans</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <div class="flex flex-col space-y-4">
-            <a href="{% url 'discovery:settings' %}" class="p-3 text-gray-500 hover:text-white transition-all group relative">
-                <i class="fa-solid fa-gear text-xl"></i>
-                <span class="absolute left-16 top-3 bg-gray-600 text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap">Settings</span>
+
+        <!-- Footer: Settings & Power -->
+        <div class="px-4 py-6 border-t border-white/5 space-y-2">
+            {% if system_settings.offline_mode %}
+            <div class="flex items-center gap-4 p-3 mb-4 hidden lg:flex">
+                <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.8)]"></div>
+                <span class="text-[9px] font-black text-yellow-500 uppercase tracking-widest">Offline Active</span>
+            </div>
+            {% endif %}
+
+            {% if user.is_superuser %}
+            <a href="{% url 'discovery:settings' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-500 hover:text-white transition-all group relative">
+                <div class="w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-gear text-lg"></i>
+                </div>
+                <span class="text-sm font-bold tracking-tight hidden lg:block">System Config</span>
+                <span class="absolute left-16 top-3 bg-gray-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Config</span>
             </a>
-            {% if user.is_authenticated %}
+            {% else %}
+            <a href="{% url 'discovery:profile' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-500 hover:text-white transition-all group relative">
+                <div class="w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-user-circle text-lg"></i>
+                </div>
+                <span class="text-sm font-bold tracking-tight hidden lg:block">Profile</span>
+                <span class="absolute left-16 top-3 bg-gray-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Profile</span>
+            </a>
+            {% endif %}
+            
             <form action="{% url 'logout' %}" method="post" class="p-0 m-0">
                 {% csrf_token %}
-                <button type="submit" class="p-3 text-red-500 hover:text-red-400 transition-all group relative">
-                    <i class="fa-solid fa-power-off text-xl"></i>
-                    <span class="absolute left-16 top-3 bg-red-600 text-xs px-2 py-1 text-white rounded hidden group-hover:block whitespace-nowrap">Terminate Session</span>
+                <button type="submit" class="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-red-500/10 text-red-500 hover:text-red-400 transition-all group relative text-left">
+                    <div class="w-8 h-8 flex items-center justify-center">
+                        <i class="fa-solid fa-power-off text-lg"></i>
+                    </div>
+                    <span class="text-sm font-bold tracking-tight hidden lg:block">Disconnect</span>
+                    <span class="absolute left-16 top-3 bg-red-600 text-xs px-2 py-1 text-white rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Logout</span>
                 </button>
             </form>
-            {% endif %}
         </div>
     </nav>
     {% endif %}
 
     <!-- Main Viewport -->
-    <main id="main-viewport" class="{% if user.is_authenticated %}ml-0 lg:ml-20{% else %}ml-0 w-full{% endif %} p-4 md:p-8 flex-1 flex flex-col min-h-0 overflow-y-auto custom-horizontal-scroll">
+    <main id="main-viewport" class="{% if user.is_authenticated %}ml-20 lg:ml-64{% else %}ml-0 w-full{% endif %} p-4 md:p-8 flex-1 flex flex-col min-h-0 overflow-y-auto custom-horizontal-scroll transition-all duration-300">
         {% if messages %}
         <div class="fixed top-8 right-8 z-[200] space-y-4 w-[24rem] md:w-[32rem]">
             {% for message in messages %}
@@ -542,8 +806,8 @@
                 <button onclick="hideOfflineNotice()" class="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 px-8 py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] font-bold transition-all">
                     Proceed with Simulation
                 </button>
-                <a href="{% url 'discovery:settings' %}" class="block mt-4 text-[10px] text-gray-500 hover:text-white uppercase tracking-widest font-bold transition-all">
-                    Disable in System Control
+                <a href="{% if user.is_superuser %}{% url 'discovery:settings' %}{% else %}{% url 'discovery:profile' %}{% endif %}" class="block mt-4 text-[10px] text-gray-500 hover:text-white uppercase tracking-widest font-bold transition-all">
+                    Disable in {% if user.is_superuser %}System Control{% else %}Profile{% endif %}
                 </a>
             </div>
         </div>
@@ -578,5 +842,111 @@
         });
     </script>
     {% endblock %}
+
+    {% if user.is_authenticated %}
+    <!-- Issue Reporting Floating Button -->
+    <button onclick="openIssueModal()" class="fixed bottom-6 right-6 w-12 h-12 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 rounded-full flex items-center justify-center text-blue-400 hover:text-white shadow-2xl backdrop-blur-md transition-all z-[150] group" title="Report an Issue">
+        <i class="fa-solid fa-bug text-lg"></i>
+    </button>
+
+    <!-- Issue Modal -->
+    <div id="issue-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm hidden animate-in fade-in duration-300">
+        <div class="glass max-w-lg w-full p-8 rounded-[2rem] border-blue-500/20 shadow-2xl space-y-6">
+            <h3 class="text-xl font-bold text-white uppercase tracking-widest flex items-center gap-3">
+                <i class="fa-solid fa-headset text-blue-500"></i>
+                Report System Anomaly
+            </h3>
+            <div class="space-y-4">
+                <div id="screenshot-preview" class="w-full aspect-video bg-black/40 rounded-xl border border-white/5 overflow-hidden hidden flex items-center justify-center">
+                    <img id="issue-screenshot-img" src="" class="max-w-full max-h-full object-contain">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">What's the anomaly?</label>
+                    <textarea id="issue-description" rows="4" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-all" placeholder="Describe what happened..."></textarea>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="closeIssueModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-white/60 px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all">
+                    Cancel
+                </button>
+                <button id="submit-issue-btn" onclick="submitIssue()" class="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all">
+                    Submit Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        let issueScreenshot = "";
+
+        async function openIssueModal() {
+            document.getElementById('issue-modal').classList.remove('hidden');
+            const preview = document.getElementById('screenshot-preview');
+            const img = document.getElementById('issue-screenshot-img');
+            
+            // Auto capture screenshot
+            try {
+                const canvas = await html2canvas(document.body, {
+                    scale: 0.5,
+                    logging: false,
+                    useCORS: true,
+                    ignoreElements: (el) => el.id === 'issue-modal' || el.classList.contains('fa-bug')
+                });
+                issueScreenshot = canvas.toDataURL("image/jpeg", 0.7);
+                img.src = issueScreenshot;
+                preview.classList.remove('hidden');
+            } catch (e) {
+                console.error("Screenshot failed", e);
+            }
+        }
+
+        function closeIssueModal() {
+            document.getElementById('issue-modal').classList.add('hidden');
+            document.getElementById('issue-description').value = "";
+            issueScreenshot = "";
+        }
+
+        async function submitIssue() {
+            const description = document.getElementById('issue-description').value;
+            const btn = document.getElementById('submit-issue-btn');
+            
+            if (!description) {
+                alert("Please describe the issue.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Sending...";
+
+            const response = await fetch("{% url 'discovery:report_issue' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: new URLSearchParams({
+                    "description": description,
+                    "screenshot": issueScreenshot,
+                    "url": window.location.href
+                })
+            });
+
+            if (response.ok) {
+                closeIssueModal();
+                // Show success toast manually
+                const toast = document.createElement('div');
+                toast.className = "fixed bottom-24 right-6 glass p-4 rounded-xl border border-blue-500/30 text-blue-400 shadow-2xl animate-in fade-in slide-in-from-bottom duration-300 z-[200]";
+                toast.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i> Issue reported. The system admins have been notified.';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 5000);
+            } else {
+                alert("Failed to send report. Please try again.");
+            }
+            btn.disabled = false;
+            btn.innerText = "Submit Report";
+        }
+    </script>
+    {% endif %}
 </body>
 </html>

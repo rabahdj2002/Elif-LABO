@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-2">
+            <h1 class="text-4xl font-black text-white uppercase tracking-tighter planet-nav">Anomaly <span class="text-blue-500">Center</span></h1>
+            <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">Infrastructure diagnostics and system disruptions.</p>
+        </div>
+        <div class="flex gap-4">
+            <div class="glass px-6 py-3 rounded-2xl border-white/5 flex items-center gap-4">
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest">Active Alerts</p>
+                    <p class="text-xl font-black text-white">{{ active_count }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
+                    <i class="fa-solid fa-bug"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issues Table -->
+    <div class="glass rounded-[2rem] overflow-hidden border-white/5">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-white/5 bg-white/[0.02]">
+                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400">Reporter</th>
+                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400">Description</th>
+                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400">Status</th>
+                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400">Created</th>
+                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for issue in issues %}
+                        {% include "discovery/partials/issue_row.html" %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-20 text-center">
+                            <div class="flex flex-col items-center gap-4 opacity-20">
+                                <i class="fa-solid fa-shield-check text-4xl"></i>
+                                <p class="text-sm font-bold uppercase tracking-widest">No anomalies detected</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Screenshot Viewer Modal -->
+<div id="screenshot-modal" class="fixed inset-0 z-[300] flex items-center justify-center p-12 bg-black/90 backdrop-blur-md hidden" onclick="this.classList.add('hidden')">
+    <img id="full-screenshot" src="" class="max-w-full max-h-full rounded-2xl shadow-2xl border border-white/10">
+</div>
+
+<!-- Manage Issue Modal -->
+<div id="manage-modal" class="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm hidden animate-in fade-in duration-300">
+    <div class="glass max-w-lg w-full p-8 rounded-[2rem] border-blue-500/20 shadow-2xl space-y-6">
+        <h3 class="text-xl font-bold text-white uppercase tracking-widest">Update Anomaly Status</h3>
+        <form id="manage-form" method="post" action="" class="space-y-4">
+            {% csrf_token %}
+            <div class="space-y-2">
+                <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">New Status</label>
+                <select name="status" id="modal-status" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-blue-500/50 appearance-none">
+                    <option value="OPEN" class="bg-slate-900">Open</option>
+                    <option value="WORKING" class="bg-slate-900">Working On</option>
+                    <option value="FIXED" class="bg-slate-900">Fixed</option>
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Admin Resolution Note</label>
+                <textarea name="admin_note" id="modal-note" rows="4" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-all" placeholder="Notes on resolution..."></textarea>
+            </div>
+            <div class="flex gap-4">
+                <button type="button" onclick="document.getElementById('manage-modal').classList.add('hidden')" class="flex-1 bg-white/5 hover:bg-white/10 text-white/60 px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold transition-all">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function viewScreenshot(src) {
+        const modal = document.getElementById('screenshot-modal');
+        const img = document.getElementById('full-screenshot');
+        img.src = src;
+        modal.classList.remove('hidden');
+    }
+
+    function openManageModal(id, status, note, updateUrl) {
+        const modal = document.getElementById('manage-modal');
+        const form = document.getElementById('manage-form');
+        const statusSelect = document.getElementById('modal-status');
+        const noteArea = document.getElementById('modal-note');
+        
+        form.action = updateUrl;
+        statusSelect.value = status;
+        noteArea.value = note;
+        
+        modal.classList.remove('hidden');
+    }
+</script>
+{% endblock %}

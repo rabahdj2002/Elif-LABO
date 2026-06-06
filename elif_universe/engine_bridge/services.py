@@ -11,8 +11,60 @@ from elif_v0_1.orchestration_runner import ProcedureRunner
 from elif_v0_1.base import InputFrame
 from discovery.models import SystemSettings
 import uuid
+import langdetect
+from langdetect import detect, DetectorFactory
+
+# Set seed for reproducible language detection
+DetectorFactory.seed = 0
 
 class EngineService:
+    @staticmethod
+    def _detect_language(text):
+        """Robust language detection for ELIF engine using langdetect."""
+        # 1. Arabic Script Detection (High Reliability for RTL script)
+        if re.search(r'[\u0600-\u06FF]', text):
+            return "Arabic"
+        
+        # 2. Advanced detection using langdetect for all supported languages
+        try:
+            # Map ISO codes to full names for the prompt
+            iso_map = {
+                'af': 'Afrikaans', 'ar': 'Arabic', 'bg': 'Bulgarian', 'bn': 'Bengali', 'ca': 'Catalan', 
+                'cs': 'Czech', 'cy': 'Welsh', 'da': 'Danish', 'de': 'German', 'el': 'Greek', 
+                'en': 'English', 'es': 'Spanish', 'et': 'Estonian', 'fa': 'Persian', 'fi': 'Finnish', 
+                'fr': 'French', 'gu': 'Gujarati', 'he': 'Hebrew', 'hi': 'Hindi', 'hr': 'Croatian', 
+                'hu': 'Hungarian', 'id': 'Indonesian', 'it': 'Italian', 'ja': 'Japanese', 'kn': 'Kannada', 
+                'ko': 'Korean', 'lt': 'Lithuanian', 'lv': 'Latvian', 'mk': 'Macedonian', 'ml': 'Malayalam', 
+                'mr': 'Marathi', 'ne': 'Nepali', 'nl': 'Dutch', 'no': 'Norwegian', 'pa': 'Punjabi', 
+                'pl': 'Polish', 'pt': 'Portuguese', 'ro': 'Romanian', 'ru': 'Russian', 'sk': 'Slovak', 
+                'sl': 'Slovenian', 'so': 'Somali', 'sq': 'Albanian', 'sv': 'Swedish', 'sw': 'Swahili', 
+                'ta': 'Tamil', 'te': 'Telugu', 'th': 'Thai', 'tl': 'Tagalog', 'tr': 'Turkish', 
+                'uk': 'Ukrainian', 'ur': 'Urdu', 'vi': 'Vietnamese', 'zh-cn': 'Chinese', 'zh-tw': 'Chinese'
+            }
+            detected_code = detect(text)
+            return iso_map.get(detected_code, "English")
+        except Exception:
+            # Heuristic Fallback for very short strings or failed detection
+            text_lower = text.lower()
+            
+            french_heuristics = [
+                r'\b(est-ce|comment|pourquoi|pour|dans|quelle|est|la|cause|plus|probable|ma|voiture|ne|démarre|plus|le|moteur|se|lance|pas|problème|panne|aide|moi)\b',
+                r'\b(l\'|d\'|qu\'|j\'|m\'|t\'|s\')',  # French apostrophes
+                r'[éèêëàâîïôûùç]' # French accents
+            ]
+            
+            spanish_heuristics = [
+                r'\b(qué|cómo|cuál|donde|quién|por|con|para|más|esta|esta|coche|motor|arranca|problema)\b',
+                r'[áéíóúñ¿¡]' # Spanish marks
+            ]
+
+            if any(re.search(h, text_lower) for h in french_heuristics):
+                return "French"
+            if any(re.search(h, text_lower) for h in spanish_heuristics):
+                return "Spanish"
+            
+        return "English"
+
     @staticmethod
     def generate_case_id(question, topic=None):
         """
@@ -77,6 +129,7 @@ class EngineService:
         child = Inquiry.objects.create(
             parent_inquiry=parent_inquiry,
             topic=parent_inquiry.topic,
+            user=parent_inquiry.user,
             case_id=f"{parent_inquiry.case_id}_branch_{uuid.uuid4().hex[:4]}",
             branch_name=divergence_title,
             core_question=compound_question,
@@ -90,6 +143,11 @@ class EngineService:
                 "coupling_status": "LOCKED_TO_PARENT"
             }]
         )
+
+        # Increment persistent inquiry usage
+        if child.user and hasattr(child.user, 'subscription'):
+            child.user.subscription.total_inquiries_consumed += 1
+            child.user.subscription.save()
         
         # 2. Re-initialize planets for the child (clean slate for the branch)
         steps = [
@@ -150,12 +208,18 @@ class EngineService:
         runner = ProcedureRunner()
         
         # Build initial frame
+        detected = EngineService._detect_language(inquiry_obj.core_question)
+        language_hint = ""
+        if detected != "English":
+            language_hint = f"CRITICAL: The operator is using {detected}. Respond ONLY in {detected}. ALL reasoning segments, descriptions, and labels MUST be in {detected}. Do not use English."
+
         input_frame = InputFrame(
             id=str(inquiry_obj.id),
             text=inquiry_obj.core_question,
             locked_at_iso=inquiry_obj.created_at.isoformat() if inquiry_obj.created_at else "2026-05-28T00:00:00Z",
             doctrinal_scope_tag="GENERAL",
-            companion_case=inquiry_obj.case_id
+            companion_case=inquiry_obj.case_id,
+            language_instruction=language_hint
         )
 
         # 1. Prepare context and internal engine components
@@ -169,7 +233,8 @@ class EngineService:
             offline_mode=sys_settings.offline_mode,
             max_llm_calls=getattr(settings, 'MAX_LLM_CALLS', 15),
             model_id=sys_settings.active_model,
-            results_dir=results_dir
+            results_dir=results_dir,
+            language_instruction=language_hint
         )
 
         return runner, run_context, components, input_frame
@@ -190,14 +255,16 @@ class EngineService:
                 "text": input_frame.text,
                 "locked_at_iso": input_frame.locked_at_iso,
                 "doctrinal_scope_tag": input_frame.doctrinal_scope_tag,
-                "companion_case": input_frame.companion_case
+                "companion_case": input_frame.companion_case,
+                "language_instruction": input_frame.language_instruction
             },
             "prior_outputs": prior_outputs,
             "run_context_data": {
                 "procedure_version": run_context.procedure_version,
                 "max_llm_calls": run_context.max_llm_calls,
                 "started_at_iso": run_context.started_at_iso,
-                "run_id": run_context.run_id
+                "run_id": run_context.run_id,
+                "language_instruction": run_context.language_instruction
             },
             "model_id": run_context.model_id,
             "offline_mode": run_context.offline_mode

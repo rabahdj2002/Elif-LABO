@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-[#020408] text-white selection:bg-blue-500/30">
+    <!-- Hero Background Effects -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[120px] rounded-full animate-pulse" style="animation-delay: 2s;"></div>
+        
+        <!-- Grid System -->
+        <div class="absolute inset-0 opacity-[0.05]" 
+             style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 40px 40px;">
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-32">
+        <!-- Hero Section -->
+        <div class="text-center mb-32">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/30 bg-blue-500/5 text-blue-400 text-[10px] uppercase tracking-[0.3em] font-black mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+                {{ system_settings.system_version }} Deployment Active
+            </div>
+
+            <h1 class="text-5xl md:text-8xl font-black tracking-tighter text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 uppercase">
+                THE <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-400 animate-shimmer bg-[length:200%_auto]">ELIF</span> LABORATORY
+            </h1>
+
+            <p class="max-w-2xl mx-auto text-gray-400 text-lg md:text-xl leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
+                A high-fidelity environment for cognitive decomposition, clinical hypothesis validation, and operative truth separation. Hardened intelligence for high-stakes decision makers.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
+                <a href="{% url 'discovery:signup' %}" class="group relative px-10 py-4 bg-white text-black font-black uppercase tracking-widest text-xs rounded-2xl overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                    <span class="relative z-10">Initialize Access</span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </a>
+                
+                <a href="#pricing" class="px-10 py-4 glass border border-white/10 text-white font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-white/5 transition-all">
+                    View Protocol Tiers
+                </a>
+            </div>
+
+            <!-- SVG Visualizer (Animated) -->
+            <div class="mt-24 relative max-w-4xl mx-auto px-4 opacity-40 hover:opacity-100 transition-opacity duration-1000">
+                <svg viewBox="0 0 1000 400" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto drop-shadow-[0_0_50px_rgba(59,130,246,0.2)]">
+                    <path d="M100 200C100 200 250 100 500 200C750 300 900 200 900 200" stroke="url(#paint0_linear)" stroke-width="2" stroke-linecap="round" class="animate-path-flow" />
+                    <circle cx="100" cy="200" r="4" fill="#3b82f6" class="animate-ping" />
+                    <circle cx="500" cy="200" r="4" fill="#818cf8" />
+                    <circle cx="900" cy="200" r="4" fill="#3b82f6" />
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="100" y1="200" x2="900" y2="200" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#3b82f6" />
+                            <stop offset="0.5" stop-color="#818cf8" />
+                            <stop offset="1" stop-color="#3b82f6" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Pricing Section -->
+        <div id="pricing" class="pt-24">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4 italic">PROTOCOL_TIERS</h2>
+                <p class="text-gray-500 text-sm md:text-base uppercase tracking-[0.2em]">Select your inquiry capacity and operational depth.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+                {% for tier in tiers %}
+                <div class="glass-card p-8 md:p-12 rounded-[3.5rem] border-white/5 hover:border-blue-500/30 transition-all flex flex-col group relative overflow-hidden">
+                    {% if tier.is_recommended %}
+                    <div class="absolute top-0 right-12 px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-b-2xl">Recommended</div>
+                    {% endif %}
+
+                    <div class="mb-12">
+                        <h3 class="text-sm font-black text-blue-400 uppercase tracking-widest mb-4">{{ tier.name }}</h3>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-5xl font-bold">${{ tier.price|floatformat:0 }}</span>
+                            <span class="text-gray-500 text-xs uppercase tracking-widest">/ month</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 flex-1 mb-12 border-t border-white/5 pt-8">
+                        <div class="flex items-center gap-4">
+                            <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                                <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                            </div>
+                            <span class="text-xs text-gray-300">{{ tier.inquiry_limit }} Clinical Inquiries</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                                <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                            </div>
+                            <span class="text-xs text-gray-300">${{ tier.spend_limit }} Computational Credits</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                                <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                            </div>
+                            <span class="text-xs text-gray-300">Hardened Multi-Room Access</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                                <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                            </div>
+                            <span class="text-xs text-gray-300">Sovereign Audit Trails</span>
+                        </div>
+                    </div>
+
+                    <a href="{% url 'discovery:signup' %}" class="w-full py-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[11px] font-black uppercase tracking-[0.2em] text-center transition-all group-hover:border-blue-500/50">
+                        Acquire Tier
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- System Stats Footer -->
+        <div class="mt-40 pt-16 border-t border-white/5">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-12 text-center uppercase">
+                <div class="space-y-2">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest">Protocol Version</p>
+                    <p class="text-xs font-bold">{{ system_settings.system_version }}</p>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest">Global Integrity</p>
+                    <p class="text-xs font-bold text-blue-400">99.98% CERTIFIED</p>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest">Encryption</p>
+                    <p class="text-xs font-bold">MIL-SPEC AES-256</p>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest">Uptime</p>
+                    <p class="text-xs font-bold text-green-400">OPERATIONAL</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes shimmer {
+        to { background-position: 200% center; }
+    }
+    .animate-shimmer {
+        animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes path-flow {
+        0% { stroke-dashoffset: 1000; stroke-dasharray: 1000; opacity: 0; }
+        50% { opacity: 1; }
+        100% { stroke-dashoffset: 0; stroke-dasharray: 1000; opacity: 0; }
+    }
+    .animate-path-flow {
+        animation: path-flow 5s ease-in-out infinite;
+    }
+
+    .glass {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+    }
+
+    .glass-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+        backdrop-filter: blur(20px);
+    }
+</style>
+{% endblock %}

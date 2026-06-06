@@ -250,7 +250,7 @@
                         <span class="text-xs font-mono text-blue-400">{{ inquiry.investigation_status|default:"Emerging" }}</span>
                     </div>
                     <div class="w-full h-1 bg-gray-900 rounded-full mb-3">
-                        <div class="h-full bg-blue-500" style="width: {{ inquiry.confidence_evolution|last|default:75 }}%"></div>
+                        <div class="h-full bg-blue-500" style="width: {{ inquiry.current_confidence }}%"></div>
                     </div>
                     <p class="text-[11px] text-gray-400 leading-relaxed">{{ family.description }}</p>
                 </div>

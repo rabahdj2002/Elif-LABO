@@ -1,59 +1,107 @@
 {% extends "discovery/rooms/room_base.html" %}
 
 {% block room_projection %}
-<div class="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-    <header class="text-center">
-        <h2 class="text-2xl md:text-3xl font-bold text-white mb-2 uppercase tracking-tighter">Discovery Room</h2>
-        <p class="text-[10px] md:text-sm text-gray-400 font-light italic">"Defining the mission boundary and core intent."</p>
+<div class="space-y-6 lg:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col">
+    <header class="flex flex-col items-center mb-2">
+        <div class="flex items-center space-x-3 mb-2">
+            <div class="h-[1px] w-8 bg-gradient-to-r from-transparent to-blue-500/50"></div>
+            <h2 class="text-xl lg:text-2xl font-black text-white uppercase tracking-[-0.05em]">Discovery Layer</h2>
+            <div class="h-[1px] w-8 bg-gradient-to-l from-transparent to-blue-500/50"></div>
+        </div>
+        <p class="text-[9px] lg:text-[11px] text-gray-500 font-medium tracking-wide">PHASE 01: ARCHITECTURAL BOUNDARY DEFINITION</p>
+        
+        {% if inquiry.specialization %}
+        <div class="mt-4 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+            <i class="fa-solid fa-microchip text-[8px]"></i>
+            SPECIALIZATION: {{ inquiry.specialization }}
+        </div>
+        {% endif %}
     </header>
 
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 min-h-[500px]">
-        <div class="glass p-6 md:p-8 rounded-[2.5rem] border-white/5 bg-white/[0.01] flex flex-col h-full overflow-hidden">
-            <h4 class="text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-4">Formalized Frame</h4>
-            <div class="relative flex-1 min-h-0">
-                <textarea class="w-full h-full bg-black/40 border border-white/10 rounded-2xl p-4 md:p-6 text-gray-200 focus:border-blue-500/50 outline-none transition-all text-sm leading-relaxed resize-none custom-scrollbar" readonly>{{ room_data.reformulation }}</textarea>
-                <div class="absolute bottom-4 right-4 text-[7px] md:text-[8px] uppercase text-gray-600 font-mono">Step 01 Archive</div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 flex-1 min-h-0">
+        <!-- Formalized Frame Card -->
+        <div class="glass-card p-6 lg:p-8 flex flex-col group relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="fa-solid fa-vector-square text-4xl text-blue-400"></i>
+            </div>
+            
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                    <i class="fa-solid fa-quote-left text-[10px] text-blue-400"></i>
+                </div>
+                <h4 class="text-[10px] uppercase tracking-[0.3em] text-blue-400 font-black">Formalized Frame</h4>
+            </div>
+
+            <div class="relative flex-1 min-h-0 bg-black/20 rounded-2xl border border-white/5 p-1">
+                <textarea id="frame-reformulation-area" class="w-full h-full bg-transparent border-none p-5 text-gray-300 focus:ring-0 outline-none text-[13px] leading-relaxed resize-none custom-scrollbar font-medium" readonly>{{ room_data.reformulation }}</textarea>
+                <div class="absolute bottom-4 right-6 flex items-center space-x-2">
+                    <span class="text-[7px] font-mono text-gray-500 uppercase tracking-widest leading-none">V1.0 REFORMULATION</span>
+                    <div class="w-1 h-1 rounded-full bg-blue-500/30"></div>
+                </div>
             </div>
         </div>
 
-        <div class="glass p-6 md:p-8 rounded-[2.5rem] border-white/5 bg-white/[0.01] flex flex-col h-full overflow-hidden">
-            <h4 class="text-[10px] uppercase tracking-[0.3em] text-purple-400 font-bold mb-4">Object Decomposition</h4>
-            <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
-                <div class="grid grid-cols-1 gap-3">
+        <!-- Object Decomposition Card -->
+        <div class="glass-card p-6 lg:p-8 flex flex-col group relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="fa-solid fa-cubes text-4xl text-purple-400"></i>
+            </div>
+
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                    <i class="fa-solid fa-microscope text-[10px] text-purple-400"></i>
+                </div>
+                <h4 class="text-[10px] uppercase tracking-[0.3em] text-purple-400 font-black">Object Decomposition</h4>
+            </div>
+
+            <div id="decomposition-scroll-area" class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
                 {% for family in room_data.objects %}
-                <div class="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10 hover:border-purple-500/30 transition-all">
-                    <div class="text-[9px] uppercase text-purple-400/60 mb-1 font-mono">{{ family.name }}</div>
-                    <ul class="space-y-0.5">
+                <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-purple-500/20 transition-all">
+                    <div class="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+                        <span class="text-[9px] uppercase font-mono text-purple-400/80 tracking-widest font-bold">{{ family.name }}</span>
+                        <span class="text-[8px] text-gray-600">{{ family.objects|length }} COMPONENTS</span>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2">
                         {% for obj in family.objects %}
-                        <li class="text-[10px] text-gray-400 flex items-center">
-                            <i class="fa-solid fa-cube text-[8px] mr-2 text-purple-900"></i>
-                            {{ obj }}
-                        </li>
+                        <div class="flex items-center group/item">
+                            <i class="fa-solid fa-cube text-[7px] mr-3 text-purple-900 group-hover/item:text-purple-500 transition-colors"></i>
+                            <span class="text-[11px] text-gray-400 group-hover/item:text-gray-200 transition-colors">{{ obj }}</span>
+                        </div>
                         {% endfor %}
-                    </ul>
+                    </div>
                 </div>
                 {% empty %}
-                <div class="col-span-2 text-center py-8 text-gray-600 italic text-xs">Waiting for engine extraction...</div>
+                <div class="h-full flex flex-col items-center justify-center text-center opacity-30">
+                    <i class="fa-solid fa-gear fa-spin-slow text-2xl mb-4"></i>
+                    <p class="text-xs italic">Decompressing semantic objects...</p>
+                </div>
                 {% endfor %}
             </div>
         </div>
-    </section>
+    </div>
 
-    <section>
-        <h4 class="text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold mb-4 text-center">Refining Trajectory</h4>
+    <!-- Footbar / Trajectory -->
+    <section class="mt-2 shrink-0">
+        <div class="flex items-center space-x-4 mb-4">
+            <div class="text-[9px] uppercase tracking-[0.3em] text-gray-500 font-black">Refining Trajectory</div>
+            <div class="h-[1px] flex-1 bg-white/5"></div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
-                <div class="text-[9px] text-gray-600 uppercase mb-1">Reframing A</div>
-                <p class="text-[11px] text-gray-400 leading-tight">"How does temporal drift impact long-range governance?"</p>
+            {% for i in "123"|make_list %}
+            <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[7px] font-mono text-gray-600 uppercase">REFRM-0{{ forloop.counter }}</span>
+                    {% if forloop.last %}
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500/20 animate-pulse"></span>
+                    {% endif %}
+                </div>
+                <p class="text-[11px] text-gray-400 leading-snug">
+                    {% if forloop.counter == 1 %}"How does temporal drift impact long-range governance?"
+                    {% elif forloop.counter == 2 %}"What is the minimum viable truth separator for this case?"
+                    {% else %}<span class="italic opacity-30">Generating emerging vectors...</span>{% endif %}
+                </p>
             </div>
-            <div class="p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
-                <div class="text-[9px] text-gray-600 uppercase mb-1">Reframing B</div>
-                <p class="text-[11px] text-gray-400 leading-tight">"What is the minimum viable truth separator for this case?"</p>
-            </div>
-            <div class="p-4 bg-white/[0.03] border border-white/5 rounded-2xl dashed opacity-30">
-                <div class="text-[9px] text-gray-600 uppercase mb-1">Reframing C</div>
-                <p class="text-[11px] text-gray-400 italic">Calculating alternative framings...</p>
-            </div>
+            {% endfor %}
         </div>
     </section>
 </div>

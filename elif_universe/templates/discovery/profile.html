@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5">
+        <div>
+            <h1 class="text-4xl font-black text-white tracking-tighter mb-2 italic">USER_PROFILE</h1>
+            <p class="text-gray-500 text-xs font-bold uppercase tracking-[0.3em]">Identity & Access Management</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest">
+                {{ subscription.tier.name|default:"No Tier" }}
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left: Core Info -->
+        <div class="lg:col-span-2 space-y-8">
+            <div class="glass p-8 rounded-[2rem] border-white/5 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-5">
+                    <i class="fa-solid fa-user-shield text-8xl"></i>
+                </div>
+                
+                <h3 class="text-sm font-black text-white uppercase tracking-[0.2em] mb-8">Account Configuration</h3>
+                
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="update_account" value="1">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Username</label>
+                            <input type="text" value="{{ user.username }}" disabled 
+                                class="w-full bg-white/5 border border-white/10 px-4 py-3 rounded-xl text-gray-400 text-sm cursor-not-allowed">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Email Address</label>
+                            <input type="email" name="email" value="{{ user.email }}" required
+                                class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-white text-sm focus:border-blue-500/50 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Research Specializations -->
+                    <div class="space-y-4 pt-4">
+                        <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Research Specializations</label>
+                        <p class="text-[10px] text-gray-500 italic mb-2">Define your expertise to categorize your intelligence inquiries.</p>
+                        
+                        <div id="spec-container" class="flex flex-wrap gap-2 mb-4">
+                            {% for spec in subscription.research_specializations %}
+                            <div class="spec-tag flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase tracking-wider">
+                                <span>{{ spec }}</span>
+                                <input type="hidden" name="specializations[]" value="{{ spec }}">
+                                <button type="button" onclick="this.parentElement.remove()" class="hover:text-white transition-colors">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            {% empty %}
+                            <p id="no-specs" class="text-[10px] text-gray-600 italic">No specializations defined yet.</p>
+                            {% endfor %}
+                        </div>
+
+                        <div class="flex gap-2">
+                            <input type="text" id="spec-input" placeholder="e.g. Bio-electrics" 
+                                class="flex-1 bg-black/40 border border-white/10 px-4 py-2 rounded-lg text-white text-xs outline-none focus:border-blue-500/30">
+                            <button type="button" onclick="addSpecialization()" 
+                                class="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">
+                                Add
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-4">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20">
+                            Update Identity
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <script>
+                function addSpecialization() {
+                    const input = document.getElementById('spec-input');
+                    const value = input.value.trim();
+                    if (!value) return;
+
+                    const container = document.getElementById('spec-container');
+                    const noSpecs = document.getElementById('no-specs');
+                    if (noSpecs) noSpecs.remove();
+
+                    // Check if already exists
+                    const existing = Array.from(container.querySelectorAll('input[type="hidden"]')).map(i => i.value.toLowerCase());
+                    if (existing.includes(value.toLowerCase())) {
+                        input.value = '';
+                        return;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'spec-tag flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase tracking-wider animate-in zoom-in-95 duration-200';
+                    div.innerHTML = `
+                        <span>${value}</span>
+                        <input type="hidden" name="specializations[]" value="${value}">
+                        <button type="button" onclick="this.parentElement.remove()" class="hover:text-white transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    `;
+                    container.appendChild(div);
+                    input.value = '';
+                }
+
+                // Handle Enter key on input
+                document.getElementById('spec-input').addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addSpecialization();
+                    }
+                });
+            </script>
+
+            <!-- Usage/Quotas -->
+            <div class="glass p-8 rounded-[2rem] border-white/5">
+                <h3 class="text-sm font-black text-white uppercase tracking-[0.2em] mb-8">Operational Quotas</h3>
+                
+                <div class="space-y-8">
+                    <!-- Inquiry Quota -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <p class="text-xs font-bold text-white">Inquiry Volume</p>
+                                <p class="text-[10px] text-gray-500 tracking-wider font-light">Research terminal cycles used — <span class="text-blue-400 font-bold">Resets: {{ subscription.next_reset_date|date:"M d, Y" }}</span></p>
+                            </div>
+                            <p class="text-[10px] font-black text-white">
+                                {{ subscription.inquiry_usage }} / {{ subscription.tier.inquiry_limit }}
+                            </p>
+                        </div>
+                        <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                            {% with usage_pc=subscription.inquiry_usage|default:0 %}
+                            {% with limit=subscription.tier.inquiry_limit|default:1 %}
+                            <div class="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)] transition-all duration-1000" 
+                                 style="width: {% widthratio usage_pc limit 100 %}%"></div>
+                            {% endwith %}
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    {% if system_settings.show_spending_overview %}
+                    <!-- Financial Quota -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <p class="text-xs font-bold text-white">Credit Expenditure</p>
+                                <p class="text-[10px] text-gray-500 tracking-wider font-light">LLM & Intelligence Costs (Persistent)</p>
+                            </div>
+                            <p class="text-[10px] font-black text-white">
+                                ${{ subscription.spend_usage|floatformat:2 }} / ${{ subscription.tier.spend_limit }}
+                            </p>
+                        </div>
+                        <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                            {% with usage_pc=subscription.spend_usage|default:0 %}
+                            {% with limit=subscription.tier.spend_limit|default:1 %}
+                            <div class="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-all duration-1000" 
+                                 style="width: {% widthratio usage_pc limit 100 %}%"></div>
+                            {% endwith %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Sidemenu/Actions -->
+        <div class="space-y-8">
+            <div class="glass p-6 rounded-[2rem] border-white/5 space-y-4">
+                <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Account Security</h3>
+                
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="change_password" value="1">
+                    
+                    {% for field in password_form %}
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <p class="text-[9px] text-red-500 font-bold ml-1">{{ field.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <style>
+                        /* Style the password inputs to match the OS UI */
+                        input[type="password"] {
+                            width: 100%;
+                            background: rgba(255, 255, 255, 0.05);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            padding: 0.75rem 1rem;
+                            border-radius: 0.75rem;
+                            color: white;
+                            font-size: 0.75rem;
+                            outline: none;
+                            transition: all 0.3s;
+                        }
+                        input[type="password"]:focus {
+                            border-color: rgba(59, 130, 246, 0.5);
+                        }
+                    </style>
+
+                    <button type="submit" class="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 transition-all group">
+                        <i class="fa-solid fa-key group-hover:rotate-12 transition-transform"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest">Update Credentials</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="glass p-6 rounded-[2rem] border-red-500/10 space-y-4">
+                <h3 class="text-[10px] font-black text-red-500/50 uppercase tracking-widest mb-4">Danger Zone</h3>
+                <p class="text-[10px] text-gray-500 italic leading-relaxed">
+                    Permanently terminate your ELIF identity and purge research history.
+                </p>
+                
+                <form method="post" onsubmit="return confirm('CRITICAL: This will immediately lock your account. You will not be able to log back in without administrator intervention. Proceed?')">
+                    {% csrf_token %}
+                    <input type="hidden" name="deactivate_account" value="1">
+                    <button type="submit" class="w-full py-3 rounded-xl border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-all">
+                        Deactivate Identity
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

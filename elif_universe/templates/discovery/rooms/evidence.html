@@ -1,107 +1,120 @@
 {% extends "discovery/rooms/room_base.html" %}
 
 {% block room_projection %}
-<div class="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-    <header class="text-center">
-        <h2 class="text-2xl md:text-3xl font-bold text-white mb-2 uppercase tracking-tighter">Evidence Room</h2>
-        <p class="text-[10px] md:text-sm text-blue-400/80 font-light italic">"Truth is not a single point; it is a cluster of high-fidelity signals."</p>
+<div class="space-y-6 lg:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col">
+    <header class="flex flex-col items-center mb-2">
+        <div class="flex items-center space-x-3 mb-2">
+            <div class="h-[1px] w-8 bg-gradient-to-r from-transparent to-blue-500/50"></div>
+            <h2 class="text-xl lg:text-2xl font-black text-white uppercase tracking-[-0.05em]">Evidence Layer</h2>
+            <div class="h-[1px] w-8 bg-gradient-to-l from-transparent to-blue-500/50"></div>
+        </div>
+        <p class="text-[9px] lg:text-[11px] text-gray-500 font-medium tracking-wide">PHASE 02: SIGNAL SYNTHESIS & AXIOMATIC MAPPING</p>
     </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-        <!-- Primary Evidence / Assumptions -->
-        <div class="lg:col-span-2 space-y-4 md:space-y-6">
-            <h4 class="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-blue-500 font-bold flex items-center">
-                <i class="fa-solid fa-map mr-2 opacity-30"></i>
-                Hidden Assumptions Map
-            </h4>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                {% for assumption in room_data.assumptions %}
-                <div class="glass p-5 rounded-2xl border-white/5 bg-white/[0.02] hover:border-blue-500/20 transition-all group">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <div class="w-1.5 h-1.5 rounded-full bg-blue-500/40 group-hover:bg-blue-500 transition-colors animate-pulse"></div>
-                        <span class="text-[8px] uppercase tracking-widest text-gray-600 font-bold">Axiomatic Layer</span>
-                    </div>
-                    <p class="text-[10px] md:text-[11px] text-gray-400 leading-normal font-light italic">"{{ assumption }}"</p>
-                </div>
-                {% empty %}
-                <div class="col-span-1 md:col-span-2 py-10 text-center glass rounded-2xl border-white/5 opacity-50 bg-white/[0.01]">
-                    <i class="fa-solid fa-microscope text-2xl md:text-3xl text-gray-800 mb-4"></i>
-                    <p class="text-[8px] md:text-[10px] uppercase tracking-widest text-gray-600 font-bold">Collecting hidden variables...</p>
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="mt-4 md:mt-8">
-                <h4 class="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-gray-500 font-bold mb-4 flex items-center">
-                    <i class="fa-solid fa-binary mr-2 opacity-30"></i>
-                    Observation Data
-                </h4>
-                <div class="p-6 glass rounded-2xl border-white/5 bg-white/[0.01] border-dashed">
-                    <p class="text-[9px] md:text-[10px] text-gray-600 italic text-center uppercase tracking-widest">Engine is synthesizing raw observations into structured hypotheses.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Disputed Data / Contradictions -->
-        <div class="space-y-6 md:space-y-8">
-            <div class="space-y-4">
-                <h4 class="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-orange-400 font-bold flex items-center">
-                    <i class="fa-solid fa-flask-vial mr-2 opacity-30"></i>
-                    Active Hypotheses
-                </h4>
-                <div class="space-y-3">
-                    {% for hyp in room_data.hypotheses %}
-                    <div class="p-4 rounded-xl bg-white/[0.02] border border-white/10 group hover:bg-white/[0.04] transition-all">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-[8px] md:text-[9px] text-gray-500 uppercase font-black tracking-widest">Hyp {{ hyp.hypothesis_id }}</span>
-                            <i class="fa-solid fa-flask text-blue-500/30 group-hover:text-blue-500 transition-colors text-[10px]"></i>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 flex-1 min-h-0">
+        <!-- Main Analysis Column -->
+        <div class="lg:col-span-8 space-y-6 flex flex-col min-h-0">
+            <!-- Hidden Assumptions Card -->
+            <div class="glass-card p-6 lg:p-8 flex flex-col flex-1 min-h-0">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                            <i class="fa-solid fa-map text-[10px] text-blue-400"></i>
                         </div>
-                        <p class="text-[10px] md:text-[11px] text-gray-400 leading-snug font-light">{{ hyp.statement }}</p>
+                        <h4 class="text-[10px] uppercase tracking-[0.3em] text-blue-400 font-black">Hidden Assumptions Map</h4>
+                    </div>
+                    <span class="text-[8px] font-mono text-gray-600 uppercase tracking-widest">Sovereign Audit V2</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                    {% for assumption in room_data.assumptions %}
+                    <div class="p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-blue-500/20 transition-all group flex flex-col justify-between">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500/40 group-hover:bg-blue-500 transition-colors animate-pulse"></div>
+                            <span class="text-[7px] uppercase tracking-widest text-gray-600 font-bold">Axiom 0{{ forloop.counter }}</span>
+                        </div>
+                        <p class="text-[11.5px] text-gray-400 leading-relaxed font-light italic">"{{ assumption }}"</p>
+                        <div class="mt-4 pt-3 border-t border-white/5 flex justify-end">
+                            <i class="fa-solid fa-link text-[8px] text-gray-700 group-hover:text-blue-500/40"></i>
+                        </div>
                     </div>
                     {% empty %}
-                    <p class="text-[10px] text-gray-600 italic text-center py-4">No formal hypotheses generated yet.</p>
+                    <div class="col-span-full py-20 flex flex-col items-center justify-center opacity-30">
+                        <i class="fa-solid fa-microscope text-3xl mb-4"></i>
+                        <p class="text-[9px] uppercase tracking-widest font-black italic">Scanning cognitive substrate...</p>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <div class="space-y-4">
-                <h4 class="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-red-500 font-bold flex items-center">
-                    <i class="fa-solid fa-triangle-exclamation mr-2 opacity-30"></i>
-                    Signal Contradictions
-                </h4>
-                
-                <div class="bg-[#0f0a0a] p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-red-500/10">
-                    <div class="space-y-4">
-                        {% for zone in room_data.contradictions %}
-                        <div class="p-3 rounded-xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-colors">
-                            <div class="flex items-center space-x-2 mb-1 text-red-500/60 transition-colors">
-                                <i class="fa-solid fa-circle-nodes text-[9px]"></i>
-                                <span class="text-[8px] uppercase font-black tracking-widest">Structural Conflict</span>
-                            </div>
-                            <p class="text-[10px] md:text-[11px] text-gray-400 leading-normal font-light">
-                                {{ zone }}
-                            </p>
-                        </div>
-                        {% empty %}
-                        <div class="p-6 text-center border border-dashed border-white/5 rounded-xl">
-                            <i class="fa-solid fa-shield-check text-green-500/20 text-xl mb-2"></i>
-                            <p class="text-[8px] md:text-[9px] text-gray-600 uppercase tracking-widest font-bold">No primary contradictions.</p>
-                        </div>
-                        {% endfor %}
-
-                        {% if inquiry.unresolved_zones %}
-                        <div class="p-3 rounded-xl bg-white/[0.02] border border-white/5 mt-4">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[8px] text-gray-600 uppercase font-bold tracking-widest">Unresolved Density</span>
-                                <span class="text-[9px] font-mono text-red-500 font-black">High Entropy Area</span>
-                            </div>
-                            <div class="h-1 bg-gray-950 rounded-full overflow-hidden">
-                                <div class="h-full bg-red-600/40 w-[30%]"></div>
-                            </div>
-                        </div>
-                        {% endif %}
+            <!-- Observations Card (Slimmer) -->
+            <div class="glass-card p-6 lg:p-8 shrink-0">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                        <i class="fa-solid fa-binary text-[10px] text-emerald-400"></i>
                     </div>
+                    <h4 class="text-[10px] uppercase tracking-[0.3em] text-emerald-400 font-black">Observation Data Feed</h4>
+                </div>
+                <div class="p-5 bg-black/20 rounded-2xl border border-dashed border-white/5 flex items-center justify-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex space-x-1">
+                            <div class="w-1 h-3 bg-emerald-500/20 rounded-full animate-bounce"></div>
+                            <div class="w-1 h-5 bg-emerald-500/40 rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                            <div class="w-1 h-2 bg-emerald-500/20 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                        </div>
+                        <p class="text-[10px] text-gray-500 italic uppercase tracking-widest">Synthesizing high-fidelity truth signals...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Hypotheses & Conflict -->
+        <div class="lg:col-span-4 space-y-6 flex flex-col min-h-0">
+            <!-- Hypotheses Card -->
+            <div class="glass-card p-6 lg:p-8 flex flex-col flex-1 min-h-0">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                        <i class="fa-solid fa-flask-vial text-[10px] text-amber-500"></i>
+                    </div>
+                    <h4 class="text-[10px] uppercase tracking-[0.3em] text-amber-500 font-black">Active Hypotheses</h4>
+                </div>
+                
+                <div class="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                    {% for hyp in room_data.hypotheses %}
+                    <div class="p-5 rounded-2xl bg-amber-500/[0.02] border border-amber-500/5 group hover:bg-amber-500/[0.04] hover:border-amber-500/20 transition-all">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[8px] text-amber-500/60 uppercase font-black tracking-widest">ID: {{ hyp.hypothesis_id|default:forloop.counter }}</span>
+                            <div class="text-[9px] text-gray-600 font-mono">EST: 0.{{ forloop.counter }}s</div>
+                        </div>
+                        <p class="text-[11.5px] text-gray-300 leading-snug font-medium italic">"{{ hyp.statement }}"</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-[10px] text-gray-600 italic text-center py-8 opacity-40">Awaiting inference cycle...</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Red Card: Signal Contradictions -->
+            <div class="glass-card p-6 lg:p-8 bg-red-500/[0.02] border-red-500/10 shrink-0">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                        <i class="fa-solid fa-triangle-exclamation text-[10px] text-red-500"></i>
+                    </div>
+                    <h4 class="text-[10px] uppercase tracking-[0.3em] text-red-500 font-black">Signal Contradictions</h4>
+                </div>
+
+                <div class="space-y-3">
+                    {% for zone in room_data.contradictions %}
+                    <div class="p-4 rounded-xl bg-red-950/20 border border-red-500/10 flex items-start space-x-4">
+                        <i class="fa-solid fa-bolt-lightning text-red-500 text-[10px] mt-1"></i>
+                        <p class="text-[10.5px] text-gray-400 leading-snug">{{ zone }}</p>
+                    </div>
+                    {% empty %}
+                    <div class="p-6 text-center border border-dashed border-white/5 rounded-2xl">
+                        <i class="fa-solid fa-shield-halved text-emerald-500/40 text-xl mb-3"></i>
+                        <p class="text-[9px] text-gray-600 uppercase tracking-widest font-black">No structural conflicts detected.</p>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
