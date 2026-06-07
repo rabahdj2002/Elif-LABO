@@ -500,6 +500,8 @@ def engine_telemetry(request, pk):
 
 def landing_page(request):
     """The public landing page / entry point."""
+    if request.user.is_authenticated:
+        return redirect("discovery:system_map")
     tiers = Tier.objects.exclude(name="Tester Tier").order_by('price', 'id')
     return render(request, 'discovery/landing.html', {
         'system_settings': SystemSettings.get_settings(),
@@ -623,7 +625,6 @@ def initialize_inquiry(request):
 
     # Inquiry & Spend Limit Check
     # Ensure default tier exists or use the system setting
-    from .settings_models import SystemSettings
     settings = SystemSettings.get_settings()
     
     if settings.default_tier:
@@ -1330,7 +1331,6 @@ def subscription_view(request):
     subscription = getattr(request.user, 'subscription', None)
     if not subscription:
         # Fallback to default tier if missing
-        from .settings_models import SystemSettings
         settings = SystemSettings.get_settings()
         subscription = UserSubscription.objects.create(
             user=request.user,
@@ -1357,7 +1357,8 @@ def subscription_view(request):
         "tier": subscription.tier,
         "available_tiers": available_tiers,
         "system_settings": SystemSettings.get_settings(),
-        "usage_percentage": min(int((subscription.monthly_inquiries_consumed / subscription.tier.inquiry_limit) * 100), 100) if subscription.tier.inquiry_limit > 0 else 0
+        "usage_percentage": min(int((subscription.monthly_inquiries_consumed / subscription.tier.inquiry_limit) * 100), 100) if subscription.tier.inquiry_limit > 0 else 0,
+        "hide_sidebar": True
     }
     return render(request, "discovery/subscription.html", context)
 
@@ -1377,7 +1378,6 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             # Initialize default subscription using system settings if available
-            from .settings_models import SystemSettings
             settings = SystemSettings.get_settings()
             
             if settings.default_tier:
@@ -1399,7 +1399,6 @@ def signup(request):
 @admin_access_required()
 def admin_dashboard(request):
     """Dashboard view for superusers to see all system inquiries."""
-    from .settings_models import SystemSettings
     settings = SystemSettings.get_settings()
     
     if request.method == "POST" and "toggle_spending" in request.POST:
@@ -1476,7 +1475,6 @@ def update_inquiry_status(request, pk):
 @user_passes_test(lambda u: u.is_superuser)
 def admin_limits_config(request):
     """View to manage global system limits and governance settings. Restricted to Superusers."""
-    from .settings_models import SystemSettings
     settings = SystemSettings.get_settings()
     
     if request.method == "POST":
@@ -1653,7 +1651,6 @@ def tester_feedback_center(request):
 
 def tier_list(request):
     """View to list all available membership tiers."""
-    from .settings_models import SystemSettings
     # Exclude special system tiers like the 'Tester Tier' from the public/admin list
     tiers = Tier.objects.exclude(name="Tester Tier").order_by('price')
     settings = SystemSettings.get_settings()
@@ -1672,12 +1669,10 @@ def tier_list(request):
     })
 
 @admin_access_required('can_manage_users')
-@admin_access_required('can_manage_users')
 def users_list(request):
     """View to list all users, their current tier usage, and spendage. Now handles user creation."""
     from django.contrib.auth.models import User
     from django.db.models import Q
-    from .settings_models import SystemSettings
     
     query = request.GET.get('q', '')
     users = User.objects.filter(is_superuser=False).prefetch_related('subscription', 'subscription__tier')
@@ -1863,7 +1858,6 @@ def user_detail(request, user_id):
                             pass
                 elif user_type == "TESTER":
                     # For Testers, force use the "Tester Tier"
-                    from .settings_models import SystemSettings
                     sys_settings = SystemSettings.get_settings()
                     tester_tier, _ = Tier.objects.get_or_create(
                         name="Tester Tier",
