@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 import sys
+import json
 from pathlib import Path
 from celery.schedules import crontab
 
@@ -26,10 +27,10 @@ sys.path.append(str(ENGINE_SRC))
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@d+^bhenx!p((h#kb4l4s7c--n)zxrn5d8-*b4(@=mc08%vqh='
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-@d+^bhenx!p((h#kb4l4s7c--n)zxrn5d8-*b4(@=mc08%vqh=')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 
@@ -60,6 +61,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -91,18 +93,66 @@ TEMPLATES = [
 WSGI_APPLICATION = 'elif_platform.wsgi.application'
 
 
+# --- DATABASE CONFIGURATION ---
+# Default credentials (Aiven Production)
+POSTGRES_CONFIG = {
+    'NAME': os.getenv('DB_NAME', 'defaultdb'),
+    'USER': os.getenv('DB_USER', 'avnadmin'),
+    'PASSWORD': os.getenv('DB_PASSWORD', ''),
+    'HOST': os.getenv('DB_HOST', 'elif-rabahdjebbes6-11c6.i.aivencloud.com'),
+    'PORT': os.getenv('DB_PORT', '22943'),
+    'SSL_MODE': os.getenv('DB_SSL_MODE', 'prefer'),
+}
+USE_POSTGRES = os.getenv('USE_POSTGRES', 'True').lower() == 'true'
+
+# Load persistent mirror to allow UI-based overrides and survival across migrations
+DB_CONFIG_PATH = BASE_DIR / 'db_config.json'
+if DB_CONFIG_PATH.exists():
+    try:
+        with open(DB_CONFIG_PATH, 'r') as f:
+            DC = json.load(f)
+            USE_POSTGRES = DC.get('use_postgres', True)
+            
+            # If UI has customized the database, override defaults
+            if DC.get('db_pg_host'):
+                POSTGRES_CONFIG['HOST'] = DC['db_pg_host']
+                POSTGRES_CONFIG['PORT'] = DC.get('db_pg_port', POSTGRES_CONFIG['PORT'])
+                POSTGRES_CONFIG['NAME'] = DC.get('db_pg_name', POSTGRES_CONFIG['NAME'])
+                POSTGRES_CONFIG['USER'] = DC.get('db_pg_user', POSTGRES_CONFIG['USER'])
+                POSTGRES_CONFIG['PASSWORD'] = DC.get('db_pg_password', POSTGRES_CONFIG['PASSWORD'])
+                POSTGRES_CONFIG['SSL_MODE'] = DC.get('db_pg_ssl_mode', POSTGRES_CONFIG['SSL_MODE'])
+    except Exception:
+        pass
+# -----------------------------
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
+        'ENGINE': 'django.db.backends.postgresql' if USE_POSTGRES else 'django.db.backends.sqlite3',
+        'NAME': POSTGRES_CONFIG['NAME'] if USE_POSTGRES else BASE_DIR / 'db.sqlite3',
+        'USER': POSTGRES_CONFIG['USER'] if USE_POSTGRES else '',
+        'PASSWORD': POSTGRES_CONFIG['PASSWORD'] if USE_POSTGRES else '',
+        'HOST': POSTGRES_CONFIG['HOST'] if USE_POSTGRES else '',
+        'PORT': POSTGRES_CONFIG['PORT'] if USE_POSTGRES else '',
+        'OPTIONS': {
+            'sslmode': POSTGRES_CONFIG['SSL_MODE'],
+            'connect_timeout': 60,
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 5,
+        } if USE_POSTGRES else {},
+    },
+    'sqlite_source': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = 'discovery:system_map'
 
 # Celery Settings
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
@@ -175,7 +225,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media Files
 MEDIA_URL = 'media/'

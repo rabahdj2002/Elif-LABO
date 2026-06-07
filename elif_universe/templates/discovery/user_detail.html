@@ -204,7 +204,7 @@
                 <div class="mt-4 flex justify-between text-[8px] text-gray-500 font-black uppercase tracking-widest px-2">
                     <span>{{ daily_activity.0.label }}</span>
                     <span>Intelligence Convergence (30-Day Window)</span>
-                    <span>{{ daily_activity|last.label }}</span>
+                    <span>{% with last_day=daily_activity|last %}{{ last_day.label }}{% endwith %}</span>
                 </div>
             </div>
 

@@ -540,11 +540,12 @@
     </div>
 
     <!-- Mobile Top Bar -->
+    {% if user.is_authenticated and not hide_sidebar %}
     <header class="lg:hidden glass border-b border-white/10 p-4 flex items-center justify-between z-[60] sticky top-0">
-        <div class="flex items-center space-x-3">
+        <a href="{% url 'discovery:system_map' %}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <i class="fa-solid fa-dna text-blue-400 text-xl"></i>
             <span class="text-[10px] font-black text-blue-500 tracking-[0.2em] uppercase">ELIF Archive</span>
-        </div>
+        </a>
         <div class="flex items-center space-x-2">
             <!-- Mobile Notifications -->
             <div hx-get="{% url 'discovery:get_notifications' %}" 
@@ -562,11 +563,12 @@
     <!-- Mobile Navigation Overlay -->
     <div id="mobile-nav-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden lg:hidden"></div>
     {% endif %}
+    {% endif %}
 
     <!-- Global Sync Overlay (REMOVED: Moved to background) -->
     <div id="global-sync-overlay" class="hidden"></div>
     
-{% if user.is_authenticated %}
+{% if user.is_authenticated and not hide_sidebar %}
     <!-- Sidebar Navigation (Star Charts) -->
     <nav class="fixed left-0 border-r top-0 h-full w-20 lg:w-64 flex flex-col py-8 glass border-white/10 z-50 side-nav transition-all duration-300">
         <!-- Close button for mobile -->
@@ -576,7 +578,7 @@
         
         <!-- Brand/Home Section -->
         <div class="px-6 mb-12 flex items-center justify-between">
-            <a href="/" class="flex items-center gap-4 group">
+            <a href="{% url 'discovery:system_map' %}" class="flex items-center gap-4 group">
                 <div class="w-12 h-12 flex items-center justify-center bg-blue-600/20 rounded-2xl border border-blue-500/30 group-hover:bg-blue-600/30 transition-all">
                     <i class="fa-solid fa-dna text-blue-400 text-2xl group-hover:rotate-180 transition-transform duration-1000"></i>
                 </div>
@@ -726,6 +728,14 @@
             {% endif %}
 
             {% if user.is_superuser %}
+            <a href="{% url 'discovery:integrations_center' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-500 hover:text-white transition-all group relative">
+                <div class="w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-plug text-lg text-blue-400"></i>
+                </div>
+                <span class="text-sm font-bold tracking-tight hidden lg:block">Integrations</span>
+                <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">API</span>
+            </a>
+
             <a href="{% url 'discovery:settings' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-500 hover:text-white transition-all group relative">
                 <div class="w-8 h-8 flex items-center justify-center">
                     <i class="fa-solid fa-gear text-lg"></i>
@@ -758,7 +768,7 @@
     {% endif %}
 
     <!-- Main Viewport -->
-    <main id="main-viewport" class="{% if user.is_authenticated %}ml-20 lg:ml-64{% else %}ml-0 w-full{% endif %} p-4 md:p-8 flex-1 flex flex-col min-h-0 overflow-y-auto custom-horizontal-scroll transition-all duration-300">
+    <main id="main-viewport" class="{% if user.is_authenticated and not hide_sidebar %}ml-20 lg:ml-64 p-4 md:p-8{% else %}ml-0 w-full p-0{% endif %} flex-1 flex flex-col min-h-0 overflow-y-auto custom-horizontal-scroll transition-all duration-300">
         {% if messages %}
         <div class="fixed top-8 right-8 z-[200] space-y-4 w-[24rem] md:w-[32rem]">
             {% for message in messages %}

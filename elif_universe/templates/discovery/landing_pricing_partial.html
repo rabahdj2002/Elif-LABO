@@ -1,0 +1,50 @@
+
+<div id="pricing" class="pt-24 pb-32">
+    <div class="text-center mb-16 px-6">
+        <h2 class="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4 italic">PROTOCOL_TIERS</h2>
+        <p class="text-gray-500 text-sm md:text-base uppercase tracking-[0.2em]">Select your inquiry capacity and operational depth.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch px-12 max-w-7xl mx-auto">
+        {% for tier in tiers %}
+        <div class="glass-card p-8 md:p-12 rounded-[3.5rem] border border-white/5 hover:border-blue-500/30 transition-all flex flex-col group relative overflow-hidden backdrop-blur-3xl bg-white/5">
+            {% if tier.is_recommended %}
+            <div class="absolute top-0 right-12 px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-b-2xl">Recommended</div>
+            {% endif %}
+
+            <div class="mb-12">
+                <h3 class="text-sm font-black text-blue-400 uppercase tracking-widest mb-4">{{ tier.name }}</h3>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-5xl font-bold">${{ tier.price|floatformat:0 }}</span>
+                    <span class="text-gray-500 text-xs uppercase tracking-widest">/ month</span>
+                </div>
+            </div>
+
+            <div class="space-y-6 flex-1 mb-12 border-t border-white/5 pt-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                    </div>
+                    <span class="text-xs text-gray-300">{{ tier.inquiry_limit }} Clinical Inquiries</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                    </div>
+                    <span class="text-xs text-gray-300">${{ tier.spend_limit }} Computational Credits</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                    </div>
+                    <span class="text-xs text-gray-300">Hardened Multi-Room Access</span>
+                </div>
+            </div>
+
+            <a href="{% url 'discovery:signup' %}" class="w-full py-5 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-[0.2em] text-center transition-all group-hover:border-blue-500/50">
+                Acquire Tier
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>

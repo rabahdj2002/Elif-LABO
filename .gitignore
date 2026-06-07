@@ -22,8 +22,16 @@ notes/local_*
 .memory_logger/
 elif_universe/.memory_logger/
 
+# Backups and Dumps
+*_dump.json
+elif_universe/*_dump.json
+
 # Django
 # elif_universe/db.sqlite3 (Inclusion requested for audit)
+db.sqlite3
+elif_universe/db.sqlite3
+db_config.json
+elif_universe/db_config.json
 media/
 staticfiles/
 

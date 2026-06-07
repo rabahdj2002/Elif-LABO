@@ -369,6 +369,8 @@ class Tier(models.Model):
     spend_limit = models.DecimalField(max_digits=10, decimal_places=2, default=50.00, help_text="Maximum USD spend allowed.")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Monthly price for this tier.")
     is_recommended = models.BooleanField(default=False, help_text="Mark this tier as 'Recommended' on the landing page.")
+    stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_price_id = models.CharField(max_length=255, blank=True, null=True)
     
     def __str__(self):
         return self.name
@@ -397,6 +399,13 @@ class UserSubscription(models.Model):
     # Custom permissions for 'Limited Admin' stored as JSON blob of allowed route names or categories
     admin_permissions = models.JSONField(default=dict, blank=True, help_text="Configured by Superuser for 'Limited Admin' type.")
     
+    # Stripe Substrate
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_status = models.CharField(max_length=50, blank=True, null=True, help_text="e.g. active, past_due, canceled")
+    current_period_end = models.DateTimeField(blank=True, null=True)
+    cancel_at_period_end = models.BooleanField(default=False)
+
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         old_tier = None
@@ -611,6 +620,19 @@ class IssueReport(models.Model):
 
     def __str__(self):
         return f"Issue by {self.user.username} - {self.status}"
+
+class StripeWebhookLog(models.Model):
+    """
+    AUDIT TRAIL: STRIPE WEBHOOKS
+    Prevents duplicate processing and provides security logs.
+    """
+    event_id = models.CharField(max_length=255, unique=True)
+    event_type = models.CharField(max_length=255)
+    payload = models.JSONField()
+    processed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.event_type} ({self.event_id})"
 
 
 

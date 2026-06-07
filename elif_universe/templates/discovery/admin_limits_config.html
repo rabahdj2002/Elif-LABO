@@ -32,49 +32,15 @@
         <!-- Engine Configuration -->
         <div class="glass p-8 rounded-[2.5rem] border-white/5">
             <h3 class="text-xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
-                <i class="fa-solid fa-microchip text-purple-400"></i> Engine Configuration
+                <i class="fa-solid fa-microchip text-purple-400"></i> Engine Calibration
             </h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
-                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Active AI Model</label>
-                    <select name="active_model" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-purple-500/50 transition-all appearance-none cursor-pointer">
-                        <option value="deepseek-chat" {% if settings.active_model == 'deepseek-chat' %}selected{% endif %}>DeepSeek Chat (Standard)</option>
-                        <option value="deepseek-reasoner" {% if settings.active_model == 'deepseek-reasoner' %}selected{% endif %}>DeepSeek Reasoner (R1)</option>
-                        <option value="sonnet" {% if settings.active_model == 'sonnet' %}selected{% endif %}>Claude 4.5 Sonnet (Legacy)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">DeepSeek API Key</label>
-                    <input type="password" name="deepseek_api_key" value="{{ settings.deepseek_api_key|default:'' }}" placeholder="sk-..." class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all">
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Anthropic API Key (Legacy)</label>
-                    <input type="password" name="anthropic_api_key" value="{{ settings.anthropic_api_key|default:'' }}" placeholder="sk-ant-..." class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-orange-500/50 transition-all">
-                </div>
-                
                 <div>
                     <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Reasoning Depth (Step 6)</label>
                     <input type="number" name="reasoning_depth" value="{{ settings.reasoning_depth }}" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-purple-500/50 transition-all">
                     <p class="mt-2 text-[9px] text-gray-500 font-medium uppercase tracking-wider px-1">Complexity multiplier for ontological expansion phases.</p>
                 </div>
-            </div>
-
-            <div class="space-y-4">
-                <label class="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all group">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center border border-yellow-500/20 group-hover:scale-110 transition-transform">
-                            <i class="fa-solid fa-vial-circle-check text-yellow-400"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs font-black text-white uppercase tracking-widest mb-1">Offline Fixture Mode</div>
-                            <div class="text-[10px] text-gray-500 font-medium max-w-xs">Simulate reasoning using predefined mock data. No API usage.</div>
-                        </div>
-                    </div>
-                    <input type="checkbox" name="offline_mode" {% if settings.offline_mode %}checked{% endif %} class="w-6 h-6 accent-yellow-500">
-                </label>
             </div>
         </div>
 
@@ -138,5 +104,73 @@
             Apply Governance Calibration
         </button>
     </form>
+
+    <!-- System Destruction / Reset -->
+    <div class="pt-12 border-t border-white/5">
+        <div class="glass p-8 rounded-[2.5rem] border-red-500/20 bg-red-500/5">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <h3 class="text-xl font-black text-white mb-2 tracking-tight flex items-center gap-3">
+                        <i class="fa-solid fa-radiation text-red-400"></i> Critical System Reset
+                    </h3>
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-widest max-w-xl">
+                        Warning: These actions are IRREVERSIBLE. Resetting will purge data from the production database. Ensure a backup exists.
+                    </p>
+                </div>
+                <button onclick="document.getElementById('reset-modal').classList.remove('hidden')" class="px-8 py-4 bg-red-600/20 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/30 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                    Initialize Purge
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Modal -->
+    <div id="reset-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-6">
+        <div class="glass max-w-lg w-full p-8 rounded-[2.5rem] border-white/10 animate-in fade-in zoom-in duration-300">
+            <h2 class="text-2xl font-black text-white mb-4 tracking-tighter uppercase italic">System Purge Protocol</h2>
+            <p class="text-xs text-gray-400 font-medium mb-8 leading-relaxed">Select the cognitive sectors you wish to purge from the system registry. Deleting data will impact all metrics and historical audits.</p>
+            
+            <form action="{% url 'discovery:system_reset' %}" method="POST" class="space-y-4">
+                {% csrf_token %}
+                <label class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all">
+                    <span class="text-[10px] text-gray-300 font-black uppercase tracking-widest">Purge All Users (Excl. Admins)</span>
+                    <input type="checkbox" name="reset_users" class="w-5 h-5 accent-red-500">
+                </label>
+
+                <label class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all">
+                    <span class="text-[10px] text-gray-300 font-black uppercase tracking-widest">Purge All Inquiries & Reasoning</span>
+                    <input type="checkbox" name="reset_inquiries" class="w-5 h-5 accent-red-500">
+                </label>
+
+                <label class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all">
+                    <span class="text-[10px] text-gray-300 font-black uppercase tracking-widest">Purge Expenditure History</span>
+                    <input type="checkbox" name="reset_spend" class="w-5 h-5 accent-red-500">
+                </label>
+                
+                <div class="py-4 flex items-center gap-4">
+                    <div class="h-px bg-white/5 flex-1"></div>
+                    <span class="text-[9px] text-gray-600 font-black uppercase tracking-[0.2em]">Full Reset</span>
+                    <div class="h-px bg-white/5 flex-1"></div>
+                </div>
+
+                <label class="flex items-center justify-between p-4 bg-red-500/10 rounded-2xl border border-red-500/20 cursor-pointer hover:bg-red-500/20 transition-all">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] text-red-400 font-black uppercase tracking-widest">MASTER PURGE (Everything)</span>
+                        <span class="text-[8px] text-red-400/60 font-medium">Deletes all users, inquiries, spend, and logs.</span>
+                    </div>
+                    <input type="checkbox" name="reset_everything" class="w-5 h-5 accent-red-600">
+                </label>
+
+                <div class="grid grid-cols-2 gap-4 mt-8">
+                    <button type="button" onclick="document.getElementById('reset-modal').classList.add('hidden')" class="py-4 bg-white/5 hover:bg-white/10 text-gray-400 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                        Abort Protocol
+                    </button>
+                    <button type="submit" class="py-4 bg-red-600 hover:bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-red-900/40">
+                        Confirm Destruction
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

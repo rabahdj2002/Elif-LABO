@@ -36,9 +36,23 @@ urlpatterns = [
     path('admin-dashboard/users/', views.users_list, name='users_list'),
     path('admin-dashboard/users/<int:user_id>/', views.user_detail, name='user_detail'),
     path('admin-dashboard/users/<int:user_id>/toggle/', views.toggle_user_status, name='toggle_user'),
+    path('admin-dashboard/users/<int:user_id>/delete/', views.delete_user, name='delete_user'),
     path('admin-dashboard/users/<int:user_id>/reset-usage/', views.manual_reset_usage, name='reset_usage'),
+    path('admin-dashboard/integrations/', views.admin_integrations_center, name='integrations_center'),
+    path('admin-dashboard/db/backup/', views.db_backup_download, name='db_backup'),
+    path('admin-dashboard/db/restore/', views.db_restore_upload, name='db_restore'),
+    path('admin-dashboard/db/restore-sqlite/', views.db_restore_sqlite_migration, name='db_restore_sqlite'),
     path('admin-dashboard/heal/', views.admin_heal_engine, name='admin_heal'),
+    path('admin-dashboard/system-reset/', views.admin_system_reset, name='system_reset'),
     path('admin-dashboard/inquiry/<pk>/status/', views.update_inquiry_status, name='update_inquiry_status'),
+    
+    # Stripe Integration
+    path('stripe/checkout/<int:tier_id>/', views.create_stripe_checkout, name='create_stripe_checkout'),
+    path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
+    path('stripe/success/', views.stripe_success, name='stripe_success'),
+    path('stripe/cancel/', views.stripe_cancel, name='stripe_cancel'),
+    path('stripe/portal/', views.stripe_customer_portal, name='stripe_portal'),
+
     path('report-issue/', views.report_issue, name='report_issue'),
     path('my-issues/', views.user_issues, name='user_issues'),
     path('admin-dashboard/issues/', views.admin_issue_center, name='admin_issue_center'),

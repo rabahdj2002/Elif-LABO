@@ -1,15 +1,21 @@
 ﻿from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.urls import reverse
+from django import forms
 from django.db.models import Sum, Count, Avg
-from .models import Inquiry, Planet, RoomState, EngineRun, SystemSettings, SpendRecord, Tier, UserSubscription, IssueReport
+from .models import Inquiry, Planet, RoomState, EngineRun, SystemSettings, SpendRecord, Tier, UserSubscription, IssueReport, StripeWebhookLog
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from engine_bridge.services import EngineService
 from .tasks import run_engine_task
 import logging
+import stripe
+from .utils_stripe import create_checkout_session, handle_webhook_event, get_stripe_client
+
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +71,18 @@ def _is_engine_busy(request):
         del request.session['active_engine_pk']
         request.session.modified = True
         return False
+
+@login_required
+def clear_engine_lock(request):
+    """Manually clear the active engine lock from the user's session."""
+    if 'active_engine_pk' in request.session:
+        del request.session['active_engine_pk']
+        request.session.modified = True
+        messages.success(request, "Reasoning lock cleared. You can now initiate a new inquiry.")
+    else:
+        messages.info(request, "No active engine lock found.")
+    
+    return redirect(request.META.get('HTTP_REFERER', 'discovery:system_map'))
 
 def admin_access_required(permission=None):
     """
@@ -162,19 +180,13 @@ def profile_view(request):
         "system_settings": SystemSettings.get_settings()
     })
 
-@admin_access_required('can_edit_settings')
+@user_passes_test(lambda u: u.is_superuser)
 def system_settings_view(request):
-    """View to manage global engine and UI parameters."""
+    """View to manage global engine and UI parameters. Restricted to Superusers."""
     settings = SystemSettings.get_settings()
     
     if request.method == "POST":
-        settings.active_model = request.POST.get("active_model")
-        settings.anthropic_api_key = request.POST.get("anthropic_api_key")
-        settings.deepseek_api_key = request.POST.get("deepseek_api_key")
-        settings.offline_mode = request.POST.get("offline_mode") == "on"
-        settings.reasoning_depth = int(request.POST.get("reasoning_depth", 7))
         settings.auto_refresh_ms = int(request.POST.get("auto_refresh_ms", 5000))
-        settings.enable_web_search = request.POST.get("enable_web_search") == "on"
         settings.strict_governance = request.POST.get("strict_governance") == "on"
         settings.debug_mode = request.POST.get("debug_mode") == "on"
         settings.show_spending_overview = request.POST.get("show_spending_overview") == "on"
@@ -186,17 +198,153 @@ def system_settings_view(request):
 
     return render(request, "discovery/settings.html", {"settings": settings})
 
-@login_required
-def clear_engine_lock(request):
-    """Admin-level override to clear the session lock."""
-    if 'active_engine_pk' in request.session:
-        del request.session['active_engine_pk']
-        request.session.modified = True
-        messages.success(request, "Engine lock cleared successfully.")
-    else:
-        messages.info(request, "No active engine lock found.")
+@user_passes_test(lambda u: u.is_superuser)
+def admin_integrations_center(request):
+    """Centralized management for AI models, Stripe, and other external APIs."""
+    settings = SystemSettings.get_settings()
+    from .models import StripeWebhookLog
+    from .db_service import DatabaseService
+    import stripe
     
-    return redirect(request.META.get('HTTP_REFERER', 'discovery:system_map'))
+    stripe_status = "Unknown"
+    last_webhook = StripeWebhookLog.objects.order_by('-processed_at').first()
+    
+    if settings.stripe_secret_key:
+        try:
+            stripe.api_key = settings.stripe_secret_key
+            stripe.Account.retrieve()
+            stripe_status = "Connected"
+        except Exception as e:
+            stripe_status = f"Error: {str(e)}"
+    else:
+        stripe_status = "Not Configured"
+
+    if request.method == "POST":
+        # Check which section was submitted to avoid overwriting unrelated fields
+        section_ai = "save_ai" in request.POST
+        section_stripe = "save_stripe" in request.POST or "test_stripe" in request.POST
+        section_db = "save_db" in request.POST or "test_db" in request.POST
+
+        if "test_stripe" in request.POST:
+            # Update values in memory to test them
+            settings.stripe_public_key = request.POST.get("stripe_public_key")
+            settings.stripe_secret_key = request.POST.get("stripe_secret_key")
+            settings.stripe_webhook_secret = request.POST.get("stripe_webhook_secret")
+            settings.stripe_live_mode = request.POST.get("stripe_live_mode") == "on"
+            
+            if not settings.stripe_secret_key:
+                messages.error(request, "Stripe Secret Key is required to test connectivity.")
+            else:
+                try:
+                    stripe.api_key = settings.stripe_secret_key
+                    stripe.Account.retrieve()
+                    messages.success(request, "Stripe Connectivity Verified: Account retrieved successfully.")
+                    settings.save() # Persist keys if test succeeded
+                except Exception as e:
+                    messages.error(request, f"Stripe Connection Failed: {str(e)}")
+            return redirect("discovery:integrations_center")
+            
+        if "test_db" in request.POST:
+            # Connection testing now uses internal credentials from settings.py
+            success, msg = DatabaseService.test_connection(settings)
+            if success:
+                messages.success(request, f"Internal Database Connection Verified: {msg}")
+            else:
+                messages.error(request, f"Internal Database Connection Failed: {msg}")
+            return redirect("discovery:integrations_center")
+
+        # Handle UI Section Saves
+        if section_ai:
+            if "active_model" in request.POST:
+                settings.active_model = request.POST.get("active_model")
+            if "anthropic_api_key" in request.POST:
+                settings.anthropic_api_key = request.POST.get("anthropic_api_key")
+            if "deepseek_api_key" in request.POST:
+                settings.deepseek_api_key = request.POST.get("deepseek_api_key")
+            
+            settings.offline_mode = request.POST.get("offline_mode") == "on"
+            settings.enable_web_search = request.POST.get("enable_web_search") == "on"
+            settings.save()
+            messages.success(request, "Intelligence parameters updated.")
+            return redirect("discovery:integrations_center")
+
+        if section_db:
+            settings.db_pg_host = request.POST.get("db_pg_host")
+            settings.db_pg_port = request.POST.get("db_pg_port")
+            settings.db_pg_name = request.POST.get("db_pg_name")
+            settings.db_pg_user = request.POST.get("db_pg_user")
+            settings.db_pg_password = request.POST.get("db_pg_password")
+            settings.db_pg_ssl_mode = request.POST.get("db_pg_ssl_mode")
+            settings.use_postgres = request.POST.get("use_postgres") == "on"
+            
+            settings.save()
+            messages.success(request, "Database substrate parameters updated.")
+            return redirect("discovery:integrations_center")
+
+        if section_stripe:
+            if "stripe_public_key" in request.POST:
+                settings.stripe_public_key = request.POST.get("stripe_public_key")
+            if "stripe_secret_key" in request.POST:
+                settings.stripe_secret_key = request.POST.get("stripe_secret_key")
+            if "stripe_webhook_secret" in request.POST:
+                settings.stripe_webhook_secret = request.POST.get("stripe_webhook_secret")
+            
+            settings.stripe_live_mode = request.POST.get("stripe_live_mode") == "on"
+            settings.save()
+            messages.success(request, "Financial parameters updated.")
+
+        return redirect("discovery:integrations_center")
+        "settings": settings,
+        "stripe_status": stripe_status,
+        "last_webhook": last_webhook,
+        "webhook_count": StripeWebhookLog.objects.count()
+    })
+
+@user_passes_test(lambda u: u.is_superuser)
+def db_backup_download(request):
+    """Generates and downloads a JSON dump of the current database."""
+    from .db_service import DatabaseService
+    try:
+        data = DatabaseService.dump_database_json()
+        response = HttpResponse(data, content_type='application/json')
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        response['Content-Disposition'] = f'attachment; filename="elif_backup_{timestamp}.json"'
+        return response
+    except Exception as e:
+        messages.error(request, f"Backup failed: {str(e)}")
+        return redirect("discovery:integrations_center")
+
+@user_passes_test(lambda u: u.is_superuser)
+def db_restore_upload(request):
+    """Restores database from an uploaded JSON file."""
+    if request.method == "POST" and request.FILES.get('backup_file'):
+        from .db_service import DatabaseService
+        backup_file = request.FILES['backup_file']
+        try:
+            content = backup_file.read().decode('utf-8')
+            success, msg = DatabaseService.load_database_json(content)
+            if success:
+                messages.success(request, msg)
+            else:
+                messages.error(request, f"Restore failed: {msg}")
+        except Exception as e:
+            messages.error(request, f"Restore error: {str(e)}")
+    else:
+        messages.error(request, "No backup file provided.")
+    
+    return redirect("discovery:integrations_center")
+
+@user_passes_test(lambda u: u.is_superuser)
+def db_restore_sqlite_migration(request):
+    """Migrates data from the local db.sqlite3 to the active database (Postgres)."""
+    from .db_service import DatabaseService
+    success, msg = DatabaseService.migrate_from_sqlite()
+    if success:
+        messages.success(request, msg)
+    else:
+        messages.error(request, f"SQLite migration failed: {msg}")
+    
+    return redirect("discovery:integrations_center")
 
 @login_required
 @login_required
@@ -350,14 +498,13 @@ def engine_telemetry(request, pk):
 
 def landing_page(request):
     """The public landing page / entry point."""
-    if request.user.is_authenticated:
-        return redirect('discovery:system_map')
-    
     tiers = Tier.objects.exclude(name="Tester Tier").order_by('price', 'id')
     return render(request, 'discovery/landing.html', {
         'system_settings': SystemSettings.get_settings(),
-        'tiers': tiers
+        'tiers': tiers,
+        'hide_sidebar': True
     })
+
 
 @login_required
 def system_map(request):
@@ -1177,23 +1324,38 @@ def tester_survey(request):
 @login_required
 def subscription_view(request):
     """View to show user tier and limits."""
-    # Ensure a default tier exists
-    free_tier, _ = Tier.objects.get_or_create(name="Free", defaults={
-        "inquiry_limit": 5,
-        "spend_limit": 1.00,
-        "price": 0.00
-    })
-    
-    subscription, _ = UserSubscription.objects.get_or_create(
-        user=request.user,
-        defaults={"tier": free_tier}
-    )
+    # Ensure a local profile exists
+    subscription = getattr(request.user, 'subscription', None)
+    if not subscription:
+        # Fallback to default tier if missing
+        from .settings_models import SystemSettings
+        settings = SystemSettings.get_settings()
+        subscription = UserSubscription.objects.create(
+            user=request.user,
+            tier=settings.default_tier
+        )
+
+    if request.method == "POST":
+        tier_id = request.POST.get('tier_id')
+        if tier_id:
+            new_tier = get_object_or_404(Tier, pk=tier_id)
+            if new_tier.price == 0:
+                # If they are on a paid plan, we should ideally cancel it in Stripe
+                # For now, let's just update the local tier
+                subscription.tier = new_tier
+                subscription.save()
+                messages.success(request, f"Operational capacity transitioned to {new_tier.name}.")
+                return redirect('discovery:subscription')
+
+    # Get available tiers for upgrade/downgrade (exclude internal tiers)
+    available_tiers = Tier.objects.exclude(name__in=["Tester Tier", "Staff"]).order_by('price')
     
     context = {
         "subscription": subscription,
         "tier": subscription.tier,
+        "available_tiers": available_tiers,
         "system_settings": SystemSettings.get_settings(),
-        "usage_percentage": min(int((subscription.inquiry_usage / subscription.tier.inquiry_limit) * 100), 100) if subscription.tier.inquiry_limit > 0 else 0
+        "usage_percentage": min(int((subscription.monthly_inquiries_consumed / subscription.tier.inquiry_limit) * 100), 100) if subscription.tier.inquiry_limit > 0 else 0
     }
     return render(request, "discovery/subscription.html", context)
 
@@ -1309,18 +1471,13 @@ def update_inquiry_status(request, pk):
             
     return redirect("discovery:admin_dashboard")
 
-@admin_access_required('can_manage_tiers')
-@admin_access_required('can_manage_tiers')
+@user_passes_test(lambda u: u.is_superuser)
 def admin_limits_config(request):
-    """View to manage global system limits and governance settings."""
+    """View to manage global system limits and governance settings. Restricted to Superusers."""
     from .settings_models import SystemSettings
     settings = SystemSettings.get_settings()
     
     if request.method == "POST":
-        settings.active_model = request.POST.get("active_model", "deepseek-chat")
-        settings.deepseek_api_key = request.POST.get("deepseek_api_key")
-        settings.anthropic_api_key = request.POST.get("anthropic_api_key")
-        settings.offline_mode = request.POST.get("offline_mode") == "on"
         settings.tester_free_inquiry_limit = request.POST.get("tester_free_inquiry_limit", 10)
         settings.tester_free_spend_limit = request.POST.get("tester_free_spend_limit", 50.00)
         settings.reasoning_depth = request.POST.get("reasoning_depth", 7)
@@ -1341,6 +1498,90 @@ def admin_limits_config(request):
     return render(request, 'discovery/admin_limits_config.html', {
         'settings': settings
     })
+
+@user_passes_test(lambda u: u.is_superuser)
+def admin_system_reset(request):
+    """
+    Destructive admin action to clear specific or all database entries.
+    ONLY accessible to Superusers. Protects all Admin level accounts.
+    """
+    if request.method != "POST":
+        return redirect("discovery:admin_limits_config")
+        
+    reset_users = request.POST.get("reset_users") == "on"
+    reset_inquiries = request.POST.get("reset_inquiries") == "on"
+    reset_spend = request.POST.get("reset_spend") == "on"
+    reset_everything = request.POST.get("reset_everything") == "on"
+    
+    deleted_counts = {}
+    
+    try:
+        if reset_everything:
+            # Most destructive - everything but admin accounts and settings
+            from .models import Inquiry, Planet, ExplorationBranch, EngineRun, RoomState, SpendRecord, IssueReport, UserSubscription, Notification
+            from django.contrib.auth.models import User
+            from django.db.models import Q
+            
+            deleted_counts['Inquiries'] = Inquiry.objects.all().delete()[0]
+            deleted_counts['Planets'] = Planet.objects.all().delete()[0]
+            deleted_counts['Explorations'] = ExplorationBranch.objects.all().delete()[0]
+            deleted_counts['Engine Runs'] = EngineRun.objects.all().delete()[0]
+            deleted_counts['Room States'] = RoomState.objects.all().delete()[0]
+            deleted_counts['Spend Records'] = SpendRecord.objects.all().delete()[0]
+            deleted_counts['Issue Reports'] = IssueReport.objects.all().delete()[0]
+            deleted_counts['Notifications'] = Notification.objects.all().delete()[0]
+            
+            # Reset subscription usage for remaining users
+            UserSubscription.objects.update(
+                total_inquiries_consumed=0,
+                monthly_inquiries_consumed=0,
+                monthly_spend_consumed=0.0
+            )
+            
+            # Delete non-admin users (Protect superusers and Limited Admins)
+            users_to_del = User.objects.filter(
+                is_superuser=False, 
+                is_staff=False
+            ).exclude(subscription__user_type='ADMIN')
+            
+            deleted_counts['Users'] = users_to_del.count()
+            users_to_del.delete()
+            
+            messages.warning(request, f"Full System Reset Complete. Data cleared: {deleted_counts}")
+            
+        else:
+            if reset_inquiries:
+                from .models import Inquiry
+                count = Inquiry.objects.all().delete()[0]
+                deleted_counts['Inquiries'] = count
+                
+            if reset_spend:
+                from .models import SpendRecord, UserSubscription
+                count = SpendRecord.objects.all().delete()[0]
+                deleted_counts['Spend Records'] = count
+                UserSubscription.objects.update(monthly_spend_consumed=0.0)
+                
+            if reset_users:
+                from django.contrib.auth.models import User
+                # Delete non-admin users (Protect superusers and Limited Admins)
+                users_to_del = User.objects.filter(
+                    is_superuser=False, 
+                    is_staff=False
+                ).exclude(subscription__user_type='ADMIN')
+                
+                count = users_to_del.count()
+                users_to_del.delete()
+                deleted_counts['Users'] = count
+                
+            if deleted_counts:
+                messages.warning(request, f"Selective Reset Complete. Data cleared: {deleted_counts}")
+            else:
+                messages.info(request, "No reset options were selected.")
+                
+    except Exception as e:
+        messages.error(request, f"System Reset Failed: {str(e)}")
+        
+    return redirect(request.META.get('HTTP_REFERER', 'discovery:admin_limits_config'))
 
 @login_required
 def tester_feedback_center(request):
@@ -1429,14 +1670,44 @@ def tier_list(request):
     })
 
 @admin_access_required('can_manage_users')
+@admin_access_required('can_manage_users')
 def users_list(request):
-    """View to list all users, their current tier usage, and spendage."""
+    """View to list all users, their current tier usage, and spendage. Now handles user creation."""
     from django.contrib.auth.models import User
     from django.db.models import Q
+    from .settings_models import SystemSettings
     
     query = request.GET.get('q', '')
     users = User.objects.filter(is_superuser=False).prefetch_related('subscription', 'subscription__tier')
     
+    # Initialize form
+    signup_form = SignupForm()
+    
+    if request.method == 'POST' and 'create_user' in request.POST:
+        signup_form = SignupForm(request.POST)
+        if signup_form.is_valid():
+            user = signup_form.save()
+            # Initialize default subscription using system settings
+            settings = SystemSettings.get_settings()
+            
+            if settings.default_tier:
+                target_tier = settings.default_tier
+            else:
+                target_tier, _ = Tier.objects.get_or_create(name="Free", defaults={
+                    "inquiry_limit": 5,
+                    "spend_limit": 10.00,
+                    "price": 0.00
+                })
+            
+            UserSubscription.objects.get_or_create(user=user, tier=target_tier)
+            messages.success(request, f"Sovereign user '{user.username}' successfully registered in the archive.")
+            return redirect('discovery:users_list')
+        else:
+            # Re-open modal script trigger could go here, but messages are usually enough
+            for field, errors in signup_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.capitalize()}: {error}")
+
     if query:
         users = users.filter(
             Q(username__icontains=query) | 
@@ -1464,7 +1735,8 @@ def users_list(request):
         'users_data': user_data,
         'active_count': active_count,
         'total_count': users.count(),
-        'search_query': query
+        'search_query': query,
+        'signup_form': signup_form
     })
 
 @admin_access_required('can_manage_users')
@@ -1479,6 +1751,21 @@ def toggle_user_status(request, user_id):
         target_user.save()
         status = "activated" if target_user.is_active else "deactivated"
         messages.success(request, f"User {target_user.username} has been {status}.")
+    return redirect('discovery:users_list')
+
+@admin_access_required('can_manage_users')
+def delete_user(request, user_id):
+    """Permanently delete a user and their associated data."""
+    from django.contrib.auth.models import User
+    target_user = get_object_or_404(User, pk=user_id)
+    
+    if target_user == request.user:
+        messages.error(request, "Sovereign Alert: You cannot terminate your own administrative identity.")
+    else:
+        username = target_user.username
+        target_user.delete()
+        messages.success(request, f"Identity Purge: User '{username}' and all associated cognitive records have been removed.")
+    
     return redirect('discovery:users_list')
 
 @admin_access_required('can_manage_users')
@@ -1518,6 +1805,34 @@ def user_detail(request, user_id):
     spend_records = SpendRecord.objects.filter(inquiry__user=target_user).order_by('-timestamp')
     tiers = Tier.objects.all()
     
+    # Calculate 30-day activity
+    from datetime import timedelta
+    from django.utils import timezone
+    today = timezone.now().date()
+    daily_activity = []
+    
+    # Get counts grouped by day for the last 30 days
+    thirty_days_ago = today - timedelta(days=29)
+    activity_qs = Inquiry.objects.filter(
+        user=target_user, 
+        created_at__date__gte=thirty_days_ago
+    ).values('created_at__date').annotate(count=Count('id')).order_by('created_at__date')
+    
+    activity_map = {item['created_at__date']: item['count'] for item in activity_qs}
+    
+    for i in range(30):
+        day = thirty_days_ago + timedelta(days=i)
+        count = activity_map.get(day, 0)
+        daily_activity.append({
+            'label': day.strftime("%b %d"),
+            'count': count,
+        })
+        
+    max_count = max([d['count'] for d in daily_activity]) if daily_activity else 0
+    for day in daily_activity:
+        # Use a minimum height of 2 for visibility on the chart
+        day['height'] = max(2, (day['count'] / max_count * 100)) if max_count > 0 else 2
+
     if request.method == "POST":
         # Handle account status updates
         if "update_account" in request.POST:
@@ -1592,7 +1907,8 @@ def user_detail(request, user_id):
         'subscription': subscription,
         'inquiries': inquiries,
         'spend_records': spend_records,
-        'tiers': tiers
+        'tiers': tiers,
+        'daily_activity': daily_activity
     })
 
 @admin_access_required('can_manage_tiers')
@@ -1606,6 +1922,8 @@ def tier_upsert(request, pk=None):
         spend_limit = request.POST.get('spend_limit')
         price = request.POST.get('price')
         is_recommended = request.POST.get('is_recommended') == 'on'
+        stripe_product_id = request.POST.get('stripe_product_id')
+        stripe_price_id = request.POST.get('stripe_price_id')
         
         if tier:
             tier.name = name
@@ -1613,6 +1931,8 @@ def tier_upsert(request, pk=None):
             tier.spend_limit = spend_limit
             tier.price = price
             tier.is_recommended = is_recommended
+            tier.stripe_product_id = stripe_product_id
+            tier.stripe_price_id = stripe_price_id
             tier.save()
             messages.success(request, f"Tier '{name}' updated successfully.")
         else:
@@ -1621,7 +1941,9 @@ def tier_upsert(request, pk=None):
                 inquiry_limit=inquiry_limit,
                 spend_limit=spend_limit,
                 price=price,
-                is_recommended=is_recommended
+                is_recommended=is_recommended,
+                stripe_product_id=stripe_product_id,
+                stripe_price_id=stripe_price_id
             )
             messages.success(request, f"Tier '{name}' created successfully.")
         return redirect('discovery:tier_list')
@@ -1816,5 +2138,75 @@ def export_inquiry(request, pk, format):
     data = collect_inquiry_report_data(inquiry)
     # Providing a Print-Ready HTML page as a fallback that behaves like a professional report.
     return render(request, 'discovery/reports/inquiry_report_pdf.html', data)
+
+@login_required
+@require_POST
+def create_stripe_checkout(request, tier_id):
+    """Initialize a Stripe Checkout session for a tier."""
+    success_url = request.build_absolute_uri(reverse('discovery:stripe_success'))
+    cancel_url = request.build_absolute_uri(reverse('discovery:stripe_cancel'))
+    
+    try:
+        session = create_checkout_session(request.user, tier_id, success_url, cancel_url)
+        return redirect(session.url)
+    except Exception as e:
+        messages.error(request, f'Checkout Error: {str(e)}')
+        return redirect('discovery:subscription')
+
+@csrf_exempt
+@require_POST
+def stripe_webhook(request):
+    """Process incoming Stripe webhooks."""
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    
+    success, message = handle_webhook_event(payload, sig_header)
+    
+    if success:
+        return HttpResponse(status=200)
+    else:
+        logger.error(f'Webhook handling failed: {message}')
+        return HttpResponse(content=message, status=400)
+
+@login_required
+def stripe_success(request):
+    """Return page after successful checkout."""
+    session_id = request.GET.get('session_id')
+    if session_id:
+        messages.success(request, 'Payment successful! Your subscription is being activated.')
+    return redirect('discovery:subscription')
+
+@login_required
+def stripe_cancel(request):
+    """Return page after cancelled checkout."""
+    messages.info(request, 'Checkout cancelled. No charges were made.')
+    return redirect('discovery:subscription')
+
+@login_required
+def stripe_customer_portal(request):
+    """Redirect to Stripe Customer Portal for subscription management."""
+    stripe_client = get_stripe_client()
+    if not stripe_client:
+        messages.error(request, 'Stripe is not configured.')
+        return redirect('discovery:subscription')
+        
+    subscription = getattr(request.user, 'subscription', None)
+    if not subscription or not subscription.stripe_customer_id:
+        messages.error(request, 'You do not have an active billing profile.')
+        return redirect('discovery:subscription')
+        
+    try:
+        import stripe
+        settings = SystemSettings.get_settings()
+        stripe.api_key = settings.stripe_secret_key
+        return_url = request.build_absolute_uri(reverse('discovery:subscription'))
+        session = stripe_client.billing_portal.Session.create(
+            customer=subscription.stripe_customer_id,
+            return_url=return_url,
+        )
+        return redirect(session.url)
+    except Exception as e:
+        messages.error(request, f'Portal Error: {str(e)}')
+        return redirect('discovery:subscription')
 
 
