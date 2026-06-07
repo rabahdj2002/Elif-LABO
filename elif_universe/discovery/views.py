@@ -1357,8 +1357,7 @@ def subscription_view(request):
         "tier": subscription.tier,
         "available_tiers": available_tiers,
         "system_settings": SystemSettings.get_settings(),
-        "usage_percentage": min(int((subscription.monthly_inquiries_consumed / subscription.tier.inquiry_limit) * 100), 100) if subscription.tier.inquiry_limit > 0 else 0,
-        "hide_sidebar": True
+        "usage_percentage": min(int((subscription.monthly_inquiries_consumed / subscription.tier.inquiry_limit) * 100), 100) if subscription.tier.inquiry_limit > 0 else 0
     }
     return render(request, "discovery/subscription.html", context)
 

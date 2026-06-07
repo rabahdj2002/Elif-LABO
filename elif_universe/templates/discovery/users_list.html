@@ -172,7 +172,7 @@
     </div>
 
     <!-- Add User Modal -->
-    <div id="add-user-modal" class="fixed inset-0 z-[100] flex items-center justify-center {% if not signup_form.errors %}hidden{% endif %}">
+    <div id="add-user-modal" class="fixed inset-0 z-[100] flex items-center justify-center {% if not signup_form.errors and request.GET.action != 'add' %}hidden{% endif %}">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
         <div class="glass w-full max-w-lg p-8 rounded-[2.5rem] border-white/10 relative animate-slide-up">
             <div class="flex justify-between items-center mb-8">
