@@ -205,7 +205,9 @@ def admin_integrations_center(request):
     from .models import StripeWebhookLog
     from .db_service import DatabaseService
     import stripe
-    
+    import time
+    from django.http import HttpResponse # Added back for safety
+
     stripe_status = "Unknown"
     last_webhook = StripeWebhookLog.objects.order_by('-processed_at').first()
     
@@ -292,8 +294,7 @@ def admin_integrations_center(request):
             settings.stripe_live_mode = request.POST.get("stripe_live_mode") == "on"
             settings.save()
             messages.success(request, "Financial parameters updated.")
-
-        return redirect("discovery:integrations_center")
+            return redirect("discovery:integrations_center")
 
     return render(request, "discovery/integrations_center.html", {
         "settings": settings,
