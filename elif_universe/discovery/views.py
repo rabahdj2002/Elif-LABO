@@ -349,7 +349,6 @@ def db_restore_sqlite_migration(request):
     return redirect("discovery:integrations_center")
 
 @login_required
-@login_required
 def documentation_view(request):
     """Protocol Documentation and Tutorials."""
     settings = SystemSettings.get_settings()
