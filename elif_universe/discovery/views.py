@@ -294,6 +294,8 @@ def admin_integrations_center(request):
             messages.success(request, "Financial parameters updated.")
 
         return redirect("discovery:integrations_center")
+
+    return render(request, "discovery/integrations_center.html", {
         "settings": settings,
         "stripe_status": stripe_status,
         "last_webhook": last_webhook,
