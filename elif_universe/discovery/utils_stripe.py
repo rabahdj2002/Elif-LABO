@@ -104,9 +104,22 @@ def _handle_checkout_completed(session):
         sub = user.subscription
         sub.stripe_customer_id = customer_id
         sub.stripe_subscription_id = subscription_id
+        
+        tier = None
         if tier_id:
-            sub.tier = Tier.objects.get(id=tier_id)
+            tier = Tier.objects.get(id=tier_id)
+            sub.tier = tier
         sub.save()
+
+        # RECORD TRANSACTION
+        from .financial_models import FinancialTransaction
+        FinancialTransaction.objects.create(
+            user=user,
+            stripe_event_id=session.id,
+            type='SUBSCRIPTION',
+            amount=session.amount_total / 100, # Stripe uses cents
+            tier=tier
+        )
 
 def _handle_subscription_updated(stripe_sub):
     sub = UserSubscription.objects.filter(stripe_subscription_id=stripe_sub.id).first()

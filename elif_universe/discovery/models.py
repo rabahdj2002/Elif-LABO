@@ -4,6 +4,7 @@ import uuid
 import re
 
 from .settings_models import SystemSettings
+from .financial_models import DailyFinancialSnapshot, FinancialTransaction, PlatformCost, BusinessAlert
 
 class Inquiry(models.Model):
     """

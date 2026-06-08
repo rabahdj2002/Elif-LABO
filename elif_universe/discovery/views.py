@@ -2,8 +2,9 @@
 from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.urls import reverse
 from django import forms
-from django.db.models import Sum, Count, Avg
-from .models import Inquiry, Planet, RoomState, EngineRun, SystemSettings, SpendRecord, Tier, UserSubscription, IssueReport, StripeWebhookLog
+from django.db.models import Sum, Count, Avg, Q
+from .models import Inquiry, Planet, RoomState, EngineRun, SystemSettings, SpendRecord, Tier, UserSubscription, IssueReport, StripeWebhookLog, DailyFinancialSnapshot, FinancialTransaction, BusinessAlert
+from .financial_service import FinancialAnalyticsService
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
@@ -1394,6 +1395,32 @@ def signup(request):
     else:
         form = SignupForm()
     return render(request, 'registration/signup.html', {'form': form})
+
+@login_required
+def financial_intelligence_view(request):
+    """
+    SaaS-style Financial Intelligence Dashboard.
+    Primary source for Profit, MRR, and AI Spend analytics.
+    """
+    if not request.user.is_superuser and request.user.subscription.user_type != 'ADMIN':
+        messages.error(request, "Sovereign Denial: Unauthorized to view Financial Intelligence.")
+        return redirect("discovery:system_map")
+
+    summary = FinancialAnalyticsService.get_executive_summary()
+    costs = FinancialAnalyticsService.get_cost_analytics()
+    
+    # Get last 30 snapshots for charts
+    snapshots = DailyFinancialSnapshot.objects.order_by('-date')[:30]
+    
+    context = {
+        "summary": summary,
+        "costs": costs,
+        "snapshots": list(reversed(snapshots)),
+        "recent_transactions": FinancialTransaction.objects.all()[:15],
+        "active_alerts": BusinessAlert.objects.filter(is_resolved=False)
+    }
+    
+    return render(request, "discovery/financial_dashboard.html", context)
 
 @admin_access_required()
 def admin_dashboard(request):

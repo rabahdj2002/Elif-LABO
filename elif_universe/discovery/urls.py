@@ -39,6 +39,7 @@ urlpatterns = [
     path('admin-dashboard/users/<int:user_id>/delete/', views.delete_user, name='delete_user'),
     path('admin-dashboard/users/<int:user_id>/reset-usage/', views.manual_reset_usage, name='reset_usage'),
     path('admin-dashboard/integrations/', views.admin_integrations_center, name='integrations_center'),
+    path('admin-dashboard/financials/', views.financial_intelligence_view, name='financial_intelligence'),
     path('admin-dashboard/db/backup/', views.db_backup_download, name='db_backup'),
     path('admin-dashboard/db/restore/', views.db_restore_upload, name='db_restore'),
     path('admin-dashboard/db/restore-sqlite/', views.db_restore_sqlite_migration, name='db_restore_sqlite'),
