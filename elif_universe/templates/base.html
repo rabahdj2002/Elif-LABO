@@ -661,6 +661,14 @@
                         <span class="text-sm font-bold tracking-tight hidden lg:block">Network Analytics</span>
                         <span class="absolute left-16 top-3 bg-purple-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Network</span>
                     </a>
+
+                    <a href="{% url 'discovery:financial_intelligence' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-gem text-lg text-emerald-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block text-emerald-300">Financial Intel</span>
+                        <span class="absolute left-16 top-3 bg-emerald-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Intel</span>
+                    </a>
                     
                     {% if user.is_superuser or user.subscription.admin_permissions.can_view_spend %}
                     <a href="{% url 'discovery:spend_history' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
