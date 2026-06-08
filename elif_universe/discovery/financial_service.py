@@ -9,26 +9,42 @@ class FinancialAnalyticsService:
     def get_executive_summary():
         now = timezone.now()
         thirty_days_ago = now - timedelta(days=30)
+        start_of_current_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_of_last_month = (start_of_current_month - timedelta(days=1)).replace(day=1)
         
+        # 1. Total (Lifetime) metrics
         total_revenue = FinancialTransaction.objects.exclude(type='REFUND').aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         active_subs = UserSubscription.objects.exclude(tier__price=0).count()
         total_ai_cost = SpendRecord.objects.aggregate(Sum('cost_usd'))['cost_usd__sum'] or 0.0
         
-        # MRR Calculation (Simplistic: Current active paid subs * tier monthly prices)
+        # 2. MRR / ARPU logic
         mrr = UserSubscription.objects.exclude(tier__price=0).aggregate(Sum('tier__price'))['tier__price__sum'] or Decimal('0.00')
-        
-        # ARPU (Average Revenue Per User - Paid)
         paid_user_count = max(active_subs, 1)
         arpu = mrr / Decimal(paid_user_count)
         
+        # 3. Monthly delta logic (Current vs Previous Month)
+        current_month_rev = FinancialTransaction.objects.filter(
+            timestamp__gte=start_of_current_month,
+            timestamp__lt=now
+        ).exclude(type='REFUND').aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        
+        last_month_rev = FinancialTransaction.objects.filter(
+            timestamp__gte=start_of_last_month,
+            timestamp__lt=start_of_current_month
+        ).exclude(type='REFUND').aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        
+        revenue_delta_pct = 0
+        if last_month_rev > 0:
+            revenue_delta_pct = ((current_month_rev - last_month_rev) / last_month_rev) * 100
+
         # AI cost last 30 days
         monthly_ai_cost = SpendRecord.objects.filter(inquiry__created_at__gte=thirty_days_ago).aggregate(Sum('cost_usd'))['cost_usd__sum'] or 0.0
         
-        # Infra monthly estimate (Based on last PlatformCost entries)
+        # Infra monthly estimate
         monthly_infra = PlatformCost.objects.filter(date_applied__gte=thirty_days_ago.date()).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         
-        net_profit = float(total_revenue) - float(total_ai_cost) - float(monthly_infra) # Simplified
-        
+        net_profit = float(total_revenue) - float(total_ai_cost) - float(monthly_infra)
+
         return {
             "total_revenue": total_revenue,
             "mrr": mrr,
@@ -37,6 +53,8 @@ class FinancialAnalyticsService:
             "total_ai_cost": total_ai_cost,
             "net_profit": net_profit,
             "arpu": arpu,
+            "revenue_delta_pct": revenue_delta_pct,
+            "current_month_rev": current_month_rev
         }
 
     @staticmethod

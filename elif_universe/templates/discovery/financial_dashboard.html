@@ -31,7 +31,10 @@
         <div class="glass p-6 rounded-3xl border-white/5 bg-white/[0.02] space-y-4">
             <div class="text-[10px] text-gray-500 font-black uppercase tracking-widest">Revenue (Total)</div>
             <div class="text-3xl font-bold text-white font-mono">${{ summary.total_revenue|floatformat:0 }}</div>
-            <div class="text-[10px] text-emerald-500 font-bold"><i class="fa-solid fa-arrow-up mr-1"></i> 12% vs last month</div>
+            <div class="text-[10px] {% if summary.revenue_delta_pct >= 0 %}text-emerald-500{% else %}text-rose-500{% endif %} font-bold">
+                <i class="fa-solid {% if summary.revenue_delta_pct >= 0 %}fa-arrow-up{% else %}fa-arrow-down{% endif %} mr-1"></i> 
+                {{ summary.revenue_delta_pct|floatformat:1 }}% vs last month
+            </div>
         </div>
         <div class="glass p-6 rounded-3xl border-white/5 bg-white/[0.02] space-y-4">
             <div class="text-[10px] text-gray-500 font-black uppercase tracking-widest">AI Intelligence Cost</div>
