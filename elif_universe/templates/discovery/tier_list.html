@@ -77,7 +77,12 @@
             <div class="relative z-10">
                 <div class="flex items-center justify-between mb-8">
                     <h3 class="text-2xl font-black text-white tracking-tight">{{ tier.name }}</h3>
-                    <div class="text-3xl font-black text-blue-400 font-mono">${{ tier.price|floatformat:0 }}<span class="text-xs text-gray-500">/mo</span></div>
+                    <div class="text-right">
+                        <div class="text-3xl font-black text-blue-400 font-mono">${{ tier.price|floatformat:0 }}<span class="text-xs text-gray-500">/mo</span></div>
+                        {% if tier.price_yearly > 0 %}
+                        <div class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">${{ tier.price_yearly|floatformat:0 }} billed annually</div>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="space-y-4 mb-8">

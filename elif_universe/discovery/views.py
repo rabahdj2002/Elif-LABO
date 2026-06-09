@@ -548,10 +548,21 @@ def engine_telemetry(request, pk):
 
 def landing_page(request):
     """The public landing page / entry point."""
+    system_settings = SystemSettings.get_settings()
     # Allow authenticated users to see the landing page too (better for immersive marketing)
     tiers = Tier.objects.all().order_by('price', 'id')
+    
+    # Pre-calculate yearly pricing for the template based on admin-defined discount (fallback)
+    discount_multiplier = (100 - system_settings.yearly_discount_percent) / 100.0
+    
+    for t in tiers:
+        if t.price_yearly and t.price_yearly > 0:
+            t.price_yearly_monthly = float(t.price_yearly) / 12.0
+        else:
+            t.price_yearly_monthly = float(t.price) * discount_multiplier
+        
     return render(request, 'discovery/landing.html', {
-        'system_settings': SystemSettings.get_settings(),
+        'system_settings': system_settings,
         'tiers': tiers,
         'hide_sidebar': True
     })
@@ -1547,6 +1558,36 @@ def admin_heal_engine(request):
         
     return redirect("discovery:admin_dashboard")
 
+@admin_access_required()
+def admin_landing_page_config(request):
+    """View for managing landing page statistics and content."""
+    settings = SystemSettings.get_settings()
+    
+    if request.method == "POST":
+        settings.stat_avg_rating = request.POST.get("stat_avg_rating", settings.stat_avg_rating)
+        settings.stat_active_users = request.POST.get("stat_active_users", settings.stat_active_users)
+        settings.stat_automations_run = request.POST.get("stat_automations_run", settings.stat_automations_run)
+        settings.stat_uptime = request.POST.get("stat_uptime", settings.stat_uptime)
+        
+        # New Branding Fields
+        settings.favicon_url = request.POST.get("favicon_url", settings.favicon_url)
+        settings.logo_url = request.POST.get("logo_url", settings.logo_url)
+        
+        # New Discount Field
+        if "yearly_discount_percent" in request.POST:
+            try:
+                settings.yearly_discount_percent = int(request.POST.get("yearly_discount_percent"))
+            except (ValueError, TypeError):
+                pass
+        
+        settings.save()
+        messages.success(request, "Landing page configuration updated successfully.")
+        return redirect("discovery:admin_landing_config")
+    
+    return render(request, "discovery/admin_landing_config.html", {
+        "system_settings": settings
+    })
+
 @admin_access_required('can_manage_inquiries')
 def update_inquiry_status(request, pk):
     """Update inquiry status. Supports HTMX or redirect."""
@@ -1931,6 +1972,7 @@ def tier_upsert(request, pk=None):
         inquiry_limit = request.POST.get('inquiry_limit')
         spend_limit = request.POST.get('spend_limit')
         price = request.POST.get('price')
+        price_yearly = request.POST.get('price_yearly')
         is_recommended = request.POST.get('is_recommended') == 'on'
         stripe_product_id = request.POST.get('stripe_product_id')
         stripe_price_id = request.POST.get('stripe_price_id')
@@ -1940,6 +1982,7 @@ def tier_upsert(request, pk=None):
             tier.inquiry_limit = inquiry_limit
             tier.spend_limit = spend_limit
             tier.price = price
+            tier.price_yearly = price_yearly
             tier.is_recommended = is_recommended
             tier.stripe_product_id = stripe_product_id
             tier.stripe_price_id = stripe_price_id
@@ -1951,6 +1994,7 @@ def tier_upsert(request, pk=None):
                 inquiry_limit=inquiry_limit,
                 spend_limit=spend_limit,
                 price=price,
+                price_yearly=price_yearly,
                 is_recommended=is_recommended,
                 stripe_product_id=stripe_product_id,
                 stripe_price_id=stripe_price_id

@@ -71,7 +71,18 @@ class SystemSettings(models.Model):
 
     # Commercial Config
     default_tier = models.ForeignKey('Tier', on_delete=models.SET_NULL, null=True, blank=True, help_text="Automatically assigned to new users.")
+    yearly_discount_percent = models.IntegerField(default=40, help_text="Discount percentage shown for yearly plans (e.g. 40)")
     
+    # Landing Page Statistics
+    stat_avg_rating = models.CharField(max_length=20, default="4.9/5", help_text="Average Rating displayed on landing")
+    stat_active_users = models.CharField(max_length=20, default="50K+", help_text="Active Users count displayed on landing")
+    stat_automations_run = models.CharField(max_length=20, default="200M+", help_text="Automations Run count displayed on landing")
+    stat_uptime = models.CharField(max_length=20, default="99.9%", help_text="Uptime percentage displayed on landing")
+
+    # Branding
+    favicon_url = models.URLField(max_length=1024, blank=True, null=True, help_text="External URL for favicon")
+    logo_url = models.URLField(max_length=1024, blank=True, null=True, help_text="External URL for sidebar/landing logo")
+
     updated_at = models.DateTimeField(auto_now=True)
 
     @property

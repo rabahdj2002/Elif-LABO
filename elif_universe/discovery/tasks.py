@@ -74,7 +74,7 @@ def run_engine_task(self, inquiry_id):
 
             # ACTUAL ENGINE EXECUTION
             try:
-                payload = runner.execute_step(
+                payload, usage = runner.execute_step(
                     step_id=step_id,
                     run_context=run_context,
                     components=components,
@@ -93,6 +93,18 @@ def run_engine_task(self, inquiry_id):
                 
                 logger.info(f"[JOB {self.request.id}] [{step_id}] Completed successfully.")
                 
+                # Track Spend
+                from discovery.models import SpendRecord
+                record = SpendRecord.objects.create(
+                    inquiry=inquiry, 
+                    step_name=display_name, 
+                    model_id=usage.get("model_id", "unknown"),
+                    input_tokens=usage.get("input_tokens", 0), 
+                    output_tokens=usage.get("output_tokens", 0)
+                )
+                record.calculate_cost()
+                record.save()
+
                 # Early exit condition (Article II Refusal in Step 1)
                 if step_id == "step_1" and payload.get("verdict") == "invalid":
                     inquiry.current_status_msg = "Frame Invalid. Halting according to Article II."

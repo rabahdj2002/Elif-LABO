@@ -4,7 +4,7 @@ Stability layer for hard-versioned LLM artifacts.
 """
 
 MODEL_REGISTRY = {
-    "sonnet": "claude-4-5-sonnet",
+    "sonnet": "claude-3-5-sonnet-20241022",
     "deepseek-chat": "deepseek-chat",
     "deepseek-reasoner": "deepseek-reasoner",
 }

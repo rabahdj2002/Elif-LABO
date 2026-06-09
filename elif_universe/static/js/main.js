@@ -75,14 +75,22 @@ $('.vidpop').magnificPopup({
 });
 
 /*  PRICING TOGGLE  */
-document.getElementById('ptog').addEventListener('change', function() {
-    const y = this.checked;
-    document.getElementById('ptogThumb').style.transform = y ? 'translateX(24px)' : 'translateX(0)';
-    document.querySelectorAll('.pv').forEach(el => el.textContent = y ? el.dataset.y : el.dataset.m);
-    document.querySelectorAll('.pper').forEach((el, i) => {
-        if (i < 2) el.textContent = y ? 'per month, billed yearly' : 'per month, billed monthly';
+const ptog = document.getElementById('ptog');
+if (ptog) {
+    ptog.addEventListener('change', function() {
+        const y = this.checked;
+        const thumb = document.getElementById('ptogThumb');
+        if (thumb) thumb.style.transform = y ? 'translateX(24px)' : 'translateX(0)';
+        
+        document.querySelectorAll('.pv').forEach(el => {
+            el.textContent = y ? el.dataset.y : el.dataset.m;
+        });
+        
+        document.querySelectorAll('.pper').forEach(el => {
+            el.textContent = y ? 'per month, billed yearly' : 'per month, billed monthly';
+        });
     });
-});
+}
 
 /*  AUTH FUNCTIONS  */
 function swTab(t) {

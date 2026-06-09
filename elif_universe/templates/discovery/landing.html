@@ -5,6 +5,9 @@
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>{{ system_settings.site_name|default:"ELIF V1" }} - Automate Everything with Uncertainty Audit</title>
+      {% if system_settings.favicon_url %}
+      <link rel="icon" href="{{ system_settings.favicon_url }}">
+      {% endif %}
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
       <!-- Bootstrap 5.3 -->
@@ -19,6 +22,13 @@
       <link rel="stylesheet" href="{% static 'css/magnific-popup.css' %}"/>
       <!-- Style CSS -->
       <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+      <style>
+         @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+         }
+      </style>
    </head>
    <body>
       <!-- ======================== LANDING PAGE ======================== -->
@@ -28,7 +38,11 @@
             <div class="container">
                <div class="d-flex align-items-center justify-content-between w-100">
                   <a href="#" class="d-flex align-items-center gap-2" style="font-size:1.2rem;font-weight:700;color:var(--tx)">
+                     {% if system_settings.logo_url %}
+                     <img src="{{ system_settings.logo_url }}" alt="Logo" class="logo-i-img" style="height:32px;width:auto;object-contain:contain">
+                     {% else %}
                      <div class="logo-i"><i class="fa-solid fa-layer-group"></i></div>
+                     {% endif %}
                      <span>{{ system_settings.site_name|default:"ELIF V1" }}</span>
                   </a>
                   <div class="d-none d-lg-flex align-items-center gap-1 mx-auto">
@@ -87,9 +101,9 @@
             <div class="aur aur-a" style="bottom:-80px;left:45%;transform:translateX(-50%);opacity:.4"></div>
             <div class="container position-relative" style="z-index:2">
                <div class="text-center">
-                  <div class="afu" style="animation-delay:.05s"><span class="hbadge"><span class="bdot"></span>Now with GPT-4o &amp; Claude 3.5 integration</span></div>
+                  <div class="afu" style="animation-delay:.05s"><span class="hbadge"><span class="bdot"></span>Faster &amp; more reliable AI experiences for your workflows</span></div>
                   <h1 class="h1 afu" style="animation-delay:.12s">Clinical Reasoning<br>for <span class="gt">Uncertainty Audit</span></h1>
-                  <p class="mx-auto afu" style="max-width:580px;font-size:clamp(.95rem,1.8vw,1.2rem);color:var(--tx2);margin-bottom:36px;animation-delay:.2s">Accelerate branching logic research, automate hypothesis validation, and scale your inquiry architecture � using sovereign reasoning engines.</p>
+                  <p class="mx-auto afu" style="max-width:580px;font-size:clamp(.95rem,1.8vw,1.2rem);color:var(--tx2);margin-bottom:36px;animation-delay:.2s">Accelerate branching logic research, automate hypothesis validation, and scale your inquiry architecture using sovereign reasoning engines.</p>
                   <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap afu" style="animation-delay:.28s">
                      <a href="{% url 'discovery:signup' %}"  class="bgrd btn px-4 py-3 fs-6"    >Start Research Protocol</a>
                      <a href="https://www.youtube.com/watch?v=ScMzIvxBSi4" class="boc btn px-4 py-3 fs-6 vidpop"><i class="fa-solid fa-circle-play me-2" style="color:var(--pur)"></i>Watch Demo</a>
@@ -104,7 +118,7 @@
                <div class="row justify-content-center mt-5">
                   <div class="col-lg-11 adi">
                      <div class="dwrap">
-                        <div class="dtbar"><span class="dd" style="background:#ff5f57"></span><span class="dd" style="background:#ffbd2e"></span><span class="dd" style="background:#28c840"></span><span class="ms-auto me-auto" style="font-size:.76rem;color:var(--tx3)">ELIF V1 Dashboard � nexus.ai/dashboard</span></div>
+                        <div class="dtbar"><span class="dd" style="background:#ff5f57"></span><span class="dd" style="background:#ffbd2e"></span><span class="dd" style="background:#28c840"></span><span class="ms-auto me-auto" style="font-size:.76rem;color:var(--tx3)">ELIF V1 Dashboard  nexus.ai/dashboard</span></div>
                         <div class="dgrid">
                            <div class="dside">
                               <div style="font-size:.64rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);padding:0 10px 10px;font-weight:700">Overview</div>
@@ -148,7 +162,7 @@
                               <div class="row g-2">
                                  <div class="col-sm-7">
                                     <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:14px">
-                                       <div style="font-size:.73rem;color:var(--tx3);margin-bottom:10px;font-weight:600"><i class="fa-solid fa-chart-bar me-1"></i>Agent Activity � Last 7 days</div>
+                                       <div style="font-size:.73rem;color:var(--tx3);margin-bottom:10px;font-weight:600"><i class="fa-solid fa-chart-bar me-1"></i>Agent Activity  Last 7 days</div>
                                        <div style="display:flex;align-items:flex-end;gap:5px;height:76px">
                                           <div class="bbar" style="height:45%"></div>
                                           <div class="bbar" style="height:72%"></div>
@@ -186,19 +200,19 @@
             <div class="container">
                <div class="row g-3 align-items-center text-center">
                   <div class="col-6 col-sm-3">
-                     <div class="pnum">4.9/5</div>
+                     <div class="pnum">{{ system_settings.stat_avg_rating }}</div>
                      <div class="plbl"><i class="fa-solid fa-star text-warning me-1"></i>Avg Rating</div>
                   </div>
                   <div class="col-6 col-sm-3">
-                     <div class="pnum">50K+</div>
+                     <div class="pnum">{{ system_settings.stat_active_users }}</div>
                      <div class="plbl">Active Users</div>
                   </div>
                   <div class="col-6 col-sm-3">
-                     <div class="pnum">200M+</div>
+                     <div class="pnum">{{ system_settings.stat_automations_run }}</div>
                      <div class="plbl">Automations Run</div>
                   </div>
                   <div class="col-6 col-sm-3">
-                     <div class="pnum">99.9%</div>
+                     <div class="pnum">{{ system_settings.stat_uptime }}</div>
                      <div class="plbl">Uptime SLA</div>
                   </div>
                </div>
@@ -221,7 +235,7 @@
                      <div class="gc p-4 h-100">
                         <div style="width:52px;height:52px;border-radius:14px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);display:flex;align-items:center;justify-content:center;margin-bottom:18px"><i class="fa-regular fa-clock fa-lg" style="color:#f87171"></i></div>
                         <h3 class="fw-semibold fs-5 mb-2">Manual, Repetitive Work</h3>
-                        <p style="font-size:.875rem;color:var(--tx2)">Your team spends 60% of their time on copy-paste tasks and repetitive queries � instead of meaningful work that drives business forward.</p>
+                        <p style="font-size:.875rem;color:var(--tx2)">Your team spends 60% of their time on copy-paste tasks and repetitive queries instead of meaningful work that drives business forward.</p>
                      </div>
                   </div>
                   <div class="col-md-4 rv" style="transition-delay:.1s">
@@ -270,7 +284,7 @@
                      <div class="gc p-4 h-100">
                         <div class="ftico"><i class="fa-solid fa-chart-line"></i></div>
                         <h3 class="fs-5 fw-semibold mb-2">Confidence Evolution</h3>
-                        <p style="font-size:.875rem;color:var(--tx2)">Real-time dashboards showing conversation quality, automation performance, and reasoning efficiency � all in one place.</p>
+                        <p style="font-size:.875rem;color:var(--tx2)">Real-time dashboards showing conversation quality, automation performance, and reasoning efficiency  all in one place.</p>
                         <span class="ftag">Cognitive Metrics</span>
                      </div>
                   </div>
@@ -313,7 +327,7 @@
                      <div class="gc p-4 h-100 text-center">
                         <div class="hnum">1</div>
                         <h3 class="fs-5 fw-semibold mb-2">Recursive Framing</h3>
-                        <p style="font-size:.875rem;color:var(--tx2)">Initialize inquiries � Recursive frames, Doctrinal layers, Logic kernels � in minutes with our one-click integration library. No code, no API keys, no headaches.</p>
+                        <p style="font-size:.875rem;color:var(--tx2)">Initialize inquiries  Recursive frames, Doctrinal layers, Logic kernels  in minutes with our one-click integration library. No code, no API keys, no headaches.</p>
                      </div>
                   </div>
                   <div class="col-md-4 rv" style="transition-delay:.1s">
@@ -333,7 +347,7 @@
                </div>
             </div>
          </section>
-         <!-- INTEGRATIONS -->
+         <!-- INTEGRATIONS 
          <section id="integrations" class="sp position-relative">
             <div class="aur aur-b" style="top:50%;right:-200px;transform:translateY(-50%)"></div>
             <div class="container position-relative" style="z-index:1">
@@ -394,6 +408,7 @@
                </div>
             </div>
          </section>
+         -->
          <!-- PRICING -->
          <section id="pricing" class="sp position-relative" style="background:var(--bg2)">
             <div class="aur aur-a" style="top:50%;left:50%;transform:translate(-50%,-50%)"></div>
@@ -407,50 +422,52 @@
                   <span style="font-size:.9rem;color:var(--tx2);font-weight:500">Monthly</span>
                   <div style="position:relative;width:52px;height:28px"><input type="checkbox" id="ptog" style="position:absolute;opacity:0;width:0;height:0"><label for="ptog" id="ptogLabel" style="position:absolute;inset:0;background:var(--sf);border:1px solid var(--bd2);border-radius:100px;cursor:pointer;transition:.3s"><span id="ptogThumb" style="position:absolute;width:20px;height:20px;left:3px;top:3px;background:var(--grad);border-radius:50%;transition:.3s;display:block"></span></label></div>
                   <span style="font-size:.9rem;color:var(--tx2);font-weight:500">Yearly</span>
-                  <span style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.25);color:#34d399;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:100px"><i class="fa-solid fa-tag me-1"></i>Save 30%</span>
+                  <span style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.25);color:#34d399;font-size:0.75rem;font-weight:700;padding:4px 12px;border-radius:100px;animation:pulse 2s infinite;"><i class="fa-solid fa-tag me-1"></i>Save {{ system_settings.yearly_discount_percent }}%</span>
                </div>
                <div class="row g-4 align-items-start rv">
+                  {% for tier in tiers %}
+                  {% if tier.name|lower != 'test' %}
                   <div class="col-md-4">
-                     <div class="pcard h-100">
-                        <div style="font-size:.82rem;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Starter</div>
-                        <div class="pamt mb-1"><sup>$</sup><span class="pv" data-m="29" data-y="19">29</span></div>
-                        <div style="font-size:.82rem;color:var(--tx3)" class="pper">per month, billed monthly</div>
-                        <p style="font-size:.875rem;color:var(--tx2);margin:14px 0 20px;padding-bottom:20px;border-bottom:1px solid var(--bd)">Perfect for small teams getting started with AI automation.</p>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>1,000 Inquiry Branches/mo</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>3 Uncertainty Audit</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>50+ integrations</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Basic analytics</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Email support</div>
-                        <a href="{% url 'discovery:signup' %}"  class="boc btn w-100 py-2 mt-4"    >Start Free Trial</a>
-                     </div>
-                  </div>
-                  <div class="col-md-4">
-                     <div class="pcard pop h-100">
+                     <div class="pcard h-100 {% if tier.is_recommended %}pop{% endif %}">
+                        {% if tier.is_recommended %}
                         <span class="pbadge"><i class="fa-solid fa-star me-1"></i>Most Popular</span>
-                        <div style="font-size:.82rem;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Pro</div>
-                        <div class="pamt mb-1"><sup>$</sup><span class="pv" data-m="79" data-y="55">79</span></div>
+                        {% endif %}
+                        <div style="font-size:.82rem;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">{{ tier.name }}</div>
+                        <div class="pamt mb-1"><sup>$</sup><span class="pv" data-m="{{ tier.price|floatformat:0 }}" data-y="{{ tier.price_yearly_monthly|floatformat:0 }}">{{ tier.price|floatformat:0 }}</span></div>
                         <div style="font-size:.82rem;color:var(--tx3)" class="pper">per month, billed monthly</div>
-                        <p style="font-size:.875rem;color:var(--tx2);margin:14px 0 20px;padding-bottom:20px;border-bottom:1px solid var(--bd)">For growing teams that need powerful automation and analytics.</p>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Unlimited Inquiry Branches</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>20 Uncertainty Audit</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>1,000+ integrations</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Advanced analytics + API</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Priority against doctrinal layers support</div>
-                        <a href="{% url 'discovery:signup' %}"  class="bgrd btn w-100 py-2 mt-4"    >Get Started <i class="fa-solid fa-arrow-right ms-1 fa-sm"></i></a>
+                        <p style="font-size:.875rem;color:var(--tx2);margin:14px 0 20px;padding-bottom:20px;border-bottom:1px solid var(--bd)">
+                           {% if tier.price == 0 %}
+                           Perfect for exploring the foundation of uncertainty at no cost.
+                           {% else %}
+                           Advanced capacity for professional research and scaled inquiry.
+                           {% endif %}
+                        </p>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{{ tier.inquiry_limit|default:"Unlimited" }} Inquiry Branches/mo</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{% if tier.price == 0 %}1 Active Audit{% else %}Concurrent Audits{% endif %}</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Standard Reasoning Depth</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Standard Doctrinal Checks</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{% if tier.price > 50 %}Priority Support{% else %}Community Support{% endif %}</div>
+                        <a href="{% url 'discovery:signup' %}" class="{% if tier.is_recommended %}bgrd{% else %}boc{% endif %} btn w-100 py-2 mt-4">
+                           {% if tier.price == 0 %}Start Free{% else %}Join Plan{% endif %}
+                        </a>
                      </div>
                   </div>
+                  {% endif %}
+                  {% endfor %}
+
+                  <!-- Sovereign/Custom Card (Always show after dynamic tiers) -->
                   <div class="col-md-4">
                      <div class="pcard h-100">
-                        <div style="font-size:.82rem;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Enterprise</div>
-                        <div style="font-size:2.2rem;font-weight:700;margin-bottom:4px;padding-top:4px">Custom</div>
-                        <div style="font-size:.82rem;color:var(--tx3)">contact us for pricing</div>
-                        <p style="font-size:.875rem;color:var(--tx2);margin:14px 0 20px;padding-bottom:20px;border-bottom:1px solid var(--bd)">For large teams with advanced security and compliance needs.</p>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Unlimited everything</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Custom AI fine-tuning</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>SSO &amp; SAML</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>99.99% SLA + dedicated manager</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>On-premises deployment</div>
-                        <button class="boc btn w-100 py-2 mt-4">Talk to Sales</button>
+                        <div style="font-size:.82rem;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Sovereign</div>
+                        <div style="font-size:2.2rem;font-weight:700;margin-bottom:4px;padding-top:4px">Sovereign</div>
+                        <div style="font-size:.82rem;color:var(--tx3)">Custom reasoning kernels</div>
+                        <p style="font-size:.875rem;color:var(--tx2);margin:14px 0 20px;padding-bottom:20px;border-bottom:1px solid var(--bd)">For organizations requiring absolute logical autonomy and on-premise power.</p>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Unlimited Inquiry Branches</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Custom AI Fine-tuning</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Local/Sovereign Deployment</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>SSO & Governance Kernel</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>24/7 Strategic Liaison</div>
+                        <button class="boc btn w-100 py-2 mt-4">Consult Deployment</button>
                      </div>
                   </div>
                </div>
@@ -537,7 +554,7 @@
                         <div class="accordion-item">
                            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#f4">Do you offer a free trial?</button></h2>
                            <div id="f4" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
-                              <div class="accordion-body">Yes � 14 days free on any plan, no complex setup required. You get access to all features. If you're not satisfied, we'll give you a full refund, no questions asked.</div>
+                              <div class="accordion-body">Yes  14 days free on any plan, no complex setup required. You get access to all features. If you're not satisfied, we'll give you a full refund, no questions asked.</div>
                            </div>
                         </div>
                      </div>
@@ -551,7 +568,7 @@
             <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(139,92,246,.2),transparent 70%);pointer-events:none"></div>
             <div class="container position-relative" style="z-index:2">
                <div class="rv">
-                  <span class="hbadge mb-4 d-inline-flex"><span class="bdot"></span>14-day free trial � no complex setup required</span>
+                  <span class="hbadge mb-4 d-inline-flex"><span class="bdot"></span>14-day free trial  no complex setup required</span>
                   <h2 style="font-size:clamp(2rem,5vw,3.8rem);font-weight:700;letter-spacing:-.025em;line-height:1.1;margin-bottom:18px">Ready to automate your<br><span class="gt">entire business?</span></h2>
                   <p style="font-size:1.05rem;color:var(--tx2);max-width:500px;margin:0 auto 36px">Join the primary nodes using ELIF to accelerate research, and deliver exceptional customer experiences.</p>
                   <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
@@ -587,7 +604,7 @@
                   </div>
                </div>
                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-4" style="border-top:1px solid var(--bd)">
-                  <p style="font-size:.8rem;color:var(--tx3);margin:0">� 2025 ELIF V1, Inc. All rights reserved by <a target="_blank" class="text-primary fw-bold" href="https://bestwpware.com/">Bestwpware</a> <br> Distributed by <a target="_blank" class="text-primary fw-bold" href="https://themewagon.com">ThemeWagon</a> </p>
+                  <p style="font-size:.8rem;color:var(--tx3);margin:0"> 2025 ELIF V1, Inc. All rights reserved by <a target="_blank" class="text-primary fw-bold" href="https://bestwpware.com/">Bestwpware</a> <br> Distributed by <a target="_blank" class="text-primary fw-bold" href="https://themewagon.com">ThemeWagon</a> </p>
                   <div class="d-flex gap-2"><a href="#" class="sico"><i class="fa-brands fa-x-twitter"></i></a><a href="#" class="sico"><i class="fa-brands fa-github"></i></a><a href="#" class="sico"><i class="fa-brands fa-linkedin-in"></i></a><a href="#" class="sico"><i class="fa-brands fa-discord"></i></a></div>
                </div>
             </div>
@@ -701,7 +718,7 @@
                            <div class="notif-ico" style="background:rgba(52,211,153,.12)"><i class="fa-solid fa-chart-line" style="color:#34d399;font-size:.9rem"></i></div>
                            <div style="flex:1">
                               <div style="font-size:.85rem;font-weight:600;margin-bottom:3px">Daily goal reached ??</div>
-                              <div style="font-size:.78rem;color:var(--tx2)">Your Uncertainty Audit resolved 1,000 conversations today � a new record!</div>
+                              <div style="font-size:.78rem;color:var(--tx2)">Your Uncertainty Audit resolved 1,000 conversations today  a new record!</div>
                               <div style="font-size:.7rem;color:var(--tx3);margin-top:5px"><i class="fa-regular fa-clock me-1"></i>18 minutes ago</div>
                            </div>
                            <div class="notif-dot"></div>
@@ -863,7 +880,7 @@
                            <div id="liveActivity" style="display:flex;flex-direction:column;gap:8px">
                               <div style="display:flex;gap:10px;padding:10px;background:var(--bg3);border-radius:10px;font-size:.78rem"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;margin-top:4px;flex-shrink:0"></span><span style="color:var(--tx2)">AI resolved billing query for user@acme.com</span><span style="margin-left:auto;color:var(--tx3);white-space:nowrap">2s ago</span></div>
                               <div style="display:flex;gap:10px;padding:10px;background:var(--bg3);border-radius:10px;font-size:.78rem"><span style="width:7px;height:7px;border-radius:50%;background:#8b5cf6;margin-top:4px;flex-shrink:0"></span><span style="color:var(--tx2)">Sales agent qualified lead from LinkedIn</span><span style="margin-left:auto;color:var(--tx3);white-space:nowrap">18s ago</span></div>
-                              <div style="display:flex;gap:10px;padding:10px;background:var(--bg3);border-radius:10px;font-size:.78rem"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;margin-top:4px;flex-shrink:0"></span><span style="color:var(--tx2)">CRM synced � 12 contacts updated</span><span style="margin-left:auto;color:var(--tx3);white-space:nowrap">45s ago</span></div>
+                              <div style="display:flex;gap:10px;padding:10px;background:var(--bg3);border-radius:10px;font-size:.78rem"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;margin-top:4px;flex-shrink:0"></span><span style="color:var(--tx2)">CRM synced  12 contacts updated</span><span style="margin-left:auto;color:var(--tx3);white-space:nowrap">45s ago</span></div>
                               <div style="display:flex;gap:10px;padding:10px;background:var(--bg3);border-radius:10px;font-size:.78rem"><span style="width:7px;height:7px;border-radius:50%;background:#fbbf24;margin-top:4px;flex-shrink:0"></span><span style="color:var(--tx2)">Escalation: complex refund case ? human</span><span style="margin-left:auto;color:var(--tx3);white-space:nowrap">1m ago</span></div>
                            </div>
                         </div>
@@ -886,7 +903,7 @@
                               <div style="width:46px;height:46px;border-radius:14px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-headset" style="color:#34d399;font-size:1.1rem"></i></div>
                               <div style="flex:1">
                                  <div class="d-flex align-items-center gap-2 mb-1"><strong>Support Bot v2.1</strong><span style="width:9px;height:9px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399"></span></div>
-                                 <div style="font-size:.78rem;color:var(--tx3)">Customer Support � GPT-4o</div>
+                                 <div style="font-size:.78rem;color:var(--tx3)">Customer Support  GPT-4o</div>
                               </div>
                               <span class="bst son">Online</span>
                            </div>
@@ -913,7 +930,7 @@
                               <div style="width:46px;height:46px;border-radius:14px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-handshake" style="color:#a78bfa;font-size:1.1rem"></i></div>
                               <div style="flex:1">
                                  <div class="d-flex align-items-center gap-2 mb-1"><strong>Sales Qualifier</strong><span style="width:9px;height:9px;border-radius:50%;background:#8b5cf6;box-shadow:0 0 8px #8b5cf6"></span></div>
-                                 <div style="font-size:.78rem;color:var(--tx3)">Sales Automation � Claude 3.5</div>
+                                 <div style="font-size:.78rem;color:var(--tx3)">Sales Automation  Claude 3.5</div>
                               </div>
                               <span class="bst sbz">Busy</span>
                            </div>
@@ -940,7 +957,7 @@
                               <div style="width:46px;height:46px;border-radius:14px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-chart-bar" style="color:#60a5fa;font-size:1.1rem"></i></div>
                               <div style="flex:1">
                                  <div class="d-flex align-items-center gap-2 mb-1"><strong>Data Analyzer</strong><span style="width:9px;height:9px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399"></span></div>
-                                 <div style="font-size:.78rem;color:var(--tx3)">Analytics � Gemini Pro</div>
+                                 <div style="font-size:.78rem;color:var(--tx3)">Analytics  Gemini Pro</div>
                               </div>
                               <span class="bst son">Online</span>
                            </div>
@@ -967,7 +984,7 @@
                               <div style="width:46px;height:46px;border-radius:14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-envelope" style="color:#fbbf24;font-size:1.1rem"></i></div>
                               <div style="flex:1">
                                  <div class="d-flex align-items-center gap-2 mb-1"><strong>Email Automator</strong><span style="width:9px;height:9px;border-radius:50%;background:#f59e0b"></span></div>
-                                 <div style="font-size:.78rem;color:var(--tx3)">Email Marketing � GPT-4o</div>
+                                 <div style="font-size:.78rem;color:var(--tx3)">Email Marketing  GPT-4o</div>
                               </div>
                               <span class="bst sid">Idle</span>
                            </div>
@@ -995,7 +1012,7 @@
                   <div class="d-flex align-items-center justify-content-between mb-4">
                      <div>
                         <h4 style="font-size:1.4rem;font-weight:700;margin-bottom:4px">AI Chat Console</h4>
-                        <p style="font-size:.875rem;color:var(--tx3);margin:0">Chat with your ELIF V1 assistant � powered by Claude.</p>
+                        <p style="font-size:.875rem;color:var(--tx3);margin:0">Chat with your ELIF V1 assistant  powered by Claude.</p>
                      </div>
                      <button class="boc btn px-3 py-2" style="font-size:.82rem" onclick="clearChat()"><i class="fa-solid fa-rotate-right me-1"></i>New Chat</button>
                   </div>
@@ -1006,17 +1023,17 @@
                               <div class="chat-ai-avatar"><i class="fa-solid fa-robot"></i></div>
                               <div>
                                  <div style="font-weight:600;font-size:.9rem">ELIF V1 Assistant</div>
-                                 <div class="chat-status"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;animation:bpls 2s infinite"></span>Online � Powered by Claude</div>
+                                 <div class="chat-status"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;animation:bpls 2s infinite"></span>Online  Powered by Claude</div>
                               </div>
                            </div>
                            <div class="chat-body" id="chatBody">
                               <div class="d-flex flex-column gap-1">
                                  <div class="msg msg-ai">?? Hi! I'm your ELIF V1 assistant. I can help you with support analytics, agent configuration, automation workflows, and business insights. What would you like to know?</div>
-                                 <div class="msg-time" style="align-self:flex-start;padding-left:4px">ELIF V1 � Just now</div>
+                                 <div class="msg-time" style="align-self:flex-start;padding-left:4px">ELIF V1  Just now</div>
                               </div>
                            </div>
                            <div class="chat-input-wrap">
-                              <textarea class="chat-inp" id="chatInp" placeholder="Ask anything � analytics, automations, agent performance..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+                              <textarea class="chat-inp" id="chatInp" placeholder="Ask anything  analytics, automations, agent performance..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
                               <button class="chat-send" id="chatSendBtn" onclick="sendChat()"><i class="fa-solid fa-paper-plane fa-sm"></i></button>
                            </div>
                         </div>

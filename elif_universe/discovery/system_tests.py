@@ -245,26 +245,125 @@ class ELIFTestEngine:
         except Exception as e:
             self.add_result("Security Audit", "FAIL", str(e), "HIGH")
 
-    # --- CATEGORY: AI ---
     def test_ai_provider(self):
-        self.log("Pinging AI Providers for latency & availability...")
+        self.log("Pinging AI Providers for REAL latency & availability...")
         try:
-            # Simulated ping to Anthropic/DeepSeek
-            latencies = {"Anthropic": random.randint(200, 1500), "DeepSeek": random.randint(100, 800)}
-            for provider, latency in latencies.items():
-                if latency > 1200:
-                    self.add_result(f"AI Latency [{provider}]", "WARNING", f"High latency detected: {latency}ms", "LOW")
-                else:
-                    self.add_result(f"AI Latency [{provider}]", "PASS", f"Latency within bounds: {latency}ms")
+            from elif_v0_1.llm_adapter import complete_structured
+            import os
             
-            # Check for API Key presence in settings
+            # 1. Credentials Check
             settings = SystemSettings.get_settings()
             if not settings.anthropic_api_key or not settings.deepseek_api_key:
                 self.add_result("AI Credentials", "WARNING", "One or more AI API keys are missing in System Config.", "MEDIUM", "Update keys in Integrations Center.")
-            else:
-                self.add_result("AI Credentials", "PASS", "Provider credentials detected.")
+                return
+
+            # Set environment for adapter
+            os.environ["ELIF_ANTHROPIC_API_KEY"] = settings.anthropic_api_key
+            os.environ["ELIF_DEEPSEEK_API_KEY"] = settings.deepseek_api_key
+            
+            providers = [
+                {"name": "Anthropic", "models": ["claude-3-5-sonnet-20241022", "claude-3-5-sonnet-20240620", "claude-3-haiku-20240307"]},
+                {"name": "DeepSeek [Chat]", "models": ["deepseek-chat"]},
+                {"name": "DeepSeek [R1]", "models": ["deepseek-reasoner"]}
+            ]
+
+            schema = {
+                "type": "object",
+                "properties": {"status": {"type": "string"}},
+                "required": ["status"]
+            }
+
+            for p in providers:
+                success = False
+                for model_id in p["models"]:
+                    try:
+                        start = time.time()
+                        complete_structured(
+                            prompt="Return status: ok",
+                            output_schema=schema,
+                            model_id=model_id,
+                            max_calls=100,
+                            offline_mode=False
+                        )
+                        latency_ms = int((time.time() - start) * 1000)
+                        
+                        status = "PASS" if latency_ms <= 2500 else "WARNING"
+                        msg = f"Latency [{model_id}]: {latency_ms}ms"
+                        self.add_result(f"AI Latency [{p['name']}]", status, msg)
+                        success = True
+                        break # Stop at first working model
+                    except Exception as e:
+                        self.log(f"Model {model_id} failed: {str(e)}")
+                        continue
+                
+                if not success:
+                    self.add_result(f"AI Connectivity [{p['name']}]", "FAIL", "All attempted models failed or were unreachable.", "CRITICAL")
+
+            self.add_result("AI Credentials", "PASS", "Provider credentials detected and verified.")
+
         except Exception as e:
-            self.add_result("AI Provider Test", "FAIL", str(e), "HIGH")
+            self.log(f"AI Provider Test Error: {str(e)}")
+            self.add_result("AI Provider Suite", "FAIL", str(e), "HIGH")
+
+    def test_full_pipeline_sanity(self):
+        """
+        CRITICAL: TOTAL ENGINE RUN TEST
+        This test catches destructuring bugs and schema mismatches by running
+        a minimal 1-step validation in a sandbox.
+        """
+        self.log("Starting Full Pipeline Sanity Check...")
+        try:
+            from engine_bridge.services import EngineService
+            from .models import Inquiry, Planet
+            from elif_v0_1.orchestration_runner import ProcedureRunner
+            from elif_v0_1.base import InputFrame
+            
+            # Create a mock inquiry
+            inq = Inquiry.objects.create(
+                core_question="Does this engine actually run?",
+                case_id="case_01_electroculture", # Use valid case for offline fixture discovery
+                status='RUNNING'
+            )
+            
+            input_frame = InputFrame(
+                id=str(inq.id),
+                text=inq.core_question,
+                locked_at_iso="2026-05-28T00:00:00Z",
+                doctrinal_scope_tag="GENERAL",
+                companion_case="case_01_electroculture"
+            )
+
+            # Create at least step 1 planet
+            Planet.objects.create(inquiry=inq, order=1, status='NOT_STARTED')
+            
+            runner = ProcedureRunner()
+            # 1. Manually initialize context to force offline_mode for sanity check
+            run_context, components = runner.get_context_and_components(
+                case_id=inq.case_id,
+                condition='c',
+                input_frame=input_frame,
+                offline_mode=True,  # Force offline to avoid API costs
+                model_id="sonnet"
+            )
+            
+            # This is the line that was failing before (destructuring)
+            payload, usage = runner.execute_step(
+                step_id="step_1",
+                run_context=run_context,
+                components=components,
+                input_frame=input_frame,
+                prior_outputs={}
+            )
+            
+            if "verdict" in payload:
+                self.add_result("Engine Pipeline Sanity", "PASS", "Full step execution cycle (offline) completed with correct return signatures.")
+            else:
+                self.add_result("Engine Pipeline Sanity", "FAIL", "Engine returned malformed payload (missing 'verdict').", "HIGH")
+                
+            inq.delete() # Cleanup
+        except Exception as e:
+            self.log(f"Pipeline Sanity Failed: {str(e)}")
+            self.add_result("Engine Pipeline Sanity", "FAIL", f"Pipeline breakdown: {str(e)}", "CRITICAL", "Check discovery/tasks.py for signature mismatches.")
 
     # --- CATEGORY: UX / FRONTEND ---
     def test_ux_reliability(self):
@@ -295,6 +394,7 @@ class ELIFTestEngine:
         if category == 'CORE' or category == 'CHAOS':
             self.test_engine_bridge_connection()
             self.test_engine_concurrency()
+            self.test_full_pipeline_sanity()
             self.test_database_integrity()
             self.test_financial_accuracy()
             self.test_security_access()
@@ -305,6 +405,7 @@ class ELIFTestEngine:
         elif category == 'ENGINE': 
             self.test_engine_bridge_connection()
             self.test_engine_concurrency()
+            self.test_full_pipeline_sanity()
         elif category == 'DATABASE': self.test_database_integrity()
         elif category == 'FINANCE': self.test_financial_accuracy()
         elif category == 'SECURITY': self.test_security_access()

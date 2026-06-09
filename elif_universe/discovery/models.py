@@ -369,6 +369,7 @@ class Tier(models.Model):
     inquiry_limit = models.IntegerField(default=5, help_text="Maximum number of inquiries allowed.")
     spend_limit = models.DecimalField(max_digits=10, decimal_places=2, default=50.00, help_text="Maximum USD spend allowed.")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Monthly price for this tier.")
+    price_yearly = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total yearly price for this tier.")
     is_recommended = models.BooleanField(default=False, help_text="Mark this tier as 'Recommended' on the landing page.")
     stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
     stripe_price_id = models.CharField(max_length=255, blank=True, null=True)
