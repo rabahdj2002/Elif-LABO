@@ -1,16 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto w-full space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
+<div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
-        <div>
-            <h1 class="text-4xl font-black text-white tracking-tighter mb-2 italic uppercase">User Protocol</h1>
-            <p class="text-gray-500 text-xs font-bold uppercase tracking-[0.3em]">Identity & Access Management</p>
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-2">
+            <h1 class="text-4xl font-black text-white uppercase tracking-tighter planet-nav">
+                Sovereign <span class="text-blue-500">Identity</span>
+            </h1>
+            <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">Member Profile: {{ user.username }} | Access Protocol Activated</p>
         </div>
-        <div class="flex items-center gap-3">
-            <span class="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest">
-                {{ subscription.tier.name|default:"No Tier" }}
+        
+        <div class="flex items-center gap-4">
+            <span class="px-6 py-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest">
+                Tier: {{ subscription.tier.name|default:"Standard" }}
             </span>
         </div>
     </div>
@@ -142,29 +145,6 @@
                             {% endwith %}
                         </div>
                     </div>
-
-                    {% if system_settings.show_spending_overview %}
-                    <!-- Financial Quota -->
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-end">
-                            <div>
-                                <p class="text-xs font-bold text-white">Credit Expenditure</p>
-                                <p class="text-[10px] text-gray-500 tracking-wider font-light">LLM & Intelligence Costs (Persistent)</p>
-                            </div>
-                            <p class="text-[10px] font-black text-white">
-                                ${{ subscription.spend_usage|floatformat:2 }} / ${{ subscription.tier.spend_limit }}
-                            </p>
-                        </div>
-                        <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                            {% with usage_pc=subscription.spend_usage|default:0 %}
-                            {% with limit=subscription.tier.spend_limit|default:1 %}
-                            <div class="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-all duration-1000" 
-                                 style="width: {% widthratio usage_pc limit 100 %}%"></div>
-                            {% endwith %}
-                            {% endwith %}
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
         </div>

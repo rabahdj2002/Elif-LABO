@@ -1,17 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto w-full space-y-12 py-12 px-6">
+<div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div class="flex items-center gap-6">
-            <a href="{% url 'discovery:tier_list' %}" class="w-12 h-12 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white hover:bg-white/10 transition-all">
-                <i class="fa-solid fa-chevron-left"></i>
-            </a>
-            <div>
-                <h1 class="text-4xl font-black text-white tracking-tighter mb-2 planet-nav">Governance Protocols</h1>
-                <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">Global resource limits and engine behavior.</p>
-            </div>
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-2">
+            <h1 class="text-4xl font-black text-white uppercase tracking-tighter planet-nav">
+                Governance <span class="text-blue-500">Kernels</span>
+            </h1>
+            <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">Global resource limits, network constraints, and engine behavior.</p>
         </div>
     </div>
 
@@ -44,27 +41,6 @@
             </div>
         </div>
 
-        <!-- Resource Quotas -->
-        <div class="glass p-8 rounded-[2.5rem] border-white/5">
-            <h3 class="text-xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
-                <i class="fa-solid fa-chart-pie text-blue-400"></i> Resource & Access Quotas
-            </h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Tester Inquiry Cap</label>
-                    <input type="number" name="tester_free_inquiry_limit" value="{{ settings.tester_free_inquiry_limit }}" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all">
-                    <p class="mt-2 text-[9px] text-gray-500 font-medium uppercase tracking-wider px-1">Threshold before testers are forced into the feedback survey.</p>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Tester Spend Cap ($)</label>
-                    <input type="number" step="0.01" name="tester_free_spend_limit" value="{{ settings.tester_free_spend_limit }}" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-500/50 transition-all">
-                    <p class="mt-2 text-[9px] text-gray-500 font-medium uppercase tracking-wider px-1">Maximum financial resource accumulation allowed for Beta Testers.</p>
-                </div>
-            </div>
-        </div>
-
         <!-- System Governance -->
         <div class="glass p-8 rounded-[2.5rem] border-white/5">
             <h3 class="text-xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
@@ -84,19 +60,6 @@
                     </div>
                     <input type="checkbox" name="strict_governance" {% if settings.strict_governance %}checked{% endif %} class="w-6 h-6 accent-emerald-500">
                 </label>
-
-                <label class="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all group">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20 group-hover:scale-110 transition-transform">
-                            <i class="fa-solid fa-eye text-blue-400"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs font-black text-white uppercase tracking-widest mb-1">Expose Financial Metrics</div>
-                            <div class="text-[10px] text-gray-500 font-medium max-w-xs">Toggle visibility of USD accumulation metrics for normal users.</div>
-                        </div>
-                    </div>
-                    <input type="checkbox" name="show_spending_overview" {% if settings.show_spending_overview %}checked{% endif %} class="w-6 h-6 accent-blue-500">
-                </label>
             </div>
         </div>
 
@@ -104,6 +67,71 @@
             Apply Governance Calibration
         </button>
     </form>
+
+    <!-- Database Management (Substrate Control) -->
+    <div class="glass p-8 rounded-[2.5rem] border-blue-500/20 bg-blue-500/5">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="space-y-1">
+                <h3 class="text-sm font-black uppercase tracking-widest text-blue-400 flex items-center gap-2">
+                    <i class="fa-solid fa-database"></i> Substrate Control
+                </h3>
+                <p class="text-[10px] text-gray-500 max-w-md">Manage the live PostgreSQL database environment or migrate legacy progress from SQLite.</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-4">
+                <!-- Backup -->
+                <a href="{% url 'discovery:db_backup' %}" class="px-6 py-2 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    Download Backup
+                </a>
+
+                <!-- Restore File Upload -->
+                <form action="{% url 'discovery:db_restore' %}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
+                    {% csrf_token %}
+                    <label class="px-6 py-2 border border-blue-500/30 bg-blue-500/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer">
+                        <span>Upload & Restore</span>
+                        <input type="file" name="backup_file" class="hidden" onchange="if(confirm('Wipe current database and restore from this file?')) this.form.submit()">
+                    </label>
+                </form>
+
+                <!-- SQLite Migration -->
+                <button onclick="runSqliteMigration(event)" class="px-6 py-2 bg-emerald-600/20 border border-emerald-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:bg-emerald-600/30 transition-all group">
+                    <i class="fa-solid fa-file-export group-hover:translate-x-1 transition-transform mr-1"></i>
+                    Migrate SQLite Progress
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    async function runSqliteMigration(event) {
+        if (!confirm('Sovereign Protocol: This will attempt to push all data from the local SQLite database into the live PostgreSQL instance. Existing Postgres data that conflicts may be overwritten. Continue?')) return;
+        
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Migrating...';
+        
+        try {
+            const response = await fetch("{% url 'discovery:db_restore_sqlite' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                alert('Migration Successful: ' + data.message);
+                location.reload();
+            } else {
+                alert('Migration Error: ' + data.message);
+            }
+        } catch (e) {
+            alert('Migration Failed: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+    </script>
 
     <!-- System Destruction / Reset -->
     <div class="pt-12 border-t border-white/5">

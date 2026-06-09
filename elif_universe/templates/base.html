@@ -544,7 +544,7 @@
     <header class="lg:hidden glass border-b border-white/10 p-4 flex items-center justify-between z-[60] sticky top-0">
         <a href="{% url 'discovery:system_map' %}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <i class="fa-solid fa-dna text-blue-400 text-xl"></i>
-            <span class="text-[10px] font-black text-blue-500 tracking-[0.2em] uppercase">ELIF Archive</span>
+            <span class="text-[10px] font-black text-blue-500 tracking-[0.2em] uppercase">ELIF CORE</span>
         </a>
         <div class="flex items-center space-x-2">
             <!-- Mobile Notifications -->
@@ -610,7 +610,7 @@
                         <div class="w-8 h-8 flex items-center justify-center">
                             <i class="fa-solid fa-satellite-dish text-lg"></i>
                         </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block">Topic Map</span>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Research Map</span>
                         <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Map</span>
                     </a>
                     <a href="{% url 'discovery:initialize' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
@@ -627,20 +627,18 @@
                         <span class="text-sm font-bold tracking-tight hidden lg:block">Analytics</span>
                         <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Stats</span>
                     </a>
-                    {% if user.subscription.user_type == 'TESTER' %}
-                    <a href="{% url 'discovery:tester_feedback_center' %}" class="flex items-center gap-4 p-3 rounded-xl {% if request.resolver_match.url_name == 'tester_feedback_center' %}bg-blue-500/10 text-blue-400 border border-blue-500/20{% else %}hover:bg-white/5 text-gray-400 hover:text-white{% endif %} transition-all group relative">
+                    <a href="{% url 'discovery:user_issues' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
                         <div class="w-8 h-8 flex items-center justify-center">
-                            <i class="fa-solid fa-vial-circle-check text-lg"></i>
+                            <i class="fa-solid fa-bug text-lg text-blue-400"></i>
                         </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block">Mission Control</span>
-                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Feedback</span>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Anomaly reports</span>
+                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Status</span>
                     </a>
-                    {% endif %}
                 </div>
             </div>
             {% endif %}
 
-            {% if user.is_superuser or user.subscription.user_type == 'ADMIN' %}
+            {% if user.is_superuser %}
             <!-- Section: System Control -->
             <div>
                 <div class="px-2 mb-4 hidden lg:block">
@@ -654,28 +652,32 @@
                         <span class="text-sm font-bold tracking-tight hidden lg:block">Admin Dashboard</span>
                         <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Dash</span>
                     </a>
+
+                    {% if user.is_superuser or user.subscription.admin_permissions.can_view_analytics %}
                     <a href="{% url 'discovery:analytics' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
                         <div class="w-8 h-8 flex items-center justify-center">
                             <i class="fa-solid fa-chart-pie text-lg text-purple-400"></i>
                         </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block">Network Analytics</span>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Analytics</span>
                         <span class="absolute left-16 top-3 bg-purple-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Network</span>
                     </a>
+                    {% endif %}
 
+                    {% if user.is_superuser or user.subscription.admin_permissions.can_view_spend %}
                     <a href="{% url 'discovery:financial_intelligence' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
                         <div class="w-8 h-8 flex items-center justify-center">
                             <i class="fa-solid fa-gem text-lg text-emerald-400"></i>
                         </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block text-emerald-300">Financial Intel</span>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block text-emerald-300">Financial Intelligence</span>
                         <span class="absolute left-16 top-3 bg-emerald-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Intel</span>
                     </a>
                     
-                    {% if user.is_superuser or user.subscription.admin_permissions.can_view_spend %}
                     <a href="{% url 'discovery:spend_history' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
                         <div class="w-8 h-8 flex items-center justify-center">
-                            <i class="fa-solid fa-wallet text-lg text-emerald-400"></i>
+                            <i class="fa-solid fa-microchip text-lg text-emerald-400"></i>
                         </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block">Billing & Wallet</span>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Debug Tracing Hub</span>
+                        <span class="absolute left-16 top-3 bg-emerald-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Debug</span>
                     </a>
                     {% endif %}
                     
@@ -684,7 +686,7 @@
                         <div class="w-8 h-8 flex items-center justify-center">
                             <i class="fa-solid fa-layer-group text-lg text-blue-400"></i>
                         </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block">Tier Management</span>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Access Tiers</span>
                     </a>
                     {% endif %}
                     
@@ -693,7 +695,17 @@
                         <div class="w-8 h-8 flex items-center justify-center">
                             <i class="fa-solid fa-users text-lg text-purple-400"></i>
                         </div>
-                        <span class="text-sm font-bold tracking-tight hidden lg:block">User Management</span>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Users Registry</span>
+                    </a>
+                    {% endif %}
+
+                    {% if user.is_superuser or user.subscription.admin_permissions.can_manage_issues %}
+                    <a href="{% url 'discovery:admin_issue_center' %}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group relative">
+                        <div class="w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-shield-virus text-lg text-blue-400"></i>
+                        </div>
+                        <span class="text-sm font-bold tracking-tight hidden lg:block">Validation Center</span>
+                        <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Status</span>
                     </a>
                     {% endif %}
                 </div>
@@ -740,7 +752,7 @@
                 <div class="w-8 h-8 flex items-center justify-center">
                     <i class="fa-solid fa-plug text-lg text-blue-400"></i>
                 </div>
-                <span class="text-sm font-bold tracking-tight hidden lg:block">Integrations</span>
+                <span class="text-sm font-bold tracking-tight hidden lg:block">Integrations Center</span>
                 <span class="absolute left-16 top-3 bg-blue-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">API</span>
             </a>
 
@@ -756,7 +768,7 @@
                 <div class="w-8 h-8 flex items-center justify-center">
                     <i class="fa-solid fa-user-circle text-lg"></i>
                 </div>
-                <span class="text-sm font-bold tracking-tight hidden lg:block">Profile</span>
+                <span class="text-sm font-bold tracking-tight hidden lg:block">Sovereign Identity</span>
                 <span class="absolute left-16 top-3 bg-gray-600 text-xs px-2 py-1 rounded hidden group-hover:block lg:group-hover:hidden whitespace-nowrap z-[200]">Profile</span>
             </a>
             {% endif %}

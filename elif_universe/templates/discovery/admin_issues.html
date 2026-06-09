@@ -1,24 +1,48 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6">
+<div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div class="space-y-2">
-            <h1 class="text-4xl font-black text-white uppercase tracking-tighter planet-nav">Anomaly <span class="text-blue-500">Center</span></h1>
+            <h1 class="text-4xl font-black text-white uppercase tracking-tighter planet-nav">
+                Validation <span class="text-blue-500">Center</span>
+            </h1>
             <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">Infrastructure diagnostics and system disruptions.</p>
         </div>
         <div class="flex gap-4">
-            <div class="glass px-6 py-3 rounded-2xl border-white/5 flex items-center gap-4">
-                <div class="text-right">
-                    <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest">Active Alerts</p>
-                    <p class="text-xl font-black text-white">{{ active_count }}</p>
+            <!-- Engine Reset Button -->
+            <a href="{% url 'discovery:admin_heal' %}" 
+               onclick="return confirm('Sovereign Alert: This will terminate all engine processes older than 10 minutes. Proceed?')"
+               class="flex items-center space-x-3 glass px-6 rounded-2xl border-red-500/30 hover:bg-red-500/20 text-red-500 transition-all group">
+                <i class="fa-solid fa-bolt-lightning text-sm group-hover:animate-pulse"></i>
+                <div class="text-left">
+                    <p class="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Heal Engine</p>
+                    <p class="text-[8px] text-red-500/50 uppercase font-bold leading-none">Flush Stuck Tasks</p>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
+            </a>
+
+            <div class="glass px-6 py-3 rounded-2xl border-blue-500/20 flex items-center gap-4">
+                <div class="text-right">
+                    <p class="text-[10px] text-blue-500 uppercase font-black tracking-widest">Active Alerts</p>
+                    <p id="active-alerts-count" class="text-[10px] font-black text-white uppercase">{{ active_count }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
                     <i class="fa-solid fa-bug"></i>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Verification Dashboard & Logs Container (Auto-Refresh) -->
+    <div id="validation-dashboard-root" 
+         hx-get="{% url 'discovery:admin_issue_center' %}?partial=status" 
+         hx-trigger="every 5s" 
+         hx-swap="innerHTML"
+         hx-preserve="true"
+         class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {% include "discovery/partials/admin_validation_status.html" %}
     </div>
 
     <!-- Issues Table -->
@@ -27,11 +51,11 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="border-b border-white/5 bg-white/[0.02]">
-                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400">Reporter</th>
-                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400">Description</th>
-                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400">Status</th>
-                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400">Created</th>
-                        <th class="px-6 py-4 text-[10px] uppercase font-black tracking-widest text-gray-400 text-right">Actions</th>
+                        <th class="px-8 py-5 text-[10px] uppercase font-black tracking-widest text-gray-400">Reporter</th>
+                        <th class="px-8 py-5 text-[10px] uppercase font-black tracking-widest text-gray-400">Description</th>
+                        <th class="px-8 py-5 text-[10px] uppercase font-black tracking-widest text-gray-400">Status</th>
+                        <th class="px-8 py-5 text-[10px] uppercase font-black tracking-widest text-gray-400 text-center">Created</th>
+                        <th class="px-8 py-5 text-[10px] uppercase font-black tracking-widest text-gray-400 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
@@ -50,6 +74,16 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <!-- Global Verification Log (Moved under Anomaly Table) -->
+    <div id="verification-log-grid" 
+         hx-get="{% url 'discovery:admin_issue_center' %}?partial=logs" 
+         hx-trigger="every 5s" 
+         hx-swap="innerHTML"
+         hx-preserve="true"
+         class="animate-in fade-in duration-500">
+        {% include "discovery/partials/admin_verification_logs.html" %}
     </div>
 </div>
 
@@ -88,7 +122,71 @@
     </div>
 </div>
 
+<!-- Test Report Modal -->
+<div id="report-modal" class="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md hidden animate-in fade-in duration-300">
+    <div class="glass max-w-4xl w-full max-h-[90vh] flex flex-col rounded-[2.5rem] border-white/5 shadow-2xl overflow-hidden">
+        <div class="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+            <div class="flex items-center gap-6">
+                <div id="report-score-ring" class="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-lg">
+                    <span id="report-score">0</span>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black text-white uppercase tracking-tighter" id="report-title">Verification Report</h3>
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest font-black" id="report-meta">Run ID: #--- | Time: ---</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('report-modal').classList.add('hidden')" class="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 text-white/50 flex items-center justify-center transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-8 space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="report-results-grid"></div>
+            <div class="space-y-4">
+                <h4 class="text-[10px] uppercase tracking-widest text-gray-400 font-bold border-l-2 border-blue-500/50 pl-3">Raw Diagnostic Logs</h4>
+                <div class="bg-black/40 border border-white/5 rounded-2xl p-6 font-mono text-[11px] text-blue-300/80 leading-relaxed whitespace-pre overflow-x-auto" id="report-logs">
+                    Initializing probe...
+                </div>
+            </div>
+        </div>
+        <div class="p-6 bg-white/[0.02] border-t border-white/5 flex justify-end">
+            <button onclick="document.getElementById('report-modal').classList.add('hidden')" class="bg-white/5 hover:bg-white/10 text-white px-8 py-3 rounded-xl text-[10px] uppercase tracking-widest font-black transition-all">
+                Close Report
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
+    async function openTestReport(runId) {
+        const modal = document.getElementById('report-modal');
+        modal.classList.remove('hidden');
+        document.getElementById('report-results-grid').innerHTML = '<p class="text-gray-500 uppercase text-[10px] tracking-widest animate-pulse">Analyzing results...</p>';
+        document.getElementById('report-logs').innerText = 'Initializing...';
+        try {
+            const response = await fetch(`/admin-dashboard/validation/report/${runId}/`);
+            const data = await response.json();
+            document.getElementById('report-score').innerText = data.health_score + '%';
+            const ring = document.getElementById('report-score-ring');
+            ring.className = `w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-lg ${data.health_score > 90 ? 'bg-emerald-500/10 text-emerald-500' : (data.health_score > 70 ? 'bg-amber-500/10 text-amber-500' : 'bg-red-500/10 text-red-500')}`;
+            document.getElementById('report-meta').innerText = `Status: ${data.status} | Time: ${data.execution_time} | ${data.created_at}`;
+            const grid = document.getElementById('report-results-grid');
+            grid.innerHTML = '';
+            if (data.results && data.results.details) {
+                data.results.details.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'glass p-5 rounded-2xl border-white/5 space-y-3';
+                    const statusColor = item.status === 'PASS' ? 'text-emerald-500' : (item.status === 'WARNING' ? 'text-amber-500' : 'text-red-500');
+                    card.innerHTML = `<div class="flex justify-between items-start"><h5 class="text-[10px] font-black text-white uppercase tracking-widest">${item.name}</h5><span class="text-[9px] font-black ${statusColor}">${item.status}</span></div><p class="text-[11px] text-gray-400 font-medium">${item.message}</p>${item.fix ? `<div class="p-3 bg-blue-500/5 rounded-lg border border-blue-500/10 text-[9px] text-blue-400/80 font-bold uppercase tracking-widest"><i class="fa-solid fa-tools mr-2"></i>REMEDY: ${item.fix}</div>` : ''}`;
+                    grid.appendChild(card);
+                });
+            } else { grid.innerHTML = '<p class="text-gray-600 text-[10px] uppercase font-bold tracking-widest col-span-2 text-center py-12">No detailed diagnostics available.</p>'; }
+            document.getElementById('report-logs').innerText = data.logs || "No logs captured.";
+        } catch (e) {
+            console.error(e);
+            document.getElementById('report-logs').innerText = "FATAL: Could not fetch report.";
+        }
+    }
+
     function viewScreenshot(src) {
         const modal = document.getElementById('screenshot-modal');
         const img = document.getElementById('full-screenshot');

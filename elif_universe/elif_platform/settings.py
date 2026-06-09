@@ -44,6 +44,10 @@ if ELIF_ANTHROPIC_API_KEY:
 # Set to None/Empty for local execution, or URL of deployed Cloud Function
 ELIF_ENGINE_URL = os.getenv('ELIF_ENGINE_URL', '')
 
+# Engine Case Discovery
+ELIF_CASES_DIR = os.getenv('ELIF_CASES_DIR', str(BASE_DIR.parent / "cases"))
+os.environ["ELIF_CASES_DIR"] = ELIF_CASES_DIR
+
 
 # Application definition
 
@@ -170,6 +174,15 @@ CELERY_TASK_ACKS_LATE = True       # Re-run tasks if worker dies
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1 # Fair distribution for long tasks
 CELERY_TASK_SOFT_TIME_LIMIT = 500  # 8.3 mins per step
 CELERY_TASK_TIME_LIMIT = 600       # 10 mins hard limit
+
+# --- EMAIL CONFIGURATION ---
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ELIF Engine <noreply@elif.ai>')
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'

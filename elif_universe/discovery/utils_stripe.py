@@ -42,6 +42,12 @@ def create_checkout_session(user, tier_id, success_url, cancel_url):
         metadata={
             'user_id': user.id,
             'tier_id': tier.id
+        },
+        subscription_data={
+            'metadata': {
+                'user_id': user.id,
+                'tier_id': tier.id
+            }
         }
     )
     return checkout_session
@@ -123,6 +129,17 @@ def _handle_checkout_completed(session):
 
 def _handle_subscription_updated(stripe_sub):
     sub = UserSubscription.objects.filter(stripe_subscription_id=stripe_sub.id).first()
+    
+    # Fallback to metadata if ID lookup fails (common in initial 'created' event)
+    if not sub:
+        user_id = stripe_sub.metadata.get('user_id')
+        if user_id:
+            from django.contrib.auth.models import User
+            user = User.objects.filter(id=user_id).first()
+            if user:
+                sub = user.subscription
+                sub.stripe_subscription_id = stripe_sub.id
+
     if sub:
         sub.stripe_status = stripe_sub.status
         sub.current_period_end = timezone.datetime.fromtimestamp(stripe_sub.current_period_end, tz=timezone.utc)

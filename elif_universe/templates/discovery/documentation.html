@@ -1,27 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-[1600px] mx-auto px-4 md:px-8 py-6 md:py-10 animate-in fade-in duration-700">
-    <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-            <div class="flex items-center space-x-4 mb-2">
-                <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                    <i class="fa-solid fa-book-open-reader text-xl"></i>
-                </div>
-                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tighter uppercase">Protocol Documentation</h1>
-            </div>
-            <p class="text-[10px] text-blue-500 font-black uppercase tracking-[0.3em] opacity-80">SYSTEM_OPERATIONS / ARCHIVE_CORE</p>
+<div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-2">
+            <h1 class="text-4xl font-black text-white uppercase tracking-tighter planet-nav">
+                <span class="text-blue-500">Documentation</span>
+            </h1>
+            <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">System Operations | Article II Framework Archive.</p>
         </div>
 
         {% if user.is_superuser %}
         <div class="flex items-center space-x-3">
-            <button type="submit" form="doc-form" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center group">
+            <button type="submit" form="doc-form" class="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-blue-500/20 flex items-center group">
                 <i class="fa-solid fa-cloud-arrow-up mr-2 group-hover:scale-110 transition-transform"></i>
                 Commit Changes
             </button>
         </div>
         {% endif %}
-    </header>
+    </div>
 
     {% if user.is_superuser %}
     <!-- Admin Split View -->

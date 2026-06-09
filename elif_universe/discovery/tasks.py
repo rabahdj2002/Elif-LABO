@@ -7,6 +7,12 @@ from .workflow_tasks import *
 
 logger = logging.getLogger(__name__)
 
+@shared_task(name='discovery.send_email_task')
+def send_email_task(subject, message, recipient_list, html_content=None, from_email=None):
+    """Asynchronous wrapper for SMTP delivery."""
+    from .email_service import EmailService
+    return EmailService.send_mail(subject, message, recipient_list, html_content, from_email)
+
 @shared_task(bind=True, name='discovery.run_engine_task')
 def run_engine_task(self, inquiry_id):
     """

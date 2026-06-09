@@ -33,6 +33,17 @@ class SystemSettings(models.Model):
     stripe_webhook_secret = models.CharField(max_length=255, blank=True, null=True)
     stripe_live_mode = models.BooleanField(default=False, help_text="If True, uses Stripe Production. If False, uses Test Mode.")
     
+    # SMTP Substrate (Communication Layer)
+    smtp_host = models.CharField(max_length=255, blank=True, null=True)
+    smtp_port = models.IntegerField(default=587)
+    smtp_user = models.CharField(max_length=255, blank=True, null=True)
+    smtp_password = models.TextField(blank=True, null=True, help_text="Encrypted SMTP Password")
+    smtp_use_tls = models.BooleanField(default=True)
+    smtp_use_ssl = models.BooleanField(default=False)
+    email_from_address = models.EmailField(default='noreply@elif.ai')
+    email_from_name = models.CharField(max_length=255, default='ELIF Engine')
+    admin_alert_email = models.EmailField(blank=True, null=True, help_text="Where to send high-priority system alerts.")
+    
     # Database Migration Settings (PostgreSQL)
     db_pg_host = models.CharField(max_length=255, blank=True, null=True)
     db_pg_port = models.CharField(max_length=10, blank=True, null=True)
@@ -58,15 +69,42 @@ class SystemSettings(models.Model):
         help_text="Markdown content for the Documentation page."
     )
 
-    # Tester Protocol
-    tester_free_inquiry_limit = models.IntegerField(default=10, help_text="Inquiries available for Testers before survey/cutoff.")
-    tester_free_spend_limit = models.DecimalField(max_digits=10, decimal_places=2, default=50.00, help_text="USD spend available for Testers before cutoff.")
-    tester_survey_schema = models.JSONField(default=list, help_text="List of questions for the tester survey.")
-    
     # Commercial Config
     default_tier = models.ForeignKey('Tier', on_delete=models.SET_NULL, null=True, blank=True, help_text="Automatically assigned to new users.")
     
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def smtp_pass(self):
+        """Decrypts the SMTP password on the fly using Fernet and Django Secret Key."""
+        if not self.smtp_password:
+            return ""
+        from cryptography.fernet import Fernet
+        import base64
+        from django.conf import settings
+        
+        # Derive a 32-byte key from Django's SECRET_KEY
+        # Fernet requires exactly 32 bytes (base64 encoded)
+        key = base64.urlsafe_b64encode(settings.SECRET_KEY[:32].encode().ljust(32, b'0'))
+        f = Fernet(key)
+        try:
+            return f.decrypt(self.smtp_password.encode()).decode()
+        except Exception:
+            return ""
+
+    @smtp_pass.setter
+    def smtp_pass(self, value):
+        """Encrypts the SMTP password using Fernet before storage."""
+        if not value:
+            self.smtp_password = None
+            return
+        from cryptography.fernet import Fernet
+        import base64
+        from django.conf import settings
+        
+        key = base64.urlsafe_b64encode(settings.SECRET_KEY[:32].encode().ljust(32, b'0'))
+        f = Fernet(key)
+        self.smtp_password = f.encrypt(value.encode()).decode()
 
     def save(self, *args, **kwargs):
         # Enforce single-row singleton pattern

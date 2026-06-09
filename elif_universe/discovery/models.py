@@ -384,7 +384,6 @@ class UserSubscription(models.Model):
     USER_TYPE_CHOICES = [
         ('NORMAL', 'Normal User'),
         ('ADMIN', 'Limited Admin'),
-        ('TESTER', 'Beta Tester'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
     tier = models.ForeignKey(Tier, on_delete=models.PROTECT, default=1)
@@ -393,9 +392,13 @@ class UserSubscription(models.Model):
     monthly_inquiries_consumed = models.IntegerField(default=0, help_text="Inquiries consumed in current billing cycle.")
     monthly_spend_consumed = models.DecimalField(max_digits=10, decimal_places=6, default=0.0, help_text="Spend consumed in current billing cycle.")
     billing_start_date = models.DateTimeField(auto_now_add=True)
-    has_completed_survey = models.BooleanField(default=False)
     has_seen_walkthrough = models.BooleanField(default=False)
     research_specializations = models.JSONField(default=list, blank=True, help_text="User-defined areas of expertise.")
+    
+    # Email Verification
+    is_verified = models.BooleanField(default=False)
+    verification_token = models.CharField(max_length=100, blank=True, null=True)
+    token_expires_at = models.DateTimeField(blank=True, null=True)
     
     # Custom permissions for 'Limited Admin' stored as JSON blob of allowed route names or categories
     admin_permissions = models.JSONField(default=dict, blank=True, help_text="Configured by Superuser for 'Limited Admin' type.")
@@ -509,38 +512,19 @@ class Notification(models.Model):
     def __str__(self):
         return f"{self.user.username}: {self.title}"
 
-class TesterQuestion(models.Model):
-    """
-    ADMIN CONTROL: DYNAMIC TESTER QUESTIONS
-    Allows admins to configure the mission reports.
-    """
-    QUESTION_TYPES = [
-        ('YES_NO', 'Yes / No'),
-        ('MCQ', 'Multiple Choice'),
-        ('FREE', 'Free Text Answer'),
-    ]
-    text = models.TextField()
-    type = models.CharField(max_length=10, choices=QUESTION_TYPES)
-    options = models.JSONField(default=list, blank=True, help_text="List of options for MCQ type.")
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+class EmailLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    recipient = models.EmailField()
+    subject = models.CharField(max_length=255)
+    template_name = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=20, default='pending')
+    error_log = models.TextField(blank=True)
+    context_data = models.JSONField(default=dict, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    message_id = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return f"{self.type}: {self.text[:50]}"
-
-class TesterSurveyResponse(models.Model):
-    """
-    DATA CAPTURE: TESTER FEEDBACK
-    Required for users in the 'TESTER' bucket.
-    """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='survey_responses')
-    answers = models.JSONField(default=dict)
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    is_rejected = models.BooleanField(default=False, help_text="If true, tester must re-answer.")
-    admin_note = models.TextField(blank=True, null=True, help_text="Reason for re-ask request.")
-
-    def __str__(self):
-        return f"Survey: {self.user.username} at {self.submitted_at} (Rejected: {self.is_rejected})"
+        return f"{self.recipient} | {self.subject} | {self.status}"
 
 class SpendRecord(models.Model):
     """
@@ -634,6 +618,36 @@ class StripeWebhookLog(models.Model):
 
     def __str__(self):
         return f"{self.event_type} ({self.event_id})"
+
+class SystemTestRun(models.Model):
+    CATEGORY_CHOICES = [
+        ('CORE', 'Core System'),
+        ('ENGINE', 'Reasoning Engine'),
+        ('AI', 'AI Provider'),
+        ('DATABASE', 'Database Integrity'),
+        ('PAYMENT', 'Payment System'),
+        ('SECURITY', 'Security & Access'),
+        ('INFRA', 'Infrastructure'),
+        ('API', 'External APIs'),
+        ('UX', 'Frontend & UX'),
+        ('FINANCE', 'Financial Reliability'),
+        ('CHAOS', 'Chaos Mode'),
+    ]
+    
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    test_type = models.CharField(max_length=50, default='STANDARD') # STANDARD, DEEP, STRESS, CHAOS
+    status = models.CharField(max_length=20, default='PENDING')
+    health_score = models.IntegerField(default=0)
+    results = models.JSONField(default=dict)
+    logs = models.TextField(blank=True)
+    execution_time = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.category} [{self.test_type}] - {self.status} ({self.health_score}%)"
 
 
 

@@ -1,22 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto py-4 md:py-8">
+<div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row items-center justify-between mb-12 space-y-6 md:space-y-0 text-center md:text-left">
-        <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <div class="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                <i class="fa-solid fa-folder-open text-2xl"></i>
-            </div>
-            <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">{{ topic_name }}</h1>
-                <p class="text-[10px] md:text-xs text-gray-500 uppercase tracking-[0.3em] font-mono">Topic ID: {{ topic_prefix }}</p>
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-2">
+            <h1 class="text-4xl font-black text-white uppercase tracking-tighter planet-nav">
+                Topic <span class="text-blue-500">Intelligence</span>
+            </h1>
+            <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">{{ topic_name }} | Cluster ID: {{ topic_prefix }}</p>
+        </div>
+        
+        <div class="flex gap-4">
+            <div class="glass px-6 py-3 rounded-2xl border-white/10 flex items-center gap-4">
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest">Inquiry Depth</p>
+                    <p class="text-[10px] font-black text-white uppercase">{{ inquiries|length }} Sequential Frames</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
             </div>
         </div>
-        <a href="{% url 'discovery:system_map' %}" class="flex items-center space-x-2 text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition-all bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl border border-white/5">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Back to Dashboard</span>
-        </a>
     </div>
 
     <!-- Timeline of Inquiries -->

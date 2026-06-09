@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Inquiry, Planet, RoomState, SpendRecord, Tier, UserSubscription, TesterSurveyResponse
+from .models import Inquiry, Planet, RoomState, SpendRecord, Tier, UserSubscription, EmailLog
 from .settings_models import SystemSettings
 
 @admin.register(SystemSettings)
@@ -7,7 +7,7 @@ class SystemSettingsAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'active_model', 'show_spending_overview', 'updated_at')
     fieldsets = (
         ('Engine configuration', {
-            'fields': ('active_model', 'anthropic_api_key', 'offline_mode', 'reasoning_depth', 'enable_web_search', 'strict_governance')
+            'fields': ('active_model', 'deepseek_api_key', 'anthropic_api_key', 'offline_mode', 'reasoning_depth', 'enable_web_search', 'strict_governance')
         }),
         ('User Experience', {
             'fields': ('linear_ui_mode', 'show_spending_overview', 'auto_refresh_ms', 'debug_mode', 'system_version')
@@ -15,8 +15,8 @@ class SystemSettingsAdmin(admin.ModelAdmin):
         ('Documentation', {
             'fields': ('documentation_content',)
         }),
-        ('Tester Protocol', {
-            'fields': ('tester_free_inquiry_limit', 'tester_survey_schema')
+        ('Communication Layer', {
+            'fields': ('email_from_address', 'email_from_name', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_use_tls', 'smtp_use_ssl')
         }),
         ('Commercial', {
             'fields': ('default_tier',)
@@ -33,15 +33,16 @@ class TierAdmin(admin.ModelAdmin):
 @admin.register(UserSubscription)
 class UserSubscriptionAdmin(admin.ModelAdmin):
     list_display = ('user', 'user_type', 'tier', 'inquiry_usage', 'spend_usage', 'billing_start_date')
-    list_filter = ('user_type', 'tier', 'has_completed_survey')
+    list_filter = ('user_type', 'tier')
     search_fields = ('user__username',)
-    fields = ('user', 'user_type', 'tier', 'monthly_inquiries_consumed', 'total_inquiries_consumed', 'billing_start_date', 'has_completed_survey', 'admin_permissions')
+    fields = ('user', 'user_type', 'tier', 'monthly_inquiries_consumed', 'total_inquiries_consumed', 'billing_start_date', 'admin_permissions')
     readonly_fields = ('billing_start_date',)
 
-@admin.register(TesterSurveyResponse)
-class TesterSurveyResponseAdmin(admin.ModelAdmin):
-    list_display = ('user', 'submitted_at')
-    readonly_fields = ('user', 'answers', 'submitted_at')
+@admin.register(EmailLog)
+class EmailLogAdmin(admin.ModelAdmin):
+    list_display = ('recipient', 'subject', 'status', 'timestamp')
+    list_filter = ('status',)
+    readonly_fields = ('timestamp',)
 
 @admin.register(Inquiry)
 class InquiryAdmin(admin.ModelAdmin):

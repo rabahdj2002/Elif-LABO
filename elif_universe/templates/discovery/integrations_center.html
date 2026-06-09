@@ -1,16 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto w-full space-y-12 py-12 px-6">
+<div class="max-w-7xl mx-auto w-full space-y-12 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div class="flex items-center gap-6">
-            <a href="{% url 'discovery:admin_dashboard' %}" class="w-12 h-12 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white hover:bg-white/10 transition-all">
-                <i class="fa-solid fa-chevron-left"></i>
-            </a>
-            <div>
-                <h1 class="text-4xl font-black text-white tracking-tighter mb-2 planet-nav">Integrations Center</h1>
-                <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">Manage external APIs, AI models, and commercial gateways.</p>
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-2">
+            <h1 class="text-4xl font-black text-white uppercase tracking-tighter planet-nav">
+                Integrations <span class="text-blue-500">Center</span>
+            </h1>
+            <p class="text-[10px] md:text-xs text-gray-400 font-medium tracking-widest uppercase">Administer external APIs, AI models, and commercial gateways.</p>
+        </div>
+        
+        <div class="flex gap-4">
+            <div class="glass px-6 py-3 rounded-2xl border-blue-500/20 flex items-center gap-4">
+                <div class="text-right">
+                    <p class="text-[10px] text-blue-500 uppercase font-black tracking-widest">Active Models</p>
+                    <p class="text-[10px] font-black text-white uppercase">{{ settings.engine_model_choices|length }} Distributed</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i class="fa-solid fa-plug"></i>
+                </div>
             </div>
         </div>
     </div>
@@ -167,6 +176,63 @@
                         Update Financial Parameters
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Communication Channel (Email/SMTP) -->
+        <div class="glass p-8 rounded-[2.5rem] border-white/5 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-black text-white tracking-tight flex items-center gap-3">
+                    <i class="fa-solid fa-envelope text-blue-400"></i> Communication substrate (SMTP)
+                </h3>
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase rounded-full border border-blue-500/20">Async Enabled</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">SMTP Host</label>
+                    <input type="text" name="smtp_host" value="{{ settings.smtp_host|default:'' }}" placeholder="smtp.gmail.com" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-400/50 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">SMTP Port</label>
+                    <input type="number" name="smtp_port" value="{{ settings.smtp_port|default:587 }}" placeholder="587" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-400/50 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">SMTP User</label>
+                    <input type="text" name="smtp_user" value="{{ settings.smtp_user|default:'' }}" placeholder="user@domain.com" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-400/50 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">SMTP Password</label>
+                    <input type="password" name="smtp_pass" placeholder="••••••••" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-400/50 transition-all">
+                    <p class="text-[9px] text-gray-500 mt-2 ml-1 italic">Leave blank to keep current encrypted password.</p>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">From Email</label>
+                    <input type="email" name="email_from_address" value="{{ settings.email_from_address|default:'' }}" placeholder="noreply@elif.ai" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-blue-400/50 transition-all">
+                </div>
+                <div class="flex items-end">
+                    <label class="flex items-center justify-between w-full p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all group">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-shield-halved text-blue-400 opacity-60 group-hover:opacity-100 transition-opacity"></i>
+                            <span class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Enable TLS/SSL</span>
+                        </div>
+                        <input type="checkbox" name="smtp_use_tls" {% if settings.smtp_use_tls %}checked{% endif %} class="w-5 h-5 accent-blue-500">
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+                <div class="flex gap-4">
+                    <input type="email" name="test_recipient" placeholder="Test recipient email..." class="flex-[2] bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white text-xs font-bold outline-none focus:border-blue-400/50 transition-all">
+                    <button type="submit" name="test_email" class="flex-1 py-4 bg-white/5 hover:bg-white/10 text-gray-300 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border border-white/10">
+                        Send Test Mail
+                    </button>
+                </div>
+                <button type="submit" name="save_email" value="1" class="w-full py-4 bg-blue-600/20 hover:bg-blue-600/40 text-blue-200 border border-blue-500/30 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all">
+                    Update Communication Parameters
+                </button>
             </div>
         </div>
 

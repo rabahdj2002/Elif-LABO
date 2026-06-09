@@ -1,0 +1,25 @@
+<div onclick="openTestReport('{{ run.id }}')" 
+     class="glass p-5 rounded-3xl border-white/5 hover:border-white/20 transition-all cursor-pointer group relative overflow-hidden">
+    {% if run.status == 'RUNNING' %}
+        <div class="absolute inset-x-0 top-0 h-0.5 bg-blue-500/50 animate-pulse"></div>
+    {% endif %}
+    
+    <div class="flex justify-between items-start mb-4">
+        <div class="w-10 h-10 rounded-xl {% if run.status == 'FAILED' %}bg-red-500/10 text-red-500{% elif run.status == 'RUNNING' %}bg-blue-500/10 text-blue-500{% else %}bg-emerald-500/10 text-emerald-500{% endif %} flex items-center justify-center text-sm">
+            {% if run.status == 'RUNNING' %}<i class="fa-solid fa-spinner-third animate-spin"></i>
+            {% elif run.status == 'FAILED' %}<i class="fa-solid fa-triangle-exclamation"></i>
+            {% else %}<i class="fa-solid fa-shield-check"></i>{% endif %}
+        </div>
+        <span class="text-[10px] font-black {% if run.status == 'FAILED' %}text-red-500{% elif run.status == 'RUNNING' %}text-blue-500{% else %}text-emerald-500{% endif %}">
+            {{ run.health_score }}%
+        </span>
+    </div>
+
+    <h4 class="text-[10px] font-black text-white uppercase tracking-widest mb-1">{{ run.get_category_display }}</h4>
+    <p class="text-[8px] text-gray-500 font-bold uppercase mb-4">{{ run.created_at|timesince }} ago</p>
+    
+    <div class="flex items-center justify-between text-[8px] uppercase font-black tracking-tighter">
+        <span class="px-2 py-1 rounded bg-white/5 text-gray-400">{{ run.test_type }}</span>
+        <span class="group-hover:translate-x-1 transition-transform">Report <i class="fa-solid fa-arrow-right ml-1"></i></span>
+    </div>
+</div>

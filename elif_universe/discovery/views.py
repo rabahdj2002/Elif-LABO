@@ -3,8 +3,9 @@ from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.urls import reverse
 from django import forms
 from django.db.models import Sum, Count, Avg, Q
-from .models import Inquiry, Planet, RoomState, EngineRun, SystemSettings, SpendRecord, Tier, UserSubscription, IssueReport, StripeWebhookLog, DailyFinancialSnapshot, FinancialTransaction, BusinessAlert
+from .models import Inquiry, Planet, RoomState, EngineRun, SystemSettings, SpendRecord, Tier, UserSubscription, IssueReport, StripeWebhookLog, DailyFinancialSnapshot, FinancialTransaction, BusinessAlert, SystemTestRun, Notification
 from .financial_service import FinancialAnalyticsService
+from .system_tests import run_system_tests_async
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
@@ -227,6 +228,37 @@ def admin_integrations_center(request):
         section_ai = "save_ai" in request.POST
         section_stripe = "save_stripe" in request.POST or "test_stripe" in request.POST
         section_db = "save_db" in request.POST or "test_db" in request.POST
+        section_email = "save_email" in request.POST or "test_email" in request.POST
+
+        if "test_email" in request.POST:
+            from .email_service import EmailService
+            # Update settings object with values from POST (for the test)
+            settings.smtp_host = request.POST.get("smtp_host")
+            settings.smtp_port = int(request.POST.get("smtp_port") or 587)
+            settings.smtp_user = request.POST.get("smtp_user")
+            # Only update password if provided
+            new_pass = request.POST.get("smtp_pass")
+            if new_pass:
+                settings.smtp_pass = new_pass
+            settings.smtp_use_tls = request.POST.get("smtp_use_tls") == "on"
+            settings.email_from_address = request.POST.get("email_from_address")
+            
+            test_recipient = request.POST.get("test_recipient")
+            if not test_recipient:
+                messages.error(request, "Recipient email is required for testing.")
+            else:
+                success, msg = EmailService.send_mail(
+                    subject="ELIF System: SMTP Channel Verification",
+                    message="If you're reading this, your SMTP configuration is functional.",
+                    recipient_list=[test_recipient],
+                    html_content="<div style='font-family: sans-serif; padding: 20px; border: 1px solid #1d4ed8; border-radius: 8px;'><h2 style='color: #1d4ed8;'>SMTP Channel Verification</h2><p>Integrated successfully.</p></div>"
+                )
+                if success:
+                    messages.success(request, f"Test email dispatched successfully to {test_recipient}. Check your inbox.")
+                    settings.save() # If test passed, auto-save settings
+                else:
+                    messages.error(request, f"Email Dispatch Failed: {msg}")
+            return redirect("discovery:integrations_center")
 
         if "test_stripe" in request.POST:
             # Update values in memory to test them
@@ -269,6 +301,21 @@ def admin_integrations_center(request):
             settings.enable_web_search = request.POST.get("enable_web_search") == "on"
             settings.save()
             messages.success(request, "Intelligence parameters updated.")
+            return redirect("discovery:integrations_center")
+
+        if section_email:
+            settings.smtp_host = request.POST.get("smtp_host")
+            settings.smtp_port = int(request.POST.get("smtp_port") or 587)
+            settings.smtp_user = request.POST.get("smtp_user")
+            
+            new_pass = request.POST.get("smtp_pass")
+            if new_pass:
+                settings.smtp_pass = new_pass
+                
+            settings.smtp_use_tls = request.POST.get("smtp_use_tls") == "on"
+            settings.email_from_address = request.POST.get("email_from_address")
+            settings.save()
+            messages.success(request, "Communication layer parameters updated.")
             return redirect("discovery:integrations_center")
 
         if section_db:
@@ -503,7 +550,7 @@ def landing_page(request):
     """The public landing page / entry point."""
     if request.user.is_authenticated:
         return redirect("discovery:system_map")
-    tiers = Tier.objects.exclude(name="Tester Tier").order_by('price', 'id')
+    tiers = Tier.objects.all().order_by('price', 'id')
     return render(request, 'discovery/landing.html', {
         'system_settings': SystemSettings.get_settings(),
         'tiers': tiers,
@@ -636,12 +683,6 @@ def initialize_inquiry(request):
     subscription, _ = UserSubscription.objects.get_or_create(user=request.user, defaults={"tier": target_tier})
     
     if not request.user.is_superuser:
-        # TESTER CHECK: If user is a tester and reached limit, and hasn't done survey
-        if subscription.user_type == 'TESTER':
-            if subscription.total_inquiries_consumed >= settings.tester_free_inquiry_limit and not subscription.has_completed_survey:
-                messages.warning(request, "Beta Tester limit reached. Please complete the following survey to continue exploring.")
-                return redirect("discovery:tester_survey")
-
         # 1. Check Spend Safety Net FIRST (Financial Safeguard)
         if subscription.spend_usage >= subscription.tier.spend_limit:
             messages.error(request, f"Financial Safeguard Triggered: Your current spend (${subscription.spend_usage:.2f}) has exceeded your tier's safety limit (${subscription.tier.spend_limit:.2f}). Please upgrade to continue.")
@@ -1244,86 +1285,64 @@ def analytics_dashboard(request):
     else:
         base_inquiries = Inquiry.objects.filter(user=request.user, is_visible_to_user=True)
         base_spend = SpendRecord.objects.filter(user=request.user)
+    
     total_inquiries = base_inquiries.count()
     completed_inquiries = base_inquiries.filter(status="COMPLETED").count()
-    total_spend = base_spend.aggregate(Sum("cost_usd"))["cost_usd__sum"] or 0.0
-    avg_cost = base_spend.aggregate(Avg("cost_usd"))["cost_usd__avg"] or 0.0
-    model_spend = base_spend.values("model_id").annotate(total=Sum("cost_usd")).order_by("-total")
+    
+    # Behavior Metrics
+    total_branches = base_inquiries.filter(parent_inquiry__isnull=False).count()
+    from django.db.models import Count
+    # Average depth = average number of completed planets per inquiry
+    depth_stats = base_inquiries.annotate(num_planets=Count('planets', filter=Q(planets__status='COMPLETED'))).aggregate(Avg('num_planets'))
+    avg_depth = depth_stats['num_planets__avg'] or 0.0
+    
+    # Peak complexity (max history log depth)
+    peak_complexity = 0
+    for inq in base_inquiries:
+        if inq.history_log and len(inq.history_log) > peak_complexity:
+            peak_complexity = len(inq.history_log)
+
     from django.utils import timezone
     from datetime import timedelta
     thirty_days_ago = timezone.now() - timedelta(days=30)
     usage_over_time = base_inquiries.filter(created_at__gte=thirty_days_ago).extra(select={"day": "date(created_at)"}).values("day").annotate(count=Count("id")).order_by("day")
     status_distribution = base_inquiries.values("status").annotate(count=Count("id"))
-    efficiency = base_spend.values("model_id").annotate(avg_tokens=Avg("input_tokens") + Avg("output_tokens")).order_by("-avg_tokens")
+    
     usage_labels = []
     usage_data = []
     for u in usage_over_time:
         label = u["day"].strftime("%d %b") if hasattr(u["day"], "strftime") else str(u["day"])
         usage_labels.append(label)
         usage_data.append(u["count"])
+        
     context = {
-        "is_admin": is_admin, "total_inquiries": total_inquiries, "completed_inquiries": completed_inquiries,
-        "total_spend": total_spend, "avg_cost": avg_cost, "model_spend": list(model_spend),
-        "usage_labels": usage_labels, "usage_data": usage_data, "status_distribution": list(status_distribution),
-        "efficiency": list(efficiency), "topic_distribution": list(base_inquiries.values("topic").annotate(count=Count("id")).order_by("-count")[:5])
+        "is_admin": is_admin, 
+        "total_inquiries": total_inquiries, 
+        "completed_inquiries": completed_inquiries,
+        "total_branches": total_branches,
+        "avg_depth": avg_depth,
+        "peak_complexity": peak_complexity,
+        "usage_labels": usage_labels, 
+        "usage_data": usage_data, 
+        "status_distribution": list(status_distribution),
+        "topic_distribution": list(base_inquiries.values("topic").annotate(count=Count("id")).order_by("-count")[:5])
     }
-    return render(request, "discovery/cognitive_analytics.html", context)
-
-@login_required
-def tester_survey(request):
-    """
-    Survey view for Beta Testers who have reached their inquiry limit.
-    Now uses dynamic questions set by Admins.
-    """
-    from .models import TesterQuestion, TesterSurveyResponse
-    subscription = get_object_or_404(UserSubscription, user=request.user)
-
-    if subscription.user_type != 'TESTER':
-        messages.info(request, "You are not designated as a Beta Tester.")
-        return redirect("discovery:system_map")
     
-    # Check for active re-ask requests
-    rejected_response = TesterSurveyResponse.objects.filter(user=request.user, is_rejected=True).order_by('-submitted_at').first()
-
-    if subscription.has_completed_survey and not rejected_response:
-        messages.info(request, "You have already completed the required survey. Thank you!")
-        return redirect("discovery:system_map")
-
-    questions = TesterQuestion.objects.filter(is_active=True).order_by('created_at')
-
-    if request.method == "POST":
-        from django.utils import timezone
-        answers = {"source": "limit_gate_survey"}
-        for q in questions:
-            answers[f"q_{q.id}"] = {
-                "question": q.text,
-                "answer": request.POST.get(f"q_{q.id}"),
-                "type": q.type
-            }
-
-        if rejected_response:
-            rejected_response.answers = answers
-            rejected_response.is_rejected = False
-            rejected_response.submitted_at = timezone.now()
-            rejected_response.save()
-        else:
-            TesterSurveyResponse.objects.create(
-                user=request.user,
-                answers=answers
-            )
-
-        # Confirm survey completion in subscription
-        if not subscription.has_completed_survey:
-            subscription.has_completed_survey = True
-            subscription.save()
-
-        messages.success(request, "Survey submitted successfully! Your feedback has been logged.")
-        return redirect("discovery:system_map")
-
-    return render(request, "discovery/tester_survey.html", {
-        "questions": questions,
-        "rejected_response": rejected_response
-    })
+    # Spend Data (Admin Only)
+    if is_admin:
+        total_spend = base_spend.aggregate(Sum("cost_usd"))["cost_usd__sum"] or 0.0
+        avg_cost = base_spend.aggregate(Avg("cost_usd"))["cost_usd__avg"] or 0.0
+        model_spend = base_spend.values("model_id").annotate(total=Sum("cost_usd")).order_by("-total")
+        efficiency = base_spend.values("model_id").annotate(avg_tokens=Avg("input_tokens") + Avg("output_tokens")).order_by("-avg_tokens")
+        
+        context.update({
+            "total_spend": total_spend, 
+            "avg_cost": avg_cost, 
+            "model_spend": list(model_spend),
+            "efficiency": list(efficiency),
+        })
+        
+    return render(request, "discovery/cognitive_analytics.html", context)
 
 @login_required
 def subscription_view(request):
@@ -1351,7 +1370,7 @@ def subscription_view(request):
                 return redirect('discovery:subscription')
 
     # Get available tiers for upgrade/downgrade (exclude internal tiers)
-    available_tiers = Tier.objects.exclude(name__in=["Tester Tier", "Staff"]).order_by('price')
+    available_tiers = Tier.objects.exclude(name="Staff").order_by('price')
     
     context = {
         "subscription": subscription,
@@ -1390,11 +1409,51 @@ def signup(request):
                 })
             
             UserSubscription.objects.get_or_create(user=user, tier=target_tier)
+            
+            # Send verification email asynchronously
+            from .email_service import EmailService
+            try:
+                EmailService.send_verification_email(user)
+                messages.info(request, "A verification email has been sent. Please check your inbox.")
+            except Exception as e:
+                import logging
+                logging.error(f"Failed to send verification email: {e}")
+                messages.warning(request, "Unable to send verification email at this time.")
+
             login(request, user)
             return redirect('discovery:system_map')
     else:
         form = SignupForm()
     return render(request, 'registration/signup.html', {'form': form})
+
+def verify_email(request, token):
+    try:
+        user = User.objects.get(verification_token=token)
+        user.is_verified = True
+        user.verification_token = ""
+        user.save()
+        messages.success(request, "Account verified! You now have full access.")
+        if request.user.is_authenticated:
+            return redirect('discovery:system_map')
+        return redirect('login')
+    except User.DoesNotExist:
+        messages.error(request, "Invalid or expired verification link.")
+        return redirect('discovery:system_map')
+
+@login_required
+def resend_verification(request):
+    if request.user.is_verified:
+        messages.info(request, "Your account is already verified.")
+        return redirect('discovery:system_map')
+    
+    from .email_service import EmailService
+    try:
+        EmailService.send_verification_email(request.user)
+        messages.success(request, "A new verification email has been sent.")
+    except Exception as e:
+        messages.error(request, "Failed to send email. Please check integration settings.")
+    
+    return redirect('discovery:system_map')
 
 @login_required
 def financial_intelligence_view(request):
@@ -1422,7 +1481,7 @@ def financial_intelligence_view(request):
     
     return render(request, "discovery/financial_dashboard.html", context)
 
-@admin_access_required()
+@user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard(request):
     """Dashboard view for superusers to see all system inquiries."""
     settings = SystemSettings.get_settings()
@@ -1431,6 +1490,9 @@ def admin_dashboard(request):
         settings.show_spending_overview = request.POST.get("show_spending_overview") == "on"
         settings.save()
         messages.success(request, f"Spending overview is now {'visible' if settings.show_spending_overview else 'hidden'} for users.")
+        return_to = request.POST.get("return_to")
+        if return_to == "users_list":
+            return redirect("discovery:users_list")
         return redirect("discovery:admin_dashboard")
 
     all_inquiries = Inquiry.objects.all().order_by("-updated_at")
@@ -1504,19 +1566,10 @@ def admin_limits_config(request):
     settings = SystemSettings.get_settings()
     
     if request.method == "POST":
-        settings.tester_free_inquiry_limit = request.POST.get("tester_free_inquiry_limit", 10)
-        settings.tester_free_spend_limit = request.POST.get("tester_free_spend_limit", 50.00)
         settings.reasoning_depth = request.POST.get("reasoning_depth", 7)
         settings.strict_governance = request.POST.get("strict_governance") == "on"
         settings.show_spending_overview = request.POST.get("show_spending_overview") == "on"
         settings.save()
-
-        # Update Tester Tier if it exists
-        from .models import Tier
-        Tier.objects.filter(name="Tester Tier").update(
-            inquiry_limit=settings.tester_free_inquiry_limit,
-            spend_limit=settings.tester_free_spend_limit
-        )
 
         messages.success(request, "Global limits and governance protocols updated.")
         return redirect('discovery:admin_limits_config')
@@ -1609,76 +1662,10 @@ def admin_system_reset(request):
         
     return redirect(request.META.get('HTTP_REFERER', 'discovery:admin_limits_config'))
 
-@login_required
-def tester_feedback_center(request):
-    """A dedicated feedback/mission control for Testers."""
-    subscription = getattr(request.user, 'subscription', None)
-    if not subscription or subscription.user_type != 'TESTER':
-        messages.error(request, "Access Denied: Mission Control is restricted to Beta Testers.")
-        return redirect("discovery:system_map")
-    
-    from .models import TesterSurveyResponse, TesterQuestion
-    responses = TesterSurveyResponse.objects.filter(user=request.user).order_by("-submitted_at")
-    
-    # Check for active re-ask requests or existing mission reports
-    rejected_response = responses.filter(is_rejected=True).first()
-    has_submitted_mission = responses.filter(answers__source__in=['tester_mission_control_survey', 'limit_gate_survey']).exists()
-
-    if request.method == "POST":
-        if "survey_response" in request.POST:
-            if has_submitted_mission and not rejected_response:
-                messages.error(request, "You have already submitted your mission report.")
-                return redirect("discovery:tester_feedback_center")
-
-            questions = TesterQuestion.objects.filter(is_active=True).order_by('created_at')
-            answers = {"source": "tester_mission_control_survey"}
-            for q in questions:
-                answers[f"q_{q.id}"] = {
-                    "question": q.text,
-                    "answer": request.POST.get(f"q_{q.id}"),
-                    "type": q.type
-                }
-            
-            if rejected_response:
-                from django.utils import timezone
-                rejected_response.answers = answers
-                rejected_response.is_rejected = False
-                rejected_response.submitted_at = timezone.now()
-                rejected_response.save()
-            else:
-                TesterSurveyResponse.objects.create(
-                    user=request.user,
-                    answers=answers
-                )
-            
-            # Notify Superusers
-            from .models import Notification
-            from django.contrib.auth.models import User
-            admins = User.objects.filter(is_superuser=True)
-            for admin in admins:
-                Notification.objects.create(
-                    user=admin,
-                    title="Mission Report Filed",
-                    message=f"Tester {request.user.username} has submitted a new reasoning mission report.",
-                    category='MISSION_COMPLETED',
-                    link='/discovery/admin-dashboard/intelligence/'
-                )
-
-            messages.success(request, "Mission report filed. Protocol adherence verified.")
-            
-        return redirect("discovery:tester_feedback_center")
-
-    return render(request, 'discovery/tester_feedback_center.html', {
-        'subscription': subscription,
-        'questions': TesterQuestion.objects.filter(is_active=True).order_by('created_at'),
-        'show_survey': not has_submitted_mission or rejected_response,
-        'rejected_response': rejected_response
-    })
 
 def tier_list(request):
     """View to list all available membership tiers."""
-    # Exclude special system tiers like the 'Tester Tier' from the public/admin list
-    tiers = Tier.objects.exclude(name="Tester Tier").order_by('price')
+    tiers = Tier.objects.all().order_by('price')
     settings = SystemSettings.get_settings()
 
     if request.method == "POST":
@@ -1857,6 +1844,19 @@ def user_detail(request, user_id):
         day['height'] = max(2, (day['count'] / max_count * 100)) if max_count > 0 else 2
 
     if request.method == "POST":
+        # Handle admin permissions toggle
+        if "update_admin_permissions" in request.POST and request.user.is_superuser:
+            perm_key = request.POST.get("perm_key")
+            is_enabled = request.POST.get("is_enabled") == "on"
+            
+            if subscription:
+                perms = subscription.admin_permissions.copy()
+                perms[perm_key] = is_enabled
+                subscription.admin_permissions = perms
+                subscription.save()
+                messages.success(request, f"Permission '{perm_key}' updated for {target_user.username}.")
+            return redirect('discovery:user_detail', user_id=user_id)
+
         # Handle account status updates
         if "update_account" in request.POST:
             email = request.POST.get("email")
@@ -1876,30 +1876,12 @@ def user_detail(request, user_id):
                 
                 # Role-Specific Tier Handling
                 if user_type == "NORMAL":
-                    # For Normal users, use selected tier or fallback to default
                     if tier_id:
                         try:
                             subscription.tier = Tier.objects.get(pk=tier_id)
                         except Tier.DoesNotExist:
                             pass
-                elif user_type == "TESTER":
-                    # For Testers, force use the "Tester Tier"
-                    sys_settings = SystemSettings.get_settings()
-                    tester_tier, _ = Tier.objects.get_or_create(
-                        name="Tester Tier",
-                        defaults={
-                            "inquiry_limit": sys_settings.tester_free_inquiry_limit, 
-                            "spend_limit": sys_settings.tester_free_spend_limit, 
-                            "price": 0.00
-                        }
-                    )
-                    # Sync any updates to global tester limits if tier already existed
-                    tester_tier.inquiry_limit = sys_settings.tester_free_inquiry_limit
-                    tester_tier.spend_limit = sys_settings.tester_free_spend_limit
-                    tester_tier.save()
-                    subscription.tier = tester_tier
                 elif user_type == "ADMIN":
-                    # For Admins, set to a placeholder "Staff" tier (they don't use it anyway)
                     admin_tier, _ = Tier.objects.get_or_create(
                         name="Staff",
                         defaults={"inquiry_limit": 0, "spend_limit": 0.00, "price": 0.00}
@@ -1914,7 +1896,9 @@ def user_detail(request, user_id):
                         "can_manage_users": request.POST.get("perm_can_manage_users") == "on",
                         "can_view_spend": request.POST.get("perm_can_view_spend") == "on",
                         "can_manage_issues": request.POST.get("perm_can_manage_issues") == "on",
-                        "can_edit_settings": request.POST.get("perm_can_edit_settings") == "on", # Added consistency
+                        "can_edit_settings": request.POST.get("perm_can_manage_settings") == "on",
+                        "can_manage_tiers": request.POST.get("perm_can_manage_tiers") == "on",
+                        "can_view_analytics": request.POST.get("perm_can_view_analytics") == "on",
                     }
                     subscription.admin_permissions = new_perms
                 else:
@@ -2006,29 +1990,74 @@ def report_issue(request):
 
 @admin_access_required('can_manage_issues')
 def admin_issue_center(request):
-    """Admin view to manage all reported issues."""
+    """Admin view to manage all reported issues and platform verification."""
     issues = IssueReport.objects.all().order_by("-created_at")
     active_count = issues.exclude(status='FIXED').count()
-    return render(request, "discovery/admin_issues.html", {
-        "issues": issues,
-        "active_count": active_count
-    })
-
-@admin_access_required('can_manage_users')
-def admin_intelligence_hub(request):
-    """Admin view to review all tester mission reports and feedback."""
-    from .models import TesterSurveyResponse, TesterQuestion
-    responses = TesterSurveyResponse.objects.all().order_by("-submitted_at")
     
-    # Optional filtering
-    source = request.GET.get('source')
-    if source:
-        responses = responses.filter(answers__source=source)
+    # Platform Verification Tests
+    test_runs = SystemTestRun.objects.all().order_by("-created_at")[:20]
+    
+    # Calculate Global Health Score (avg of last 5 unique category runs)
+    from django.db.models import Avg
+    recent_health = SystemTestRun.objects.filter(status='COMPLETED').values('category').annotate(avg_score=Avg('health_score')).order_by('-created_at')[:5]
+    global_score = sum(item['avg_score'] for item in recent_health) / len(recent_health) if recent_health else 0
+    
+    # Calculate SVG offset for health ring (dasharray 440)
+    # 440 - (440 * score / 100)
+    health_offset = 440 - (440 * (global_score / 100))
+
+    context = {
+        "issues": issues,
+        "active_count": active_count,
+        "test_runs": test_runs,
+        "global_score": int(global_score),
+        "health_offset": int(health_offset),
+        "categories": SystemTestRun.CATEGORY_CHOICES
+    }
+
+    if request.headers.get('HX-Request') and request.GET.get('partial') == 'status':
+        return render(request, "discovery/partials/admin_validation_status.html", context)
+
+    if request.headers.get('HX-Request') and request.GET.get('partial') == 'logs':
+        return render(request, "discovery/partials/admin_verification_logs.html", context)
+
+    return render(request, "discovery/admin_issues.html", context)
+
+@admin_access_required('can_manage_issues')
+def trigger_system_test(request):
+    """Trigger a new platform verification cycle."""
+    if request.method == "POST":
+        category = request.POST.get("category", "CORE")
+        test_type = request.POST.get("test_type", "STANDARD")
         
-    return render(request, "discovery/admin_intelligence.html", {
-        "responses": responses,
-        "active_source": source,
-        "questions_count": TesterQuestion.objects.count()
+        run = SystemTestRun.objects.create(
+            category=category,
+            test_type=test_type,
+            status="RUNNING"
+        )
+        
+        run_system_tests_async(run.id)
+        
+        if request.headers.get('HX-Request'):
+            # Return nothing or a small signal, the polling will handle the UI update
+            return HttpResponse(status=204)
+            
+        messages.success(request, f"Verification Cycle [{category}] initialized in background.")
+        return redirect("discovery:admin_issue_center")
+    return redirect("discovery:admin_issue_center")
+
+@admin_access_required('can_manage_issues')
+def get_test_report(request, run_id):
+    """Return JSON details for a specific test run."""
+    run = get_object_or_404(SystemTestRun, pk=run_id)
+    return JsonResponse({
+        "id": run.id,
+        "status": run.status,
+        "health_score": run.health_score,
+        "results": run.results,
+        "logs": run.logs,
+        "execution_time": f"{run.execution_time:.2f}s",
+        "created_at": run.created_at.strftime("%Y-%m-%d %H:%M:%S")
     })
 
 @login_required
@@ -2056,56 +2085,6 @@ def update_issue_status(request, issue_id):
             
         messages.success(request, f"Issue #{issue.id} updated.")
     return redirect("discovery:admin_issue_center")
-
-@admin_access_required('can_view_stats')
-def manage_tester_questions(request):
-    """View to manage the dynamic checklist for Beta Testers."""
-    from .models import TesterQuestion
-    if request.method == "POST":
-        if "add_question" in request.POST:
-            text = request.POST.get("text")
-            q_type = request.POST.get("type")
-            options_raw = request.POST.get("options", "")
-            # Clean up comma separated options
-            options = [o.strip() for o in options_raw.split(",") if o.strip()] if options_raw else []
-            
-            TesterQuestion.objects.create(
-                text=text,
-                type=q_type,
-                options=options
-            )
-            messages.success(request, "Question deployed to mission protocol.")
-        elif "delete_question" in request.POST:
-            q_id = request.POST.get("question_id")
-            TesterQuestion.objects.filter(id=q_id).delete()
-            messages.warning(request, "Question decommissioned.")
-            
-        return redirect("discovery:manage_tester_questions")
-    
-    questions = TesterQuestion.objects.all().order_by("-created_at")
-    return render(request, "discovery/admin_intelligence_questions.html", {"questions": questions})
-
-@admin_access_required('can_view_stats')
-def reask_tester_feedback(request, response_id):
-    """Set flag on feedback so tester is prompted to re-answer."""
-    from .models import TesterSurveyResponse
-    response = get_object_or_404(TesterSurveyResponse, pk=response_id)
-    if request.method == "POST":
-        response.is_rejected = True
-        response.admin_note = request.POST.get("admin_note", "The reasoning auditor requested a re-submit of this feedback.")
-        response.save()
-
-        from .models import Notification
-        Notification.objects.create(
-            user=response.user,
-            title="Mission Refill Requested",
-            message=f"The Reasoning Auditor requested a refinement: \"{response.admin_note}\"",
-            category='MISSION_REJECTED',
-            link='/discovery/tester-feedback/'
-        )
-        messages.info(request, f"Re-ask request dispatched to {response.user.username}.")
-        
-    return redirect("discovery:admin_intelligence_hub")
 
 @login_required
 def get_notifications(request):
