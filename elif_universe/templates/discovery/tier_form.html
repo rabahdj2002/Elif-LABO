@@ -42,16 +42,8 @@
                         <p class="text-[10px] text-gray-500 mt-2 font-bold uppercase tracking-widest">Max research tasks</p>
                     </div>
 
-                    <!-- Spend Limit -->
-                    <div>
-                        <label class="block text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Spend Floor (USD)</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-shield-halved absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500/50"></i>
-                            <input type="number" step="0.01" name="spend_limit" value="{{ tier.spend_limit|default:50.00 }}" required
-                                   class="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-white font-mono font-bold focus:border-blue-500/50 focus:bg-white/10 transition-all outline-none">
-                        </div>
-                        <p class="text-[10px] text-gray-500 mt-2 font-bold uppercase tracking-widest">Financial safeguard</p>
-                    </div>
+                    <!-- Spend Limit (Hidden from UI) -->
+                    <input type="hidden" name="spend_limit" value="{{ tier.spend_limit|default:50.00 }}">
                 </div>
 
                 <!-- Price -->

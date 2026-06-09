@@ -441,7 +441,7 @@ Where the final operative truth is separated from speculative noise, providing t
 Administrators can calibrate the system via the **System Control** panel:
 *   **Intelligence Model**: Canonical selection (e.g., Claude 4.5 Sonnet).
 *   **Reasoning Depth**: Fine-tuning the depth of the logic engine (3-15 levels).
-*   **Budgeting**: Real-time spending overview and API quota management.
+*   **Resource Allocation**: Real-time inquiry capacity and operational load management.
 
 ---
 
@@ -548,8 +548,7 @@ def engine_telemetry(request, pk):
 
 def landing_page(request):
     """The public landing page / entry point."""
-    if request.user.is_authenticated:
-        return redirect("discovery:system_map")
+    # Allow authenticated users to see the landing page too (better for immersive marketing)
     tiers = Tier.objects.all().order_by('price', 'id')
     return render(request, 'discovery/landing.html', {
         'system_settings': SystemSettings.get_settings(),
@@ -683,14 +682,14 @@ def initialize_inquiry(request):
     subscription, _ = UserSubscription.objects.get_or_create(user=request.user, defaults={"tier": target_tier})
     
     if not request.user.is_superuser:
-        # 1. Check Spend Safety Net FIRST (Financial Safeguard)
+        # 1. Check Technical Safeguard (Operational Limit)
         if subscription.spend_usage >= subscription.tier.spend_limit:
-            messages.error(request, f"Financial Safeguard Triggered: Your current spend (${subscription.spend_usage:.2f}) has exceeded your tier's safety limit (${subscription.tier.spend_limit:.2f}). Please upgrade to continue.")
+            messages.error(request, "Operational Safeguard: Your current inquiry complexity has reached the safety ceiling for your protocol level. Please upgrade to continue.")
             return redirect("discovery:subscription")
             
         # 2. Check Inquiry Cap SECOND (Operational Limit)
         if subscription.inquiry_usage >= subscription.tier.inquiry_limit:
-            messages.error(request, f"Inquiry Limit Reached: Your current tier allows only {subscription.tier.inquiry_limit} inquiries. Please upgrade your subscription.")
+            messages.error(request, f"Inquiry Capacity Reached: Your current protocol level allows only {subscription.tier.inquiry_limit} inquiries. Please upgrade your access level.")
             return redirect("discovery:subscription")
 
     if request.method == "POST":
@@ -944,7 +943,7 @@ def spawn_branch_view(request, pk):
     sub = getattr(request.user, 'subscription', None)
     if sub and not request.user.is_superuser:
         if sub.spend_usage >= sub.tier.spend_limit:
-            messages.error(request, f"Financial Safeguard: Branching restricted. Spend limit reached.")
+            messages.error(request, "Operational Safeguard: Branching restricted due to protocol load limits.")
             if request.headers.get('HX-Request'):
                 response = HttpResponse()
                 response['HX-Redirect'] = reverse("discovery:subscription")
@@ -952,7 +951,7 @@ def spawn_branch_view(request, pk):
             return redirect("discovery:subscription")
             
         if sub.inquiry_usage >= sub.tier.inquiry_limit:
-            messages.error(request, f"Inquiry Limit Reached: Your current tier allows only {sub.tier.inquiry_limit} inquiries. Please upgrade to branch into new trajectories.")
+            messages.error(request, f"Inquiry Capacity Reached: Your current protocol level allows only {sub.tier.inquiry_limit} inquiries. Please upgrade to branch into new trajectories.")
             if request.headers.get('HX-Request'):
                 response = HttpResponse()
                 response['HX-Redirect'] = reverse("discovery:subscription")
@@ -1397,6 +1396,8 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             # Initialize default subscription using system settings if available
+            # Note: Using try/except because SystemSettings might be in settings_models.py
+            from .settings_models import SystemSettings
             settings = SystemSettings.get_settings()
             
             if settings.default_tier:
@@ -1424,7 +1425,10 @@ def signup(request):
             return redirect('discovery:system_map')
     else:
         form = SignupForm()
-    return render(request, 'registration/signup.html', {'form': form})
+    return render(request, 'registration/signup.html', {
+        'form': form,
+        'hide_sidebar': True
+    })
 
 def verify_email(request, token):
     try:

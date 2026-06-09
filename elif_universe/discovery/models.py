@@ -459,7 +459,7 @@ class UserSubscription(models.Model):
             Notification.objects.create(
                 user=self.user,
                 title="Cycle Refresh",
-                message="A new monthly billing cycle has started. Your inquiry and spend limits have been reset.",
+                message="A new monthly operational cycle has started. Your inquiry capacity has been refreshed.",
                 category='USAGE_RESET'
             )
             return True

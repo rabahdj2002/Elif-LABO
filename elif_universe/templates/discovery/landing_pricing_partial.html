@@ -1,50 +1,52 @@
 
-<div id="pricing" class="pt-24 pb-32">
-    <div class="text-center mb-16 px-6">
-        <h2 class="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4 italic">PROTOCOL_TIERS</h2>
-        <p class="text-gray-500 text-sm md:text-base uppercase tracking-[0.2em]">Select your inquiry capacity and operational depth.</p>
+<div id="pricing" class="pt-40 pb-40">
+    <div class="text-center mb-24 px-6">
+        <h2 class="text-xs font-bold text-indigo-500 uppercase tracking-[0.5em] mb-4">Flexible Access</h2>
+        <h3 class="text-4xl md:text-6xl font-bold text-white tracking-tighter mb-6">Simple Protocol Tiers.</h3>
+        <p class="max-w-2xl mx-auto text-gray-500 text-lg font-medium">Select the inquiry capacity and computational depth that suits your operational needs.</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch px-12 max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch px-8 max-w-7xl mx-auto">
         {% for tier in tiers %}
-        <div class="glass-card p-8 md:p-12 rounded-[3.5rem] border border-white/5 hover:border-blue-500/30 transition-all flex flex-col group relative overflow-hidden backdrop-blur-3xl bg-white/5">
+        <div class="dashboard-preview p-10 flex flex-col group relative overflow-hidden">
             {% if tier.is_recommended %}
-            <div class="absolute top-0 right-12 px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-b-2xl">Recommended</div>
+            <div class="absolute top-0 right-10 px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-b-xl">Best Value</div>
             {% endif %}
 
-            <div class="mb-12">
-                <h3 class="text-sm font-black text-blue-400 uppercase tracking-widest mb-4">{{ tier.name }}</h3>
+            <div class="mb-10">
+                <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.2em] mb-4">{{ tier.name }}</p>
                 <div class="flex items-baseline gap-2">
-                    <span class="text-5xl font-bold">${{ tier.price|floatformat:0 }}</span>
-                    <span class="text-gray-500 text-xs uppercase tracking-widest">/ month</span>
+                    <span class="text-5xl font-bold text-white">${{ tier.price|floatformat:0 }}</span>
+                    <span class="text-gray-500 text-sm font-medium">/ month</span>
                 </div>
             </div>
 
-            <div class="space-y-6 flex-1 mb-12 border-t border-white/5 pt-8">
+            <div class="space-y-5 flex-1 mb-10 border-t border-white/5 pt-8">
                 <div class="flex items-center gap-4">
-                    <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                        <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                    <div class="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-check text-[8px] text-indigo-400"></i>
                     </div>
-                    <span class="text-xs text-gray-300">{{ tier.inquiry_limit }} Clinical Inquiries</span>
+                    <span class="text-sm text-gray-400 font-medium">{{ tier.inquiry_limit }} Clinical Inquiries</span>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                        <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                    <div class="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-check text-[8px] text-indigo-400"></i>
                     </div>
-                    <span class="text-xs text-gray-300">${{ tier.spend_limit }} Computational Credits</span>
+                    <span class="text-sm text-gray-400 font-medium">Adaptive Reasoning Depth</span>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div class="w-6 h-6 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                        <i class="fa-solid fa-check text-[8px] text-blue-400"></i>
+                    <div class="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-check text-[8px] text-indigo-400"></i>
                     </div>
-                    <span class="text-xs text-gray-300">Hardened Multi-Room Access</span>
+                    <span class="text-sm text-gray-400 font-medium">Hardened Multi-Room Access</span>
                 </div>
             </div>
 
-            <a href="{% url 'discovery:signup' %}" class="w-full py-5 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-[0.2em] text-center transition-all group-hover:border-blue-500/50">
-                Acquire Tier
+            <a href="{% url 'discovery:signup' %}" class="w-full py-4 rounded-full bg-white text-black font-bold text-sm text-center transition-all hover:scale-[1.02] active:scale-[0.98]">
+                Get Started
             </a>
         </div>
         {% endfor %}
     </div>
 </div>
+

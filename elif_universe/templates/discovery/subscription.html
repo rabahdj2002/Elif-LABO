@@ -48,8 +48,8 @@
             </p>
         </div>
 
-        <!-- Spend Tracking -->
-        <div class="glass p-8 rounded-3xl border-white/5 bg-white/[0.02]">
+        <!-- Spend Tracking (REMOVED) -->
+        <div class="hidden">
             <div class="flex justify-between items-center mb-6">
                 <div class="text-[10px] text-gray-500 uppercase tracking-widest font-black">Computational Fuel</div>
                 <div class="text-xs font-mono text-emerald-400 font-bold">${{ subscription.monthly_spend_consumed|floatformat:2 }} / ${{ tier.spend_limit }}</div>
@@ -88,10 +88,7 @@
                             <i class="fa-solid fa-check text-blue-500"></i>
                             {{ available_tier.inquiry_limit }} Inquiries / Month
                         </li>
-                        <li class="flex items-center gap-3 text-xs text-gray-400 font-medium">
-                            <i class="fa-solid fa-check text-blue-500"></i>
-                            ${{ available_tier.spend_limit }} Spend Floor
-                        </li>
+                        <!-- Spend Ceiling Removed -->
                         {% if available_tier.price > 0 %}
                         <li class="flex items-center gap-3 text-xs text-gray-400 font-medium">
                             <i class="fa-solid fa-check text-blue-500"></i>

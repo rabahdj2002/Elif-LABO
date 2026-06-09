@@ -21,13 +21,13 @@
                 </div>
             </div>
             {% if is_admin %}
-            <div class="glass px-6 py-3 rounded-2xl border-emerald-500/20 flex items-center gap-4">
+            <div class="glass px-6 py-3 rounded-2xl border-blue-500/20 flex items-center gap-4">
                 <div class="text-right">
-                    <p class="text-[10px] text-emerald-500 uppercase font-black tracking-widest">Network Spend</p>
-                    <p class="text-[10px] font-black text-white uppercase font-mono">${{ total_spend|stringformat:".4f" }}</p>
+                    <p class="text-[10px] text-blue-500 uppercase font-black tracking-widest">Inquiry Depth</p>
+                    <p class="text-[10px] font-black text-white uppercase font-mono">{{ avg_depth|floatformat:1 }} Steps</p>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                    <i class="fa-solid fa-microchip"></i>
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i class="fa-solid fa-layer-group"></i>
                 </div>
             </div>
             {% else %}
@@ -58,11 +58,11 @@
             <div class="text-[9px] text-gray-600 mt-1 uppercase">Sovereign Resolution Rate</div>
         </div>
         <div class="glass p-6 rounded-3xl border-white/5 bg-white/[0.02]">
-            <div class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">{% if is_admin %}Avg Session Cost{% else %}Branching Density{% endif %}</div>
-            <div class="text-2xl font-bold {% if is_admin %}text-emerald-400{% else %}text-purple-400{% endif %} font-mono">
-                {% if is_admin %}${{ avg_cost|floatformat:4 }}{% else %}{{ total_branches }}{% endif %}
+            <div class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">Branching Density</div>
+            <div class="text-2xl font-bold text-purple-400 font-mono">
+                {{ total_branches }}
             </div>
-            <div class="text-[9px] text-gray-600 mt-1 uppercase">{% if is_admin %}Per Reasoning Event{% else %}Divergent Trajectories{% endif %}</div>
+            <div class="text-[9px] text-gray-600 mt-1 uppercase">Divergent Trajectories</div>
         </div>
         <div class="glass p-6 rounded-3xl border-white/5 bg-white/[0.02]">
             <div class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">Workflow States</div>
@@ -70,11 +70,11 @@
             <div class="text-[9px] text-gray-600 mt-1 uppercase">State Variance Matrix</div>
         </div>
         <div class="glass p-6 rounded-3xl border-white/5 bg-white/[0.02]">
-            <div class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">{% if is_admin %}Model Diversity{% else %}Peak Complexity{% endif %}</div>
-            <div class="text-2xl font-bold {% if is_admin %}text-purple-400{% else %}text-orange-400{% endif %} font-mono">
-                {% if is_admin %}{{ model_spend|length }}{% else %}{{ peak_complexity }}{% endif %}
+            <div class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2">Peak Complexity</div>
+            <div class="text-2xl font-bold text-orange-400 font-mono">
+                {{ peak_complexity }}
             </div>
-            <div class="text-[9px] text-gray-600 mt-1 uppercase">{% if is_admin %}Involved Architectures{% else %}Max Mutation Depth{% endif %}</div>
+            <div class="text-[9px] text-gray-600 mt-1 uppercase">Max Mutation Depth</div>
         </div>
     </div>
 
@@ -89,11 +89,13 @@
         </div>
 
         {% if is_admin %}
-        <!-- Spend by Model (Admin Only) -->
+        <!-- Cognitive Complexity (Admin Replacement) -->
         <div class="glass p-8 rounded-[2rem] border-white/5 bg-black/40 overflow-hidden">
-            <h5 class="text-sm font-bold text-gray-300 uppercase tracking-[0.2em] mb-8"><i class="fa-solid fa-chart-pie mr-3 text-emerald-500"></i>Expenditure by Architecture</h5>
-            <div class="h-64 flex justify-center">
-                <canvas id="modelSpendChart"></canvas>
+            <h5 class="text-sm font-bold text-gray-300 uppercase tracking-[0.2em] mb-8"><i class="fa-solid fa-brain mr-3 text-purple-500"></i>Structural Complexity Monitor</h5>
+            <div class="h-64 flex flex-col justify-center items-center space-y-4">
+                <div class="text-6xl font-black text-blue-500 font-mono">{{ total_branches }}</div>
+                <div class="text-xs text-gray-500 uppercase tracking-widest font-bold">Total Evolutionary Branches</div>
+                <p class="text-[10px] text-gray-600 text-center max-w-xs px-4">Tracking the divergence of inquiries across all network nodes.</p>
             </div>
         </div>
         {% else %}
@@ -216,29 +218,6 @@
             }
         }
     });
-
-    {% if is_admin %}
-    const modelSpendCtx = document.getElementById('modelSpendChart').getContext('2d');
-    new Chart(modelSpendCtx, {
-        type: 'doughnut',
-        data: {
-            labels: [{% for m in model_spend %}"{{ m.model_id }}",{% endfor %}],
-            datasets: [{
-                data: [{% for m in model_spend %}{{ m.total|floatformat:4 }},{% endfor %}],
-                backgroundColor: ['rgba(59, 130, 246, 0.6)', 'rgba(16, 185, 129, 0.6)', 'rgba(139, 92, 246, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(239, 68, 68, 0.6)'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 10, padding: 15 } }
-            }
-        }
-    });
-    {% endif %}
 
     const statusCtx = document.getElementById('statusChart').getContext('2d');
     new Chart(statusCtx, {
