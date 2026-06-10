@@ -11,4 +11,7 @@ psycopg2-binary
 Django>=6.0.0,<6.1.0
 whitenoise
 gunicorn
+openai
+# Optional: tenacity (helpful for LLM retries if not already there)
+tenacity
 
