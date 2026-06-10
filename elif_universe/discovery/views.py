@@ -1973,6 +1973,7 @@ def tier_upsert(request, pk=None):
         spend_limit = request.POST.get('spend_limit')
         price = request.POST.get('price')
         price_yearly = request.POST.get('price_yearly')
+        is_contact_only = request.POST.get('is_contact_only') == 'on'
         is_recommended = request.POST.get('is_recommended') == 'on'
         stripe_product_id = request.POST.get('stripe_product_id')
         stripe_price_id = request.POST.get('stripe_price_id')
@@ -1983,6 +1984,7 @@ def tier_upsert(request, pk=None):
             tier.spend_limit = spend_limit
             tier.price = price
             tier.price_yearly = price_yearly
+            tier.is_contact_only = is_contact_only
             tier.is_recommended = is_recommended
             tier.stripe_product_id = stripe_product_id
             tier.stripe_price_id = stripe_price_id
@@ -1995,6 +1997,7 @@ def tier_upsert(request, pk=None):
                 spend_limit=spend_limit,
                 price=price,
                 price_yearly=price_yearly,
+                is_contact_only=is_contact_only,
                 is_recommended=is_recommended,
                 stripe_product_id=stripe_product_id,
                 stripe_price_id=stripe_price_id

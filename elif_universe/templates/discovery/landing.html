@@ -438,31 +438,46 @@
                         <span class="pbadge"><i class="fa-solid fa-star me-1"></i>Most Popular</span>
                         {% endif %}
                         <div style="font-size:.82rem;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">{{ tier.name }}</div>
+                        
+                        {% if tier.is_contact_only %}
+                        <div class="pamt mb-1">Contact Us</div>
+                        <div style="font-size:.82rem;color:var(--tx3)" class="pper">Custom Pricing</div>
+                        {% else %}
                         <div class="pamt mb-1"><sup>$</sup><span class="pv" data-m="{{ tier.price|floatformat:0 }}" data-y="{{ tier.price_yearly_monthly|floatformat:0 }}">{{ tier.price|floatformat:0 }}</span></div>
                         <div style="font-size:.82rem;color:var(--tx3)" class="pper">per month, billed monthly</div>
+                        {% endif %}
+
                         <p style="font-size:.875rem;color:var(--tx2);margin:14px 0 20px;padding-bottom:20px;border-bottom:1px solid var(--bd)">
-                           {% if tier.price == 0 %}
+                           {% if tier.is_contact_only %}
+                           Sovereign-grade infrastructure and bespoke reasoning protocols.
+                           {% elif tier.price == 0 %}
                            Perfect for exploring the foundation of uncertainty at no cost.
                            {% else %}
                            Advanced capacity for professional research and scaled inquiry.
                            {% endif %}
                         </p>
                         <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{{ tier.inquiry_limit|default:"Unlimited" }} Inquiry Branches/mo</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{% if tier.price == 0 %}1 Active Audit{% else %}Concurrent Audits{% endif %}</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Standard Reasoning Depth</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>Standard Doctrinal Checks</div>
-                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{% if tier.price > 50 %}Priority Support{% else %}Community Support{% endif %}</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{% if tier.is_contact_only %}Unlimited Concurent Audits{% elif tier.price == 0 %}1 Active Audit{% else %}Concurrent Audits{% endif %}</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{% if tier.is_contact_only %}Sovereign Depth{% else %}Standard Depth{% endif %}</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{% if tier.is_contact_only %}Full Governance Access{% else %}Standard Doctrinal Checks{% endif %}</div>
+                        <div class="pfl"><span class="pchk"><i class="fa-solid fa-check"></i></span>{% if tier.is_contact_only or tier.price > 50 %}Priority Support{% else %}Community Support{% endif %}</div>
+                        
+                        {% if tier.is_contact_only %}
+                        <a href="mailto:{{ system_settings.support_email|default:'support@nexus.ai' }}" class="boc btn w-100 py-2 mt-4">Contact Sales</a>
+                        {% else %}
                         <a href="{% url 'discovery:signup' %}" class="{% if tier.is_recommended %}bgrd{% else %}boc{% endif %} btn w-100 py-2 mt-4">
                            {% if tier.price == 0 %}Start Free{% else %}Join Plan{% endif %}
                         </a>
+                        {% endif %}
                      </div>
                   </div>
                   {% endif %}
                   {% endfor %}
 
-                  <!-- Sovereign/Custom Card (Always show after dynamic tiers) -->
-                  <div class="col-md-4">
-                     <div class="pcard h-100">
+                  {% comment %}
+                  <!-- Sovereign/Custom Card (Removed to only show admin-set tiers) -->
+                  {% endcomment %}
+               </div>
                         <div style="font-size:.82rem;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Sovereign</div>
                         <div style="font-size:2.2rem;font-weight:700;margin-bottom:4px;padding-top:4px">Sovereign</div>
                         <div style="font-size:.82rem;color:var(--tx3)">Custom reasoning kernels</div>
