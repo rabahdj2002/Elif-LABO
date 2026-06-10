@@ -1,4 +1,4 @@
-# elif-lab
+# elif-lab :
 
 Experimental corrigible laboratory for **ELIF** — the corrigible discovery and validation architecture.
 
