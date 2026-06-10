@@ -32,7 +32,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-@d+^bhenx!p((h#kb4l
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*,localhost,127.0.0.1').split(',')
 
 # ELIF Alpha Engine Keys
 ELIF_ANTHROPIC_API_KEY = os.getenv('ELIF_ANTHROPIC_API_KEY', '')
